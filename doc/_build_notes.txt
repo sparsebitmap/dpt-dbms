@@ -1,0 +1,149 @@
+Building the DPT DBMS from Source
+=================================
+
+
+Contents
+========
+  - General Notes
+
+  - Precompiled Headers
+
+  - Toolsets and platforms
+    - Visual C++ 6
+    - Visual C++ 8 (2005 express)
+    - gcc/MinGW/Eclipse IDE
+    - gcc/MinGW/Python (Roger Marsh's notes)
+
+
+
+General Notes
+=============
+
+- Various internal macros and variables begin with "bb" or "BB".  This has no real meaning but is a good indication that something is part of DPT.
+
+- The precompiler definition "_BBDBAPI" must be present to indicate you are building DPT at level 2 or above (see API doc for what that means).
+
+- There are a number of diagnostic code sections conditionally included based on the precompiler definition "_DEBUG".  In other words the idea is that you would have this present in a debug build but not release.  It's a standard Microsoft C++ constant.
+
+- A read through the DPT API tutorial document is probably a good way to get a feel for the DBMS structure, especially if you're planning to go down in there and look round or do some customization.  That document also describes the other avaialble APIs (at the time of writing C and Java via DLLs) which you might even decide would be more convenient than wrestling with the C++ source.
+
+
+Precompiled headers
+===================
+- Every source file includes precompiled headers via the file "stdafx.h", which betrays DPT's origin as a MFC application.  When compiling in a non Visual C++ platform, this file is still required as it contains assorted global #defines and so on.
+
+
+Specific Toolsets
+=================
+
+Visual C++ 6
+------------
+- The supplied sample project file (helloworld.dsp) should open and build with no changes (it does here anyway).
+
+- Visual Studio will want to create a few auxiliary project files like .dsw and .ncb, plus all the compiled .obj files when you build, so you'll have to be working in a writable directory.
+
+
+Visual C++ 8 (2005/"Express")
+-----------------------------
+- You can open the above VC6 project files with VC8.  At save time it will create corresponding files in the new formats (.vcproj, .sln etc.)
+
+- The API should build with this free (at the time of writing) "Express" version of the compiler, but you also need the Windows Platform SDK too.  See e.g. "http://www.codeproject.com/useritems/FreeVS2005Win32.asp" for some notes on hooking these things up so they work.
+
+- VC 2005 has a variety of new "nanny" options turned on by default.  As well as creating bigger and slower code, DPT may not work properly with these turned on, although feel free to experiment.  I recommend disabling them and you can do that by going into the menu [Project/Properties/Configuration properties/C++/Preprocessor], and setting a new constant "BB_VC8".  This invokes various overrides in bbglobaldecs.h.
+
+- VC 2005 comes with a different C++ standard library implementation to Version 6, and at the time of writing DPT experiences some runtime problems using the new implementation.  std::map in particular seems problematic.
+
+
+gcc via Eclipse
+
+---------------
+- The toolchain here is the free combination of:
+   - Eclipse (IDE)
+   - gcc (compiler, plus gxx linker and debugger)
+   - MinGW (runtime library, and enabler for *nix tools like the compiler)
+- At the time of writing the relevant versions are: 
+     Eclipse 3.5 (Galileo)
+     gcc 3.4.5
+     MinGW 5.1.6.
+
+- To create and build a version of the "helloworld" sample project, follow these steps.
+
+1. Download Eclipse CDT (C/C++ Development Toolkit).
+     This is one of the main Eclipse downloads, you won't have to search too 
+     hard on the eclipse.org site for it.
+2. Download MinGW.
+     This includes the gcc compiler amongst other things.
+3. Install both.
+     Order doesn't matter.  The "getting started" section in the C++ help on 
+     the Eclipse website gives some background and will handhold through this 
+     if necessary, but there is nothing to it really.
+4. Start a new C++ project in Eclipse.
+     If you haven't used it before go through their "hello world" tutorial first, 
+     as that will make sure you have a working setup, with a workspace location 
+     defined, a successful hookup to the gcc compiler, etc.
+5. Now to start on DPT.  First perform "file/new C++ project".  
+     Call it "Hello", choosing type = "empty project".
+6. Tell Eclipse which source files to compile, as follows.
+     {Note. As it says in the Eclipse "how to" docs, there are numerous ways to 
+     do this and the choice depends on how you want to manage the source code 
+     on your local machine.  The following is a very straightforward way}.
+     (a) Right click on the new project in the leftmost "project explorer" pane 
+         and choose "new folder".  Call it DPT as that's where the DPT code will go.
+     (b) Right click on the DPT folder from (a) and choose "import", then when it 
+         asks where from, choose "general\file system" and click "next".  On the 
+         next screen click the "browse..." button and navigate to where you downloaded 
+         and unzipped the DPT source.  Choose the top level folder, e.g. "V2R25" and 
+         click OK. Then back on the import screen expand that folder using the little 
+         triangle, check the check boxes next to its "include" and "source" directories, 
+         and click "finish".
+         This actually takes a fresh copy of all the source code and places it in 
+         the Eclipse workspace directory, prompting you to overwrite any old version 
+         if there was one there.  It is possible to direct Eclipse to the original copy, 
+         or to a copy in your own version control system, but it's more complicated.
+     (c) Place the DPT "include" directory on the compiler's #include path by  
+         choosing menu "Project/Properties", expanding the "C/C++ general" option group, 
+         and selecting "paths and symbols".  In the "Includes" tab (should be the one
+         visible) choose "GNU C++" and Add..." the directory to those already there
+         by clicking "workspace..." and choosing Hello\DPT\include as created in (a).
+         Also add the include\dbapi subdirectory (the DPT C++ wrappers) - it should go
+         second in the list.
+     (d) Another import step like (b) above, this time to get the sample "hello world"
+         program itself.  Right click on the HelloDPT project and again choose "file 
+         system".  This time click "browse..." and navigate to the DPT downloaded and
+         unzipped "Hello World!" sample project and select the 2 files "stdafx.h" and 
+         "helloworld.cpp" and click "finish".  They should now be alongside the DPT 
+         directory in the project, but since stdafx.h is a header, drag it into the
+         DPT\include directory (or repeat step (c) pointing to where it currently is).
+7. Define the symbol _BBDBAPI.
+      Once again go to the project properties, "paths and symbols" screen as in 6(c).  
+      This time choose the second tab ("#symbols") and then choose GNU C++ and click 
+      "Add...". Put _BBDBAPI, with no value, and click OK, OK.
+
+8. Build the project
+      Right click on it, choose "build project", and cross your fingers.  The console 
+      window at the bottom will show progress.
+9. Run it (Ctrl+F11).
+     After the first time it seems Eclipse automatically builds any changed/saved 
+     modules without you having to, but the first time you have to explicitly do
+     it otherwise it says "binary not found".  Anyway, DPT's "Hello" message should
+     appear now in the console window at the bottom.  Note that the sample program
+     contains a gets() call so that when it's run at the DOS console it does
+     not disappear immediately.  In Eclipse the program will now be waiting for
+     an enter press in the console window before it finishes.  Comment out the gets()
+     next time obviously to stop that happening.
+
+
+Other compilers
+---------------
+- At the time of writing Roger Marsh has done a lot of work with gcc/mingw on both FreeBSD/Wine and native Windows, in order to develop some Python wrappers using SWIG for his chess application.  I think he has successful builds with gcc in more configurations than the eclipse one described above.
+
+- Included in the "Sample Projects" directory are Roger's notes (the HTML doc) and some application code.  These applications are built using a make file, which could form a useful starting point if attempting to build using similar languages - Ruby for example.
+
+- Roger's email address is in there too for any queries about the above.
+
+
+Wine
+----
+- DPT used to try and auto-detect whether it was running on Wine rather than Windows but it doesn't any more.  The alternate processing is now invoked (from V2.23) with a regular parameter switch (the LOADCTL parameter).  Apart from the possibility of needing to change this parameter value from its default, if you can get DPT to compile it should work on Wine.
+
+
