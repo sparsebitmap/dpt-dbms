@@ -1,0 +1,5 @@
+Visual C++ project (see notes in the doc folder)
+
+A "Hello World" console application which also makes a few simple DPT calls, for example to retrieve and print the version number.
+
+Just open the dsp file and hit F5.  The project assumes the source code is located one directory up and across, i.e. where it is in the download package.
