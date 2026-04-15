@@ -1,0 +1,220 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V3Rx</TITLE>
+
+<H1>Release Notes for DPT Versions 3.xx</H1>
+
+<HR>
+
+<P><BIG><B>Current major version:</BIG></B>
+<P><BIG><B><FONT COLOR=FF0000>Version 3.0</FONT></BIG></B>
+
+<P>See the <A HREF = "relnotes_V3R0.html">release notes for MAJOR VERSION 3.0 ....</A>
+
+<!***************************************************************>
+<P><HR width = 50% align = left>
+
+<P><BIG><B>Minor versions:</BIG></B>
+
+<P><a href="http://dptoolkit.com/downloads.html">Download latest version...</A>.
+
+<P><BIG><B>3.08</BIG></B>
+<BR>30th August 2014
+
+<UL>
+<LI>Fix to statement number support
+<BR>In the last release DPT added statement number support, but it did not correctly handle the situation where the number of dotted subparts of statement numbers <A HREF = "language.html#COMP_STMT_NUMS">differs from the code nesting</A>. This is now fixed. In addition, spaces are no longer required after statement numbers. E.g. 10.FD is a valid statement.
+
+<LI>Improvement to logon security
+<BR>When DPT is configured to require account verification on logon, it will now <A HREF="language.html#LOGON">lock an account after 5 consecutive failed attempts</A>.
+
+</UL>
+
+<P><HR width = 50% align = left>
+<!***************************************************************>
+<P><BIG><B>3.07</BIG></B>
+<BR>7th July 2014
+
+<P>A couple of things in this release, one looking forwards, one looking backwards:
+
+<UL>
+<LI>Unicode support
+<BR>DPT now has some capabilities to process Unicode data, including automatic conversion during image I/O. This and related features are discussed <A HREF = "language.html#COMP_ASCII">here in the UL guide</A>.
+
+<LI>Statement numbers
+<BR>Really old User Language code now stands a better chance of running on DPT with the support for statement numbers added in this release. Some notes about the DPT implementation of this feature are <A HREF = "language.html#COMP_STMT_NUMS">here in the UL guide</A>.
+</UL>
+
+<P><HR width = 50% align = left>
+<!***************************************************************>
+<P><BIG><B>3.06</BIG></B>
+<BR>26th January 2014
+
+<P>Two main things in this release:
+
+<P>1. DBMS improvement:
+<UL>
+<LI>The auto-retry processing invoked when trying to place a record lock is now more consistent with the well-known and expected 3s x ENQRETRY delay. Prior to this version, a DPT host experiencing both heavy update and read processing might sometimes wait for shorter or longer than the expected period. Occasionally a much longer delay could make it appear as if the system had locked up.
+</UL>
+
+<P>2. Other functionality:
+
+<UL>
+<LI>Record sort, value sort, and Sirius $list sort can now all be done <A HREF="language.html#COMP_CASE">as case-insensitive sorts</A> if desired.
+<LI>So you can easily prove that this works, the test-data generator function $DPT_RANDOMSTRING now optionally generates mixed case strings.
+</UL>
+
+<P><HR width = 50% align = left>
+<!***************************************************************>
+<P><BIG><B>3.05 + File Wizard V1.2</BIG></B>
+<BR>23rd April 2013
+
+<P>No changes to DPT host or client. Just a new build of the File Wizard, including:
+
+<UL>
+<LI>64 bit compatibility. Previously the File Wizard would not run on 64 bit machines if they had a 64-bit JVM installed. Now an appropriate JVM is selected when the app starts up.
+
+<LI>Double-click open from Windows Explorer on long file names. Previously if the file name was longer than 8 characters the File Wizard would not allow it to be opened this way because it assumed the DD name was the same as the file name minus ".DPT". Now the inferred DD name is truncated at 8 characters. 
+</UL>
+
+<!***************************************************************>
+<P><HR width = 50% align = left>
+<P><BIG><B>3.05</BIG></B>
+<BR>27th January 2013
+
+<P>In prior DPT versions, parameter 3 of the $POST function would always be truncated to length 1. Now any length string can be supplied. $ECBDSET was unaffected and continues to work correctly.
+
+<!***************************************************************>
+<P><HR width = 50% align = left>
+<P><BIG><B>3.04</BIG></B>
+<BR>25th November 2012
+
+<P>This version corrects a very occasionally seen feature of the $ROUND function, where "noise" would appear in the tiny decimal places of the result (below the 15th place).
+
+<P>In general, numeric User Language $functions return unrounded, i.e. full-precision, results. In other words the full precision of the underlying 64-bit floating point representation is allowed to remain intact, rather than being rounded to 15 significant digits <A HREF = "language.html#Number_Handling">as happens at various points during User Language evaluation</A>. This is desirable since mathematical expressions using logs and trig etc. as sub-terms should give results with as much precision as possible, and only accumulate rounding errors slowly. (Some rounding error must of course always occur eventually on a digital computer). Deliberate 15DP rounding is only applied at certain points such as the end of an expression evaluation.
+
+<P>The $ROUND function is a special case however, since we are explicitly requesting low precision. In the relatively unusual case where you use $ROUND as a term in a larger expression, its result is now stripped of tiny-DP noise, which on prior versions might have caused unintuitive behaviour with certain inputs (for example <TT>IF 2.76 NE $ROUND(2.76,2) THEN PRINT 'IT SHOULD REALLY'</TT>)
+
+<!***************************************************************>
+<P><HR width = 50% align = left>
+<P><BIG><B>3.03</BIG></B>
+<BR>30th September 2012
+
+<P>This release contains two main things:
+<OL>
+<LI>An important DBMS fix
+<LI>A chunk of new emulated functions for access control and security (LOGON, LOGCTL etc).
+</OL>
+
+<P><H4>Important DBMS fix</H4>
+V3.0 last year introduced a bug which affects STRING ORD NUM fields. Users who are still running versions below 3.0, or who have no STRING ORD NUM fields, are unaffected by the bug. The bug manifests itself during record STORE and field ADD operations on STRING ORD NUM fields, and any such operations which have been performed since Version 3.0 was installed are affected.
+
+<P>Affected users should read the following, which includes a suggested procedure for correcting the corrupt file data they probably now have.
+
+<P>The nature of the bug is that DPT stores the numeric (floating point) representation of the value in table B as well as in the ORD NUM index. The data area for a STRING field should contain the string representation.
+
+<P>This bug has a benign effect and a serious effect which could crash the DPT host system. The benign effect is that if you have any "non-standard" numeric literal formatting that was intended (e.g. leading zeros, trailing DP zeros, E format, etc.), this formatting will have been lost by storing the standardized floating point data. This will show when the field is printed or otherwise accessed. The second, serious, effect is that the incorrectly-stored values are actually corrupt since they have floating point representation in a field which is defined as STRING. This causes the DBMS confusion in any future attempts to change or delete these field values, and it will probably crash.
+
+<P>If you have records affected by the bug these entire records must be deleted and re-stored after installing V3.03, since the fields on them cannot be cleanly deleted and re-added. The simplest thing is to reorganize the file, which is advisable to do regularly anyway. If you <I>do not</I> use DPT fast reorg, your normal procedures will fix the data corruption satisfactorily. DPT fast reorg by default however assumes the data is not corrupt in this way, so it must be invoked with appropriate options to force it to reload each field on each table B extent separately. The following is not an optimally-efficient reorg, but is suggested as the simplest way to guarantee it does what we want here.
+<PRE class = code>
+=UNLOAD (PAI)
+INITIALIZE
+=LOAD
+</PRE>
+
+Reloading affected records as above will leave the file with no data corruption and once again safe for use in all commands and User Language statements. However, if you have fields which should have held non-standard numeric literals, they will still contain the standardized literal. For example the value "7" when you actually stored "7.00" or whatever. You will have to correct the formatting on these values using field CHANGE statements according to the particulars of your data and application usage.
+
+
+<H4>Enhancement: Access control and logon security</H4>
+Now we can move on to some happier news! This release adds a decent chunk of extra (optional) support for security, mainly targeted at controlling access to certain commands and UL statements. For example users can be given access to the DPT command line to issue their own ad-hoc queries, but they can be prevented from updating any data, or data in certain files.
+
+<UL>
+<LI>The <A HREF = "language.html#LOGCTL">LOGCTL command</A> now allows file-specific privileges to be entered too. Note however that DPT's scheme for file-specific access control is much simpler than M204's.
+
+<LI>The M204 <A HREF = "language.html#LOGON">LOGIN/LOGON command</A> is now emulated in this version.
+
+<LI>The M204 parameters ACCOUNT, CURPRIV and UPRIV, and the <A HREF = "language.html#FUNC_ACCOUNT">$ACCOUNT</A> function, are now implemented with more or less the same meaning. 
+
+<LI>See the <A HREF = "sysconfig.html#ACCESSCONTROL">System Config Guide</A> section for more details on DPT's currently-supported access-control features. 
+</UL>
+
+<P><U>Access-control-related backward compatibility - some potential issues</U>
+<BR>If you do not enable this feature with the <A HREF = "m204xref.html#CSTFLAGS">CSTFLAGS=X'0200' and/or X'0400'</A> settings, there are no backward compatibility issues. Otherwise the following should be considered depending on whether you enable one or both of those options.
+
+<UL>
+<LI>Connection handshake: The process of connecting to DPT via socked-based IODevs will prompt for one additional line of input if CSTFLAGS=X'0200' is enabled. User 0, daemon and IODev3 threads are unaffected, each inheriting privileges, if needed, from their initiator.
+
+<LI>Application code in general: You may find code which uses a command or $function which now requires some level of extra privilege. This can be an indication of hackery in the application that perhaps should be rewritten (e.g. general application code should avoid using system manager-type facilities if possible). Otherwise just elevate the user with $LOGON, or alternatively get in touch with DPT HQ to suggest the command is recategorized, or that RESET COMMAND is implemented more fully :)
+
+<LI>The DPT Client will remember the last logon details to make reconnection automatic as usual if it was closed down without logging off. DPT Client users will however find that if the host settings are changed to require a password when they previously did not, automatic reconnection will fail until a valid password is given.
+
+<LI>Custom privilege switches: To implement the new features in this version, DPT uses the low-order 16 bits of the 32-bit privileges value it maintains in its password file (since V2.16). Any custom processing you have based on these 32 bits should ideally be changed to use the high-order 16 bits only. This is only necessary if you wish to make use of DPT's built-in access control features as well as your own custom processing.  (Apologies to anyone affected by this. DPT will never use the high-order 16 bits - they are yours for ever!)
+
+<LI>Database API programs which want to enable access control will need to use one of the DatabaseServices class constructors which takes a password. In addition some of the function names and return constant names have been altered since the last version to clarify the difference between account names and user ids. The built-in features are not currently well-supported down in the API layer though. Most of it is implemented in the command processor and User Language layers.
+</UL>
+
+<H4>Other changes</H4>
+Finally some miscellaneous little things.
+
+<UL>
+<LI>User Language on DPT can now be set to allow hex numeric literals, for example %X = 0x00FF. This is controlled by a M204-compatibility <A HREF = "m204xref.html#CSTFLAGS">system option</A> which because this is so cool, defaults to ON.
+<LI>The emulated Sirius functions $X2D and $D2X can now work with numbers up to 64 bits in size by specifying 16 as the second parameter.
+</UL>
+
+<P>
+<!***************************************************************>
+<P><HR width = 50% align = left>
+
+<P><BIG><B>3.02</BIG></B>
+<BR>7th April 2012
+
+<P><U>Enhancement: Case-insensitive searching</U>
+<BR>Case-insensitive searching is now supported on DPT via a new custom LIKE 'NOCASE:...' pattern syntax. For example 
+
+<PRE class=code>
+FD SURNAME IS LIKE 'NOCASE:SM*'
+...
+IF SURNAME IS LIKE 'nocase:sm*' THEN
+</PRE>
+
+will both match values like SMITH, smith, SmYtHe, and sMeDlEy. 
+
+<P>Case-insensitive equality searches can be performed using LIKE with no wildcards or other special pattern characters. Case-insensitive range searches are supported only so far as you can express them using pattern syntax, which is to say only in simple cases. 
+
+<P>By being embedded in the pattern syntax this facility is available in all DPT usage configurations, API layers and the File Wizard, not just User Language.
+
+<P>More details are given in the <A HREF = "language.html#Pattern_Matching">DPT language guide, M204 compatibility section</A>.
+
+<P><U>Fixes</U>
+<BR>API textual find specifications using IN RANGE will now correctly accept the optional FROM keyword.
+
+
+<!***************************************************************>
+<P><HR width = 50% align = left>
+
+<P><BIG><B>3.01</BIG></B>
+<BR>(2nd June 2011 - original)
+<BR>(11th August 2011 - repackaged with Wizard V1.1)
+
+<P><U>Fixes</U>
+<LI>The occasional benign "DD name is in use" errors no longer occur when including procedures which themselves include unusually large numbers of further procedures.  This was due to a classic "one-past-the-end" pointer error in the reuse test for the internal "+Pxxxxxx" DD names used for procedures.
+<LI>The client navigator once again expands the temporary procedures directory correctly (bugged in 2.30).
+
+<P><U>Cosmetics</U>
+<LI>The FIWHEN parameter now shows "0" if FISTAT has never been reset.  Up till now it has dealt with this situation by confusingly showing the current date and time.
+<LI>The CREATE and INCREASE commands now issue an error message if the calculated [BRECPPG*BSIZE] would exceed the currently-in-effect value of the <A HREF = "dbaguide.html#MAGICNUMBERS">MAXRECNO</A> parameter, rather than the theoretical maximum of 2G records.  This is in addition to the runtime test performed when storing or extending records.
+<LI>The "DD name is in use" message now says which DD name is being referred to.
+
+<P><U>File Wizard</U>
+<LI>V1.1: Sorted out some issues with the help dialog, most importantly the hyperlinks now work.
+
+
+
+<P><HR>
+</HTML>

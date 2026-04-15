@@ -1,0 +1,317 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+LI.web { list-style-type: square; list-style-image: url(images/bullet_ring_red.bmp)}
+LI.nonweb { list-style-type: circle; list-style-image: url(images/bullet_ring_black.bmp)}
+LI.subitem { list-style-type: disk;}
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V3R0</TITLE>
+
+<H1>Release Notes for DPT Version 3.0</H1>
+<H3>Release date: 29th April 2011</H3>
+
+Dedicated to William and Kate, future king and queen, <A HREF = "http://en.wikipedia.org/wiki/Wedding_of_Prince_William_of_Wales_and_Kate_Middleton">married today</A>.
+
+<P>
+<HR>
+
+<P>Version 3.0 contains several large chunks of functionality which have been in development for years, and have now finally made it up to production standard and off the workbench.  There is no unifying theme except to make all this good stuff available.
+
+<P>For anybody who has been trying out the beta versions, the main new things since the last one are the File Wizard and Java API, which are included for the first time.
+
+<H2>Contents</H2>
+
+<UL>
+	<LI><A HREF = #BLOBs>Database Binary Large Object Fields (BLOBs) and "Table E"</A></LI>
+	<LI><A HREF = #Wizard>File Wizard Utility</A></LI>
+	<LI><A HREF = #Reorgs>Fast Unloads, Loads and Reorgs</A></LI>
+	<LI><A HREF = #API>Java API and Other API Enhancements/Changes</A></LI>
+	<LI><A HREF = #Other>Other</A></LI>
+	<LI><A HREF = #V2RX>V2.xx Quick Recap</A></LI>
+</UL>
+
+
+
+
+
+<P><HR>
+<!********************************>
+<A NAME = BLOBs></A>
+<H2>Database Binary Large Object Fields (BLOBs) and "Table E"</H2>
+
+<P>DPT now allows string fields in the database to be arbitrary in length, an approximate emulation of the Model 204 feature.
+
+<P>A BLOB field is created by using the new field attribute:
+
+<PRE CLASS = code>
+DEFINE FIELD REMARKS.TEXT (BLOB)
+</PRE>
+
+<P>The DBA guide contains a detailed section describing the <A HREF = "dbaguide.html#BLOBs">implementation and usage of BLOB fields on DPT</A>.
+
+<P><U>File structure compatibility</U>
+<BR>This is mentioned because on Model 204 files needed to be recreated to get a table E, and then became inaccessible to earlier versions.  On DPT the maintenance of BLOB fields <I>does</I> involve some new FCT information, but the first time a file is opened with version 3.xx these items are configured.  There is no explicit action you need to take, such as recreating the file, and the FICREATE parameter is still "B" as it was for version 2.  Files that have been opened with version 3.xx can still be used with version 2.xx.  Records with BLOB data when accessed with older DPT versions just appear to contain the BLOB descriptor, i.e. a cryptic string item.
+
+
+
+
+<P><HR>
+<!********************************>
+<A NAME = Wizard></A>
+<H2>File Wizard Utility</H2>
+
+<P>This is a simple but useful new application for browsing DPT database files just as if they were text files in notepad.  No more having to log onto a DPT host and issue line commands just to look at a few records of data.  The application was written to test and to showcase the new Java API (see below), so it provides the ability to perform most database functions one way or another, including field and file admin, but it won't be offended if all you do is use it to browse data and change the odd record here or there.
+
+<P>Ideally you would associate <TT>dptwizard.exe</TT> with <TT>".DPT"</TT> files, which allows double-click on files in Windows Explorer to open them.
+
+<P>The File Wizard is a Java application, wrapped as a Windows executable.  In the unlikely event that you don't have a Java runtime virtual machine installed, you'll be prompted to get one when invoking the application for the first time. 
+
+<P>Full details are contained in the <A HREF = "wizard.html">File Wizard User Guide</A>, which is also accessible via F1 inside the application.  The picture below shows the default appearance after double clicking on the sample <TT>TEAMS.DPT</TT> file which comes with the download.
+
+<P><IMG SRC="images\rel30wiz.gif">
+
+
+
+
+<P><HR>
+<!********************************>
+<A NAME = Reorgs></A>
+<H2>Fast Unloads, Loads and Reorgs</H2>
+
+This version contains a new group of features designed to speed up routine file loading and maintenance operations on DPT, much like the Sirius tools do on Model 204.  Despite having the same purpose, the DPT features are controlled by entirely different commands, command options and parameters.  They are not an emulation of Sirius fast load/unload.
+
+<P>The DPT manuals contain detailed information on the new commands, parameters etc., with the most important new chapters being as follows.
+
+<UL>
+<LI>The Language Guide sections on the new commands <A HREF = "language.html#UNLOADCMD">=UNLOAD</A> and <A HREF = "language.html#BLOD">=LOAD</A>, the combined command <A HREF = "language.html#REORG">REORGANIZE</A>, and the <A HREF = "language.html#FUNC_UNLOAD">$UNLOAD</A> and <A HREF = "language.html#FUNC_LOAD">$LOAD</A> User Language functions.
+
+<LI><A HREF = "dbaguide.html#LOADING">Detailed notes in the DBA guide</A> about the fast load feature, including all the low level reference information like the file formats they expect.
+
+<LI>A <A HREF = "dbaguide.html#REORGS">discussion of reorgs</A> on DPT using the new feature, plus some recipes for commonly-encountered situations.
+
+<LI>A <A HREF = "dbaguide.html#LOADM204">special section</A> on loading data from Model 204.
+</UL>
+
+<A NAME = FastBenchmarks></A>
+<P><U>Benchmarks</U>
+<BR>Here are some rough timings for the same 5 million records that were loaded in previous load benchmarks, <A HREF = "relnotes_V2Rx.html#V214LOADS">e.g. V 2.14</A>.  All times in seconds.  
+
+<P>Points of interest with this data:
+
+<UL>
+<LI>Fast unloads are 6-10 x quicker than User Language depending on format.
+<LI>Fast loads are 2-10 x quicker depending on format and whether indexes are built dynamically or not.
+<LI>Loading data from M204 in the simplest (PAI) format will likely be 5-6 x quicker than UL (run #s 8-9).
+<LI>Extracting and loading index information from M204 in PAI format will likely be quicker, but not spectacularly so, than letting DPT build the indexes from the data (run #s 9-10).
+<LI>A reorg is now 4-12 x quicker depending on format (run #s 2+7 vs e.g. 1+5 or 3+8).
+</UL>
+
+<P><TABLE BORDER>
+
+<TR><TH>#</TH> <TH>Run type</TH> <TH>Data     </TH> <TH>Indexes  </TH> <TH>Total  </TH> <TH>Remarks</TH> </TR>
+
+<TR><TD>-</TD><TD><B><U>Unloads</U></B></TD></TR>
+
+<TR>
+<TD>1</TD>
+<TD>Extract data via formatted User Language image</TD> 
+ 	<TD ALIGN=RIGHT>146</TD> 
+ 	<TD ALIGN=RIGHT>-</TD> 
+ 	<TD ALIGN=RIGHT>146</TD> 
+ 	<TD>FLOAT fields in FLOAT image items (not possible from M204)</TD> 
+</TR>
+
+<TR>
+<TD>2</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast unload (compressed)</TD> 
+ 	<TD ALIGN=RIGHT>23</TD> 
+ 	<TD ALIGN=RIGHT>20</TD> 
+ 	<TD ALIGN=RIGHT>43</TD> 
+ 	<TD>-</TD> 
+</TR>
+
+<TR>
+<TD>3</TD>
+<TD>Extract data via User Language PAI</TD> 
+ 	<TD ALIGN=RIGHT>602</TD> 
+ 	<TD ALIGN=RIGHT>-</TD> 
+ 	<TD ALIGN=RIGHT>602</TD> 
+ 	<TD>See sample program in DEMOPROC</TD> 
+</TR>
+
+<TR>
+<TD>4</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast unload (PAI format)</TD> 
+ 	<TD ALIGN=RIGHT>64</TD> 
+ 	<TD ALIGN=RIGHT>44</TD> 
+ 	<TD ALIGN=RIGHT>108</TD> 
+ 	<TD>Data extract equivalent to #3</TD> 
+</TR>
+
+<TR>
+<TD>-</TD>
+<TD><B><U>Loads</U></B></TD></TR>
+
+<TR>
+<TD>5</TD>
+<TD>User Language image from #1, single-step deferred index updates</TD>
+ 	<TD ALIGN=RIGHT>336</TD> 
+ 	<TD ALIGN=RIGHT>116</TD> 
+ 	<TD ALIGN=RIGHT>452</TD> 
+ 	<TD>Index time is just the final chunk merges plus btree builds</TD> 
+</TR>
+
+<TR>
+<TD>6</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast load of data from #2, single-step deferred index updates</TD> 
+ 	<TD ALIGN=RIGHT>181</TD> 
+ 	<TD ALIGN=RIGHT>121</TD> 
+ 	<TD ALIGN=RIGHT>302</TD> 
+ 	<TD>""</TD> 
+</TR>
+<TR>
+<TD>7</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast load of everything from #2</TD> 
+ 	<TD ALIGN=RIGHT>37</TD> 
+ 	<TD ALIGN=RIGHT>82</TD> 
+ 	<TD ALIGN=RIGHT>119</TD> 
+ 	<TD>Index time is TAPEI reads plus btree builds</TD> 
+</TR>
+
+<TR>
+<TD>8</TD>
+<TD>User Language "PAI" input from #3, single-step deferred index updates</TD>
+ 	<TD ALIGN=RIGHT>1798</TD> 
+ 	<TD ALIGN=RIGHT>115</TD> 
+ 	<TD ALIGN=RIGHT>1913</TD> 
+ 	<TD>as #5</TD> 
+</TR>
+
+<TR>
+<TD>9</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast load of data from #4, single-step deferred index updates</TD> 
+ 	<TD ALIGN=RIGHT>244</TD> 
+ 	<TD ALIGN=RIGHT>121</TD> 
+ 	<TD ALIGN=RIGHT>365</TD> 
+ 	<TD>""</TD> 
+</TR>
+
+<TR>
+<TD>10</TD>
+<TD><SPAN STYLE = "Font: Bold; Color: #FF0000;">(V3)</SPAN> Fast load of everything from #4</TD> 
+ 	<TD ALIGN=RIGHT>101</TD> 
+ 	<TD ALIGN=RIGHT>120</TD> 
+ 	<TD ALIGN=RIGHT>221</TD> 
+ 	<TD>as #7</TD> 
+</TR>
+
+</TABLE>
+
+
+
+<P><HR>
+<!********************************>
+<A NAME = API></A>
+<H2>Java API and Other API Enhancements/Changes</H2>
+
+<P><U>Java wrappers</U>
+<BR>The Database API is now accessible from Java using the downloadable JAR of API classes which mirror the base C++ API.  This whole area is covered in the <A HREF = "DBAPI.html#JAPI">Database API guide</A>.
+
+<P>Sample source code is available as a separate download of the File Wizard project (see above).
+
+<P><U>Database queries issued in text form</U>
+<BR>It is now possible to do arbitrarily complex database finds via a new "User Language-like" interface of the API, as an alternative to constructing them in one of the other C++ style ways.  This function is useful when end users are offered the ability to issue database queries via API programs.  An example is shown below (and more details are available <A HREF = "DBAPI.HTML#Ch5">here</A>).
+
+<PRE CLASS=code>
+void fd (APIDatabaseFileContext file) 
+{
+//Piecemeal style:
+  APIFindSpecification cb("COLOR", FD_EQ, "BLUE");
+  APIFindSpecification mf("MAKE", FD_EQ, "FORD");
+  APIFindSpecification mt("MAKE", FD_EQ, "TOYOTA");
+  APIFindSpecification b2("BODY", FD_EQ, "2DR");
+  APIFindSpecification b4("BODY", FD_EQ, "4DR");
+
+  file.FindRecords(cb & (mf | mt & (b2 | b4)));
+
+//Text style:
+  file.FindRecords("COLOR = BLUE AND (MAKE = FORD OR MAKE = TOYOTA AND (BODY = 2DR OR 4DR)))";
+}
+</PRE>
+
+<P><U>Access to BLOBs</U>
+<UL>
+<LI>The interfaces to DefineField() and RedefineField() accept flags/attributes allowing BLOB field definition.
+<LI>The FieldValue class has been loosened up to take arbitrarily long string values, and its StrLen() function now returns an <TT>int</TT> instead of an <TT>unsigned _int8</TT>.
+<LI>The DLL-based C API now has functions taking a string length, so values containing hex zeros can be stored (applies to any STRING field, not just BLOBs).
+</UL>
+
+Otherwise BLOB fields behave just like STRING fields, only longer.  Attempts to use values >255 where not allowed (everywhere except BLOB fields) will throw exceptions at a slightly later stage than before - i.e. no longer at parameter construction time.  You can also access the BLOB descriptor if you want.  See the <A HREF = "DBAPI.html#Single_Fields">API guide section on field access</A>.
+
+
+
+<P><U>Miscellaneous API</U>
+<UL>
+<LI>Some <A HREF = "DBAPI.html#Miscellaneous">new functions</A> added for random access into record sets and value sets (e.g. <TT>AccessRandomRecord(int)</TT>, <TT>AccessRandomValue(int)</TT>), as an alternative to using a cursor where that might be inconvenient or impossible.
+</UL>
+
+<P><HR>
+<!********************************>
+<A NAME = Other></A>
+<H2>Other Version 3.0 stuff unrelated to the above</H2>
+
+<P><U>Miscellaneous fixes</U>
+<LI>REDEFINE FIELD from FLOAT to INVISIBLE now converts all data values correctly.
+<LI>Follow-on fix from <A HREF = "relnotes_V2RX.html#V2R30">V2.30</A> where expressions containing patterns were made to treat right bracket as ending the expression rather than being part of the pattern.  That fix should also have been applied to find expressions too, such as <TT>FD (NAME IS LIKE *)</TT>.
+<LI>When sorting by a multiply-occurring field without the EACH option, and later in the same request accessing occurrences after the first, the later occurrences do not sometimes appear to be missing from the record.
+<LI>No more "sick record" error if you sort a set containing non-existent records.
+<LI>Better error message now with certain invalid %variable <TT>INITIAL</TT> expressions previously allowed through but evaluating to null string.
+
+<P><U>Miscellaneous enhancements</U>
+<LI>The pattern matcher, as used across the system in numerous places, can now process certain simple leading wildcard searches much more efficiently, by translating them internally into the equivalent of a $SCAN function.  <TT>'*ABC'</TT>, <TT>'ABC*'</TT> and <TT>'*ABC*'</TT> are examples.  This is obviously useful in any case but is the only way to give the system a fighting chance when such patterns are used (you know you want to) in table B searches against BLOB fields.
+<LI>The "batch2" userid can be in mixed case.
+<LI>The webserver built-in <A HREF = "webguide.html#Coding_Command"><TT>=COMMAND</TT> script</A> can be disabled with a new access-control flag.
+
+<P><U>Multi-CPU support</U>
+<LI>A new read-only system parameter, <A HREF = "m204xref.html#NCPUS">NCPUS</A>.
+<LI>General deferred update processing can now make use of the parallelism enabled as part of the fast load project, via <A HREF = "m204xref.html#LOADTHRD">LOADTHRD</A>.
+
+<P><U>Sequential files - NOCRLF option</U>
+<LI>Previously User Language IMAGE READ could not always handle input files containing floating point data, because of the possibility of CRLF (X'0D0A') sequences embedded within the FP bit patterns.  This is no longer a restriction so long as <A HREF = "dbaguide.html#Alloc_RecLen">fixed length records</A> and the new NOCRLF option are used.
+
+<P><U>Demo code - fun stuff</U>
+<LI>The emulator download now contains a full-screen User Language game to steal away some of your free time.  Just type "MINE" at the chevron (or use the shortcut in the installed MINEPROC directory).  It's mouse-sensitive - click your way to the top of the high score table!
+
+<P><IMG SRC="images\rel30mine.gif">
+
+<P><HR>
+<!********************************>
+<A NAME = V2RX></A>
+<H2>Version 2.xx Quick Recap</H2>
+For anyone who wasn't paying close attention during the lengthy 2.xx era, lots of improvements were made to emulation accuracy, quite a few bugs were reported and fixed, and some new features were added too. Here is a short list of the top 10 most exe-catching new features from 2.01 to 2.30, in chronological order.
+
+<UL>
+<LI>2.03: customizable editor $function help
+<LI>2.04: INITIALIZE KEEPDEFS option
+<LI>2.04: DBMS source code published with new user API
+<LI>2.12: Mixed case User Language and related options
+<LI>2.14: Single step deferred updates
+<LI>2.16: Password file support added
+<LI>2.22: Various ways of sending email from DPT
+<LI>2.27: Much more user friendly installer
+<LI>2.27: Fullscreen mode mouse-sensitivity
+<LI>2.29: Windows service mode for DPT host
+</UL>
+
+<P>Full details can be found in the <A HREF = relnotes_V2RX.html>V2.xx release notes</A>.
+
+
+
+
+
+
+</HTML>

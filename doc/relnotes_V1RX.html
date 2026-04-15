@@ -1,0 +1,124 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V1RX</TITLE>
+
+<H1>Release Notes for DPT Versions 1.x</H1>
+
+<UL>
+	<LI><A HREF = #V1R1>1.1 (19 June 06)</A>
+	<LI><A HREF = #V1R2>1.2 (29 July - 18 August 06)</A>
+	<LI><A HREF = #V1R3>1.3x (10 October 06 ... rolling)</A>
+</UL>
+
+
+<!********************************>
+<HR>
+
+<A NAME = V1R1></A>
+<H3>V1.1
+<BR>19 June 2006</H3>
+
+<P>A small set of bug fixes and cosmetic tweaks.
+
+<UL>
+
+<LI>SYSPORT default value changed from 204 to 13204 (i.e. a port number with no current conventional meaning).
+<LI>Handling of <A HREF = "language.html#COMP_RESERVED">reserved words in commands and User Language</A> is much more forgiving, and gives better error messages when necessary.
+
+<LI>Fixed cosmetic glitches in the debugger watch pane.
+
+<LI>Windows XP: A "themed" title bar no longer reverts to "W2K classic" appearance on resize/restore.
+<LI>Linux/Wine: Non-root user can start host using default settings (see SYSPORT comment above).
+
+<LI>Documentation changed as per the above.
+</UL>
+
+<P><HR>
+<P>
+
+<!********************************>
+<A NAME = V1R2></A>
+<H3>V1.2
+<BR>First released: 29 July 2006
+<BR>Final update: 18 August 2006</H3>
+
+<P>Most of these were reported by Mick Sheehy.  Some were highlighted while running the procedure-maintenance utility posted on M204-L by Richard Clark.  
+
+<UL>
+<LI><U>$functions</U>
+<LI>$CURREC: returns the number of a just-stored record even if there is an enclosing record loop.
+<LI>$DATECNV: The "output" format need not contain all components (e.g. DDMM or YYYY are valid).
+<LI>$DEBLANK: Handles null input string correctly.
+<LI>$EDIT: Alternative for "hook" character (see below).
+<LI>$LSTPROC: The last two image items are now independently optional rather than having to be both present or neither present. The format of the procedure modified dates returned can now be controlled by a provisional <A HREF = "m204xref.html#CSTFLAGS">fudge switch</A>. Null string parm 6 is treated the same as missing parm 6 (i.e. wildcard proc names). The image item holding the directory name is now only populated in group context.
+
+<LI><U>Lists</U>
+<LI>List names can now contain dots and underscores.
+<LI>Fixed bug where if a list was reduced to one record during a loop on that list the one record might not have been iterated when it should.
+<LI>The DECLARE IMAGE statement can now introduce a full image body as well as simply declaring the name of an image whose body is defined elsewhere.
+
+<LI><U>Screens</U>
+<LI>Screen input items are now pad-stripped both before and after the physical read.  This caters for when you pre-load a field with pad characters as a sort-of-alternative to clearing it.
+<LI>Fixed parsing bug with certain placings of the WITH CURSOR option on the READ SCREEN statement.
+<LI>Fixed the situation where a MODIFY item UNPROTECTED statement stopped working if it was executed repeatedly (e.g. in a subroutine).
+<LI>Same fix as with DECLARE IMAGE above.
+
+<LI><U>Misc UL</U>
+<LI>Fixed parsing bug with COUNT OCCURRENCES OF fieldname.
+<LI>Improved messaging in certain places if the user attempts to use a null field name.
+<LI>Fixed bug where unary prefix operators (-/+/NOT) could cause incorrect expression compilation precedence in certain situations.
+<LI>The notorious "¬" (hook) character in the "¬=" (not equal) expression operator can now also be supplied as "^" (hat) with the same meaning.  The hat is a universally-available ASCII character and also has no other special meaning in User Language.  This change is an attempt to pre-empt issues with both international keyboard layout standards and ASCII/EBCDIC translation when porting code to/from M204.
+
+<LI><U>Commands</U>
+<LI>The message issued in response to the UTABLE command has been made less confusing.
+
+<LI><U>Front end</U>
+<LI>Debugger: the object name suggested when invoking 'watch' makes more sense in relation to what's currently selected on the screen.
+<LI>The label for "toggle pane 2" now correctly reads "Alt+2" instead of "Ctrl+2".
+<LI>The "Like" operator in the debugger "Go until" function is now "~" (tilde) instead of "^" (hat).  See comment above.
+<LI>Ctrl+Enter and Shift+Enter in the fullscreen view no longer cause strange visual behaviour.
+
+<LI><U>Documentation</U>
+<LI>All changed as per the above.
+<LI>Wish list and compatibility queries documents posted on website.
+</UL>
+
+
+
+<P><HR>
+<!********************************>
+<A NAME = V1R3></A>
+<H3>V1.3: 10 October 2006
+<BR>V1.3a: 1 November 2006</H3>
+
+<P>This version has a new number because it includes one or two new features as well as bug fixes.
+
+<H3>New features</H3>
+
+<UL>
+<LI>Some interesting <A HREF = "language.html#USECMD">new options on the USE $PRINT</A> command.  Requested by Mick S.
+<LI>Assorted features which were planned for the upcoming version 2.0 are present, but not yet documented (apart from this comment).  Apologies for any unpleasant surprises.
+<LI>The UTABLE command is now supported, although only as a synonym for RESET which covers the most common usage. (V1.3a).
+</UL>
+
+<H3>Bug fixes</H3>
+
+<UL>
+<LI>Fix to correctly allow %variables for AT and TO specifications in the PRINT family of statements. (31/10/06: fixed the fix).
+<LI>The $DATECNV function now correctly handles the 'MONTH' format element (full month name) every time rather than randomly failing.
+<LI>The OUTFLAGS/8 bit is no longer used.
+<LI>String variable INITIAL values containing an equals sign no longer cause the compiler to assume a declaration is an assignment statement.
+<LI>Output from the RESET command can now be suppressed using MSGCTL=2 or the apsy option. (V1.3a).
+<LI>USE output issued between two screen reads does not force a new page prompt on the terminal when there was no line output to show. (V1.3a).
+</UL>
+
+<P><HR>
+<P>
+
+</HTML>

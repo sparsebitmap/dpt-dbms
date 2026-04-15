@@ -1,0 +1,152 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>DPT Demo Guide</TITLE>
+
+<H1 Align = "Center">Database Programmer's Toolkit</H1>
+<H1 Align = "Center">Demo Guide and Walkthrough</H1>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.
+
+<H1>Contents</H1>
+
+<UL>
+	<LI><A HREF = #ABOUT>About This Document</A>
+	<LI><A HREF = #CLIENTHOST>Introduction to the Client and Host</A>
+	<LI><A HREF = #EDITOR>Editor</A>
+	<LI><A HREF = #SMARTS>Smart Error Messages</A>
+	<LI><A HREF = #DEBUG>Debugger</A>
+	<LI><A HREF = #NAVIGATOR>Navigator</A>
+	<LI><A HREF = #SAMPLES>Sample Database and Code</A>
+	<LI><A HREF = #OTHERS>Other DPT facilities you could check out</A>
+</UL>
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = ABOUT></A> <H2>About This Document</H2>
+
+The following sections are intended to be read whilst using Database Programmer's Toolkit for the first time, and make up a 30-minute guided tour of its main facilities.
+
+<P>If you've got the main DPT download, this document lives in the same directory as a number of much more detailed documents, such as the <A HREF = "ideuser.html">IDE User's Guide</A>, <A HREF = "wizard.html">File Wizard User Guide</A>, <A HREF = "dbaguide.html">DBA Guide</A> and the <A HREF = "sysconfig.html">System Configuration Guide</A>.
+
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = CLIENTHOST></A> <H2>Introduction to the Client and Host</H2>
+
+DPT has two main parts, which is to say two PC programs, namely a client and a host.  The host contains all the interesting functionality like the compiler, whereas the client is really just an editor with some frills, plus the ability to talk to the host.  There is also a third DPT utility program, the File Wizard, which will be introduced briefly later on.
+
+<P>The host can perform work on its own if you configure it for a batch run, and the client can also work on its own if you just want to edit code local to the client.  However, the system is primarily designed to be used with the client and host connected, so that you can execute code as you write it.
+
+<P>So the first thing to do for a demo is start both applications, and then connect the client to the host.  <I>Hint: Later on, if you forget to disconnect before closing down, the client will automatically connect to the last host used</I>.
+
+<P>The default local machine IP address and port number that come up in the "connect" dialog (127.0.0.1:13204) should connect successfully, unless you have a strict firewall running on your PC.  In that case you'll need to either disable the firewall, or more realistically, configure it to allow this "localhost" or "loopback" connection through. 
+
+<P>The next thing to do is give a user name.  Login user names are not required in a default DPT installation, so you can just press enter here if you like.  (Alternatively set up an auto user name in the "options" menu).
+
+<P>Now you should have the familiar M204-style chevron, and you can start to enter some commands or User Language.  One thing to notice here is that line-mode output on DPT is sent to a scrolling window rather than using a 3270-style page-at-a-time scheme.  So you can always scroll back to see any output that has "disappeared".  If you press the page-up key now you'll just see a handful of client start-up messages.
+
+<P>If you have installed the demo download, a number of procedure directories should be available.  For example the following commands will list some procedures:
+
+<PRE CLASS=code>
+open demoproc
+d list
+</PRE>
+
+<P><I>Hint: Alt+up at the chevron retrieves previous input lines - there's no need to keep typing similar commands</I>
+
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = EDITOR></A> <H2>Editor</H2>
+
+The editor provides a fair quantity of tools and eye-candy, accessible via the "options" menu.  For example auto-tab (moderately useful) and colour coding (very useful), both of which are enabled by default.
+
+<P>Open the editor on temporary procedure zero by entering the 'e' or 'edit' command, then type in the following lines, or something similar of your own devising:
+
+<PRE CLASS=code>
+b
+
+%x = 'hello world'
+
+if $len(%x) > 0
+print $word(%x,,2) with ', ' with $word(%x,,1)
+end if
+
+end
+</PRE>
+
+<P>Depending on how you typed the text in, you will probably have seen various options take effect, including automatic uppercasing and tabbing, and $function name/parameter prompting.  Full details about the editor functionality can be accessed via the help menu.
+
+<P>Let's try and run that code - hit F5.
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = SMARTS></A> <H2>Smart Error Messages</H2>
+
+<P>If you typed in the request exactly as above, it will not have compiled (missing THEN on the IF statement).  Notice how each error message is accompanied by the procedure name and line number where the error occurred.  DPT can use this information to take you straight to the location of the error for rapid correction.
+
+<P>Either cursor up to the error you're interested in and hit F2, or just hit F2 from the chevron and DPT will select the first one in the last batch of errors, which is usually the one you'd want to fix first.  Fix the error and hit F5 to try again.
+
+<P>A key part of the programming experience on DPT is that the command line remains available whilst a procedure is being edited.  You can use Ctrl+Tab now to toggle between the editor and the command line, for example to remind yourself exactly what the error message said when you hit F2 before reading it properly!
+
+<P>More than this, several procedures can be open for edit at the same time, so for example if you Ctrl+Tab to the chevron now and enter 'EDIT -1' it will open up temporary proc -1 and you will have two procedures open.  Ctrl+Tab now cycles through the open procedures.  <I>Hint: F2 on an INCLUDE statement in the editor opens a new edit window on the included procedure</I>.
+
+
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = DEBUG></A> <H2>Debugger</H2>
+
+Once you get your request to compile and run, you can take a closer look at how control flows through it by turning on the debugger and stepping through a line at a time.  Turn on the debugger with Ctrl+F1 and hit F5 again in the editor. Then either step with F4 or try out any of the other functions in the "debug" menu.  
+
+<P>The arrow in the margin indicates the next statement to be executed, and you can set breakpoints which are indicated with a red blob.  Right clicking on a line targets a debugger function at that line.  
+
+<P>To see the values of objects and variables that you "watch" you have to open up a second pane with Alt+2, which appears on the left hand side of the screen. <I>Hint: Hovering the cursor over a variable is often the quickest way to see its value.</I>
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = NAVIGATOR></A> <H2>Navigator</H2>
+
+When debugging is not in progress, the left hand pane, if visible, contains a tree structure which you can use to streamline various programming tasks like listing procedures in a directory and fields in a database file.  You can move around the navigator with the keyboard or the mouse.  Right click or F1 on nodes in the tree to see the various available options.
+
+<P>Usually the action taken by the navigator is simply to construct and send a command to the host as if you had done it by hand.  Together with other features of the GUI this can save a lot of switching back and forth from the keyboard to the mouse.  For example you can use the navigator to issue DISPLAY SUBSYS (hit return or double click) and then use smart edit (F2 or double click) on the line showing the login procedure to go straight into an edit session for that procedure.
+
+<P><I>Hint: The navigator is by far the quickest way to perform many common programming tasks.</I>
+
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = SAMPLES></A> <H2>Sample Database and Code</H2>
+
+The download comes with a small sample database already allocated, plus some sample code (DEMOPROC) and DOS batch files.  You can explore these from within DPT Client with the navigator, and even invoke the DEMO subsystem to see DPT's 3270 simulation in action.
+
+<P>The sample code and data are intended to provide a starting point from which to experiment and find out what DPT can do. To load some more meaty volumes of data, try running or customizing the sample load job in the host directory.
+
+<P>Have fun!
+
+
+<!************************************************************>
+<P><HR><BR>
+<A NAME = OTHERS></A> <H2>Other DPT facilities you could check out</H2>
+
+<P><U>File Wizard</U>
+<BR>From Version 3.0 the main DPT download also contains this useful utility program for opening, viewing and administering DPT database files.  Try going to the install directory and double-clicking on one of the sample database files.
+
+<P><U>Web server and demo webite</U>
+<BR>The sample application is web-enabled too.  Start DPT, open your browser and point it at "localhost".  Depending on how your browser is configured, you may have to "persuade" it that you really want to look at a web site on your local machine, but this is simply a matter of clicking the appropriate buttons when offered.  (In MSIE click "work offline" then "connect").  It's also possible you'll get objections from a local firewall, which you can suppress by allowing localhost (loopback) connections on port 80 (the default WEBPORT parameter).  
+
+<P>Eventually you should see the interactive demo website running on dpthost.  All the code behind this web site is also accessible via the client navigator, and is explained in much more detail in the DPT Web Programming Guide.
+
+
+<P><HR><BR>
+ 
+
+</HTML>

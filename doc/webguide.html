@@ -1,0 +1,1075 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>DPT Web Server Admin and Programming Guide</TITLE>
+
+<H1 ALIGN = "Center">Database Programmer's Toolkit</H1>
+<H1 ALIGN = "Center">Web Server Admin and Programming Guide</H1>
+
+
+</H2>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.  Likewise the term "Janus" which is a trademark of Sirius Software.
+
+<H2>Contents</H2>
+
+<UL>
+	<LI><A HREF= #Quickstart  > Quick-Start Programming Tutorial (Appendix) ...</A>
+
+	<BR><BR>
+	<LI><A HREF= #Intro   > Overview             </A>
+	<LI><A HREF= #Config  > System Configuration     </A>
+	<LI><A HREF= #Coding  > Programming for Dynamic Page Content </A>
+	<LI>Appendixes:
+	<OL>
+	<LI><A HREF= #Terms > Terminology </A>
+	<LI><A HREF= #HTTP_Processing > HTTP Message Processing on DPT</A>
+	<LI><A HREF= #Quickstart > the above-mentioned tutorial </A>
+	</OL>
+
+	<BR>
+	<LI>Also: 
+	<BR><A HREF= "language.html#FUNC_WEB">Link to language reference section on web $functions ...</A>
+</UL>
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = Intro></A> <H2> Overview </H2>
+
+<UL>
+	<LI><A HREF= #Intro_Features> Features </A>
+	<LI><A HREF= #Intro_Thoughts> Web application development on DPT? </A>
+	<LI><A HREF= #Intro_StatDynam> Static and dynamic web page content </A>
+	<LI><A HREF= #Intro_Daemons> Server daemons </A>
+</UL>
+
+
+<A NAME = Intro_Features></A> 
+<H3>Features</H3>
+<UL>
+	<LI>A simple <A HREF = #Terms>HTTP</A> 1.1  server running within the main DPT host
+	<LI>Dynamic content can be created with User Language and/or <A HREF = #HTTPSSI>SSI</A>
+	<LI>Supports browser caching and other standard functions
+	<LI>Very simple to configure and program
+	<LI>Uses specialized control parameters and $functions</A>
+</UL>
+
+<A NAME = Intro_Thoughts></A> 
+<H3>Web application development on DPT?</H3>
+Unlike most of DPT, the web server is not a direct emulation of a Model 204 feature.  Having said that, there is great similarity with parts of Sirius's Janus Web suite, which is no real surprise as the purpose is the same.  (And if you're going to copy someone, who better than the Sirius guys?)   The DPT web server is somewhat more straightforward than Janus Web, which makes it easier to configure and write applications for.  This is of course in addition to the fact that working with HTML, pictures, documents etc. is easier on the PC anyway.
+
+<P>In reality, while not being 100% portable to Janus or any other platform, you'll probably find that much of the code you write in a web application is in standard formats such as HTML.  While the exact mechanics of serving up that HTML differ between web servers, the general principles of HTTP messaging are the same, and web application code has a similar structure in any language on any platform. As well as User Language programming notes, this guide contains assorted background information which applies to web programming in general, for example a summary of <A HREF = #HTTP_Processing>HTTP message processing</A>, which is fundamental to the whole exercise.  So writing a web application on DPT is as good an introduction to this area as using any other platform, and probably easier than many because you can do everything together through the same user interface.
+
+<A NAME = Intro_StatDynam></A> 
+<H3>Static and dynamic web page content</H3>
+The thing which means we can talk about "web-based applications" rather than just "web sites" is the ability for users to interact with the pages in their browser and see different information based on actions they make.  Ignoring the various client-side "DHTML" concepts for the moment, this usually means that instead of simply serving up HTML files held at its end, the web server instead runs some kind of user-written <A HREF = #Terms>"scripts"</A>, and serves the output from these scripts instead.  Whatever language they're written in the scripts will usually be creating HTML on the fly, but they might generate output in any other form that the browser end of the application requested, such as plain text or applets.  On DPT these scripts are written in User Language.
+
+<UL>
+	<LI><B>Static content:</B>
+	<BR>A typical web site still requires lots of this (images, sounds etc.) but it is mostly trivial for the server to handle (the appendix contains <A HREF= #HTTP_Processing >some more detailed notes</A>)
+	<LI><B>Dynamic content:</B>
+	<BR>Is much more interesting, and creating it is the main subject of this document.
+</UL>
+
+<A NAME = Intro_Daemons></A> 
+<H3>Server daemons</H3>
+This is another issue which is shared in common by all web servers, which must be prepared to handle huge numbers of potentially very small requests, where socket  connection and server thread initialization might become a significant overhead.  DPT addresses this concern by spawning special daemon users which are permanently initialized and ready to service web requests.  These daemons can run with database files permanently open, globals permanently set, and so forth, which cuts down on per-request overheads.  When a browser requests a dynamic web page, your script (User Language handler procedure) for the page is run by one of the server daemons.
+
+<P>In most respects these daemons are just regular user threads.  The one big difference is that they have access to an extra output "destination" in addition to the normal terminal output and USE destinations.  This is the network connection back to the browser, with data sent there becoming the content of the requested web page.  The programming section below describes various ways to write information to the browser, and also various ways you can easily code, test and debug your scripts, with or without involving the server daemons.
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Config></A> <H2> System Configuration </H2>
+
+<UL>
+	<LI><A HREF= #Config_Default > Default and demo configurations </A>
+	<LI><A HREF= #Config_Enabling > Enabling the web server </A>
+	<LI><A HREF= #Config_Daemons > Daemon processing and parameters </A>
+	<LI><A HREF= #Config_Content > Managing "content type" reference data </A>
+	<LI><A HREF= #Config_Other > Other issues </A>
+</A>
+</UL>
+
+<A NAME = Config_Default></A>
+<H3>Default and demo configurations</H3>
+The chances are that as you read this your DPT installation is the one that comes with the demo download, in which case the web server is automatically enabled and should work straight away - just start the DPT host and point your browser at "localhost" or "127.0.0.1".
+
+<P>However, if you make a fresh installation by starting dpthost.exe in a clean directory, the default is for the web server not to be enabled.  This section describes various system level actions you can take to enable and configure it.  
+
+
+<A NAME = Config_Enabling></A>
+<H3>Enabling the web server</H3>
+For the web server to work, the following two parameters need to be changed from their default settings.
+<UL>
+	<LI><A HREF = "m204xref.html#WEBPORT">WEBPORT</A>: Tells DPT to listen for incoming browser connections.
+	<LI><A HREF = "m204xref.html#WEBNDAEM">WEBNDAEM</A>: Controls the initiation of one or more server daemons to handle those connections. 
+</UL>
+
+<A NAME = Config_Daemons></A>
+<H3>Daemon processing and parameters</H3>
+All <A HREF = "language.html#BBSPAWN">daemons on DPT</A> run with a single input command line.  In the case of the web server daemons this command is <A HREF = "language.html#PSTWEB">=PSTWEB</A>, a custom command similar to the PSTxxx commands used for checkpointing etc.  The functioning of the command can be summarised as follows:
+
+<OL>
+	<LI>The daemon opens a standard procedure directory named by <A HREF = "m204xref.html#WEBPROC">WEBPROC</A>.
+	<BR>This is the default directory for procedures generating dynamic content.
+	<BR>It is allocated automatically (i.e. you do not have to code an ALLOCATE command for it anywhere) but with a file name which you can define.
+	<LI>The daemon (first one only) includes an initialization procedure.
+	<BR>This can contain any one-off commands required to configure your web application.
+	<LI>The daemon includes a login procedure.
+	<BR>In this proc you might typically place OPEN and RESET commands and perhaps set up some globals.  This reduces the overhead of doing these things for every incoming request, since the daemon retains a continuous session between requests.
+	<LI>The daemon then makes subtle alterations to its settings for routing line output etc. in preparation for creating dynamic content.
+	<BR>This is discussed later in the programming section.
+	<LI>Finally the daemon starts polling the queue of waiting browser connections, picking them up as they arrive and sending appropriate responses.
+	<LI>Server daemons waiting for work show in the MONITOR command as <A HREF = "m204xref.html#WT_Special">custom wait state 94</A>.
+</OL>
+
+Fine control can be exerted over daemon operation using various parameters.  Follow the hyperlinks for details about:
+
+<UL>
+	<LI><A HREF = "m204xref.html#WEBPROC">WEBPROC / WEBPRDSN</A>: Assumed directory location of user script procedures.
+	<LI><A HREF = "m204xref.html#WEBDMINI">WEBDMINI / WEBDMLGN</A>: Daemon init/login proc names
+	<LI><A HREF = "m204xref.html#WEBHOME">WEBHOME</A>: Default page name.			<LI><A HREF = "m204xref.html#WEBROOT">WEBROOT</A>: Public logical root directory.
+	<LI><A HREF = "m204xref.html#WEBEXTN">WEBEXTN</A>: File extension denoting dynamic content.
+	<LI><A HREF = "m204xref.html#WEBCONTO">WEBCONTO</A>: Quiet connection time-out.
+	<LI><A HREF = "m204xref.html#WEBFLAGS">WEBFLAGS</A>: Assorted switches.
+	<LI><A HREF = "m204xref.html#WEBPMAX">WEBPMAX / WEBPMAXT / WEBPCURT</A>: Size limits on incoming messages
+</UL>
+
+<A NAME = Config_Content></A>
+<H3>Managing "content type" reference data</H3>
+In the HTTP protocol, it is usually considered the responsibility of a server to tell a client (e.g. browser) how to interpret the data inside each file it serves.  For example, "here is the file you requested 'beach.gif', and it contains a GIF format picture".  Clearly the browser could have guessed that itself from the file extension, and most browsers these days do that, and also have an array of other techniques they apply by looking inside the data (after all, being flexible on this issue is part of their competitive advantage over other browsers).  However, the convention that servers describe served content is still valid, even if many browsers just ignore the information, so it is something worth mentioning.
+
+<P>When serving static file content, DPT performs a lookup of the file extension in a cross-reference table, and returns a standard content type description if it knows one. Otherwise it is left to the browser to decide. The <A HREF = "language.html#BBMIME">=MIME command</A> is used for maintenance of this reference information.
+
+<P>When serving dynamic content, the browser will have requested a resource ending in e.g. ".dptw", which does not have a standard meaning.  The content will depend on the request-handler procedure that you write, and while it will usually be HTML (the default), it might be of any type, or even "multipart" data containing more than one type.  Whatever it is, your code is responsible for sending an appropriate content type description unless you have confidence that all your clients will be using browsers that can make a correct guess.  The method by which the handler procedure specifies the content type may or may not involve validation against the lookup table (see later).
+
+
+<A NAME = Config_Other></A>
+<H3>Other web server config issues</H3>
+
+<P><U>Security</U>
+<BR>In the initial release (V2.0) the web server has no specific support for security-related features like HTTPS/SSL, or hooks into Windows login services, which is in line with the generally relaxed DPT security philosophy.  However since a web application is by nature public, you may wish to consider the following simple measures that can be taken.
+<UL>
+	<LI>Use Windows security to restrict the area of the host machine's file system accessible to the web server (see WEBROOT above), so browsers cannot access miscellaneous files.  
+	<LI>You can build a simple homepage login scheme using DPT's <A HREF = "sysconfig.html#ACCESSCONTROL">password file</A> (LOGCTL etc.) to store passwords; or <A HREF = "language.html#FUNC_HSH">$HSH</A>, <A HREF = "language.html#FUNC_SHA1">$SHA1</A> etc. if you want to maintain passwords some other way.
+	<LI>Do something with <A HREF = "sysconfig.html#AUTOSYS">apsy AUTOSYS/auto logout</A> in conjunction with the password file if you want the ability to do remote command-line server admin without giving command-line access to the whole world.
+	<LI>Setting SYSPORT to -1 means no remote terminal users can connect to the system at all.
+</UL>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Coding></A> <H2> Programming for Dynamic Page Content </H2>
+
+Following on from the earlier notes, this section describes how to use a small set of specialized new User Language features to create dynamic web page content and control how it's sent to the browser.  Various other issues to do with building web pages are also covered, and it's therefore quite a long section, as follows.  (<I>Note: There is a much shorter tutorial chapter in <A HREF = #Quickstart>Appendix 3</A> if you're in a hurry ...</I>)
+
+<UL>
+	<LI><A HREF= #Coding_Boundaries > Request start and completion points</A>
+	<LI><A HREF= #Coding_Parms > Request parameterization methods </A>
+	<LI><A HREF= #Coding_Preparing > Preparing the response </A>
+	<LI><A HREF= #Coding_BufferWrites > Writing to the HTTP data buffer </A>
+	<LI><A HREF= #Coding_Errors > Error handling </A>
+	<LI><A HREF= #Coding_Special > Specialized coding topics and ideas </A>
+	<LI><A HREF= #Coding_Debugging > Building and debugging web code </A>
+	<LI><A HREF= #Coding_Daemon > Miscellaneous daemon processing issues </A>
+</UL>
+
+
+<A NAME = Coding_Boundaries></A>
+<H3>Request start and completion points </H3>
+In response to an HTTP request for a resource with the "dynamic" URI extension (default ".dptw"), a server daemon includes a procedure or executes a command.  The command case is really a simple form of the procedure case, so the following discussion talks about procedures, and returns to commands briefly towards the end.
+
+<P>The name of the procedure that gets included is the URI minus the extension, (which in the end will probably be a .txt file since that is <A HREF = "dbaguide.html#Procedures">the default extension for procedures on DPT</A>).  The procedure is by default assumed to reside in <A HREF = "m204xref.html#WEBPROC">WEBPROC</A>, but you can request procedures in other directories too.
+
+<PRE CLASS=code>
+www.elsewhere.com/script1.dptw                   //assumed to be in WEBPROC
+localhost/myprocs/script1.dptw                   //a different directory - MYPROCS
+127.0.0.1/perm group g1/script1.dptw             //a directory group
+</PRE>
+
+The server daemon will need the specified file or group open, so that would be a time to put an OPEN command in the daemon login proc.  WEBPROC will always be open if it exists.  Note that since the inclusion of a procedure requires that it resides in a M204-style allocated proc directory, you can't run arbitrarily-located scripts like say "C:/proc.dptw"unless you allocate those directories as "DDs".  Only one level of indirection is allowed, i.e. to name an alternate allocated directory from WEBPROC.
+
+<P>Once the procedure has been included, the web page request processing is deemed to be complete when the daemon returns to command level out of the procedure.  You can also trigger early completion from partway through the procedure using <A HREF = "language.html#FUNC_WEB_FINISH">$WEB_FINISH</A>.  In either case the results are returned to the browser and no further processing happens for that HTTP request.  Everything that happens inside the procedure is up to you, and you can use any combination of commands, User Language, subsystem invocations etc.
+
+<P>The server daemons have a continuous session which they keep going while servicing many requests - the idea being to remove per-request overheads in the form of repeated file openings/closings, parameter and global settings, and so forth.  However, note that some things *are* reinitialized for each HTTP request, such as the dynamic content buffer (obviously), and also the daemon's message history ($ERRMSG, $FSTERR, etc.) and other terminal output history (PRINT etc.) 
+
+<A NAME = Coding_Parms></A>
+<H3>Request parameterization methods </H3>
+Dynamic content requests will often be parameterized in some way, to take account of user input or preferences.  Parameters can be passed from <A HREF = #HTTP_InputForm>HTML input forms</A> in three main ways, with DPT providing similar $functions for retrieving the parameters in each case:
+
+
+<P><TABLE BORDER>
+<TR>
+<TH>Parameterization method</TH><TH>Typical use</TH><TH>Retrieval $function</TH>
+</TR>
+
+<TR>
+<TD>1. URI parameters</TD><TD>Many simple retrieval request forms</TD><TD>$WEB_GET_URI_PARM</TD>
+</TR>
+
+<TR>
+<TD>2. Data sent with POST</TD><TD>More complex forms</TD><TD>$WEB_GET_POST_PARM</TD>
+</TR>
+
+<TR>
+<TD>3. HTTP header fields</TD><TD>Control information</TD><TD>$WEB_GET_HEADER</TD>
+</TR>
+
+</TABLE>
+
+<P><U>1. URI parameters</U>
+<BR>This is the simplest and easiest-to-understand way of passing parameters from an input form to a web server.  When the user fills in the form, the browser appends the parameter names and vaules to the requested URI after a question mark, and then navigates to e.g.:
+
+<PRE CLASS=code>
+www.nerdstuff.com/search.dptw?product=compilers&language=M204
+</PRE>
+
+<P>As well as being simple, this method is user-friendly from a browsing point of view, since an entire parameterized URI such as the one above can be bookmarked, and presents no problems to the browser's "forward" and "back" functions.
+ 
+<P>The host-side procedure retrieves the parameter values set like this using the <A HREF = "language.html#FUNC_WEB_GET_URI_PARM">$WEB_GET_URI_PARM</A> function.
+
+
+<P><U>2. Data sent with a POST request</U>
+<BR>This technique comes in to its own when the requirements in a particular situation do not suit the above.  For example:
+
+<UL>
+<LI>When the parameter names or values might be inconveniently long.
+<LI>When they can take values containing special characters such as line-end sequences (e.g. a <I>textarea</I> control) which might corrupt the functioning of the URI parm mechanism.
+<LI>You wish to hide the operational "mechanism" of a form, so having the parameters visible in the browsers's location box is undesirable.
+<LI>When the browser wants to send data in the form of one or more files to be transferred from the browser's local machine to the host's.
+<LI>Various other reasons. (Some people recommend always using POST - the best advice is read up on the differences and make your own decision).
+</UL>
+
+<P>In such cases the input form can simply switch from using "action=GET" to "action=POST" on its submit button.  The main difference in <A HREF = #HTTP_Processing>HTTP message terms</A> is that a GET request consists of a URI and some headers, whereas a POST request additionally has an attached data section, containing the values entered by the user on a form, and/or file contents.
+
+<P>The parameters are retrieved in a similar way but with a different $function, <A HREF = "language.html#FUNC_WEB_GET_POST_PARM">$WEB_GET_POST_PARM</A>.  Despite the apparently complexity of this parameter-passing scheme compared to the previous one, your server-side handler code can look exactly the same apart from the name of the $function.  The differences are handled automatically by the browser at one end and DPT at the other.
+
+<P>The data sent can be of an arbitrary size, which presents a problem to processing in User Language where the largest data object size is usually 255 bytes.  If you expect data longer than 255 bytes the answer is to increase the <A HREF = "m204xref.html#STRINGMAX">STRINGMAX parameter</A> value and declare the receiving variables with sufficient LEN to take the incoming values.
+
+
+<P><U>3. HTTP header fields</U>
+<BR>Most of the header fields in HTTP requests and responses are for low-level control of the protocol by the browser and server.  While applications can use custom header fields to parameterize requests in any way they see fit, the most common times a host-side script would access header information are when interacting with browser features such as content caching and cookies.  
+
+<P>All the headers on an incoming request are accessible within User Language using the <A HREF = language.html#FUNC_WEB_GET_HEADER">$WEB_GET_HEADER</A> function.  Cookies and caching are <A HREF = #Coding_Special>discussed in more detail</A> later.
+
+
+<A NAME = Coding_Preparing></A>
+<H3>Preparing a response</H3>
+Now we've talked all about how our code is invoked and how we can see exactly what the browser asked for, lets move on to what we send back and how.  In HTTP terms there are three main components to DPT's response.
+
+<UL>
+	<LI>A response code
+	<BR>This is set, if required, using <A HREF = "language.html#FUNC_WEB_PUT_RESPCODE"> $WEB_PUT_RESPCODE</A>.
+
+	<LI>Any number of HTTP header fields
+	<BR>These are set, if required, using using the general <A HREF = "language.html#FUNC_WEB_PUT_HEADER"> $WEB_PUT_HEADER</A> function, and/or the more specific <A HREF = "language.html#FUNC_WEB_PUT_DATATYPE"> $WEB_PUT_DATATYPE</A> and <A HREF = "language.html#FUNC_WEB_PUT_COOKIE"> $WEB_PUT_COOKIE</A> functions.  Most headers are automatically added by the system.
+
+	<LI>The data
+	<BR>Almost always required - populated as described below.
+</UL>
+
+<P>The appendix contains some <A HREF = #HTTP_Processing>lower-level information</A> about how DPT prepares its HTTP response message.
+
+
+
+<!************************************>
+<A NAME = Coding_BufferWrites></A>
+<H3>Writing to the HTTP data buffer</H3>
+Output to be sent to the browser is assembled in a buffer before finally sending it in a single HTTP response message when the script finishes.  There are several ways of writing to the buffer, as follows.
+
+<P><U>1. Line by line</U>
+<BR>A simple way to generate textual data such as HTML is to print it out line by line.  To this end DPT provides a special variation of the PRINT statement, WEBPRINT, which works exactly like PRINT except that the output goes to the HTTP data buffer instead of the normal output destination.  Here is an entire web page generated using this method:
+
+<PRE CLASS=code>
+B
+WEBPRINT '&ltHTML&gt'
+WEBPRINT '&ltTITLE&gtEmployee Information&lt/TITLE&gt'
+
+%N = $WEB_GET_URI_PARM('NAME')
+IN EMPLOYEE FR WHERE NAME = %N
+    WEBPRINT '&ltP&gt' WITH FIRSTNAME AND SURNAME
+    WEBPRINT '&ltBR&gt&ltIMG SRC="photos/' SURNAME '_' FIRSTNAME '.jpg"&gt'
+END FOR
+
+WEBPRINT '&lt! Standard page small print&gt'
+WEBPRINT '&ltP&gt&ltFONT SIZE = 1&gtThe information on this page is copyright ...&lt/FONT&gt'
+WEBPRINT '&ltP&gt&ltFONT SIZE = 1&gtblah yawn blah&lt/FONT&gt'
+WEBPRINT '&lt/HTML&gt'
+END
+</PRE>
+
+WEBPRINT statements append a newline separator sequence (CRLF) to the end of the string placed in the HTTP buffer, so the above code generates readable HTML.  Note also that like AUDIT, SET TRAILER etc., if you end the expression with an ellipsis (...) the output line must be continued with actual PRINT statements rather than WEBPRINT.
+
+<P><U>2. Rerouting normal output to the HTTP data buffer</U>
+<BR>The WEBPRINT statement is provided to improve code readability by distinguishing it from regular PRINT, but you can use PRINT if you prefer.  This is achieved using the <A HREF = "language.html#FUNC_WEB_USE">$WEB_USE</A> function, which redirects everything that would normally appear as "terminal" line output (UL PRINT, messages, command output, etc.) to the HTTP data buffer.
+ 
+<P>This method can be handy to generate error diagnostics with existing code which uses PRINT statements.  For example:
+
+<PRE CLASS=code>
+...
+ON ERROR
+  $WEB_BUFFER_SIZE(0)                    /? discard anything built so far   ?/
+  $WEB_USE('ON')                         /? reroute PRINT                   ?/
+  INCLUDE STANDARD_ERROR_CODE            /? diagnostics using PRINT         ?/
+  $WEB_PUT_DATATYPE('TXT')               /? assuming messages are not HTML  ?/
+  $THREADCODE(0)                         /? stand down auto error handling  ?/
+  $WEB_FINISH                            /? all done                        ?/
+END ON
+END
+</PRE>
+
+It is also one way of creating a "remote command line" handler, since the $WEB_USE setting remains in effect if the script drops out of User Language to issue commands.  (See also the <A HREF = #Coding_Command>shorthand method for obtaining command output</A> later).
+
+<PRE CLASS=code>
+...
+  $WEB_USE('ON')
+END
+TABLEB RECLEN     /? output will go to HTTP buffer ?/
+</PRE>
+
+
+<P>Notice <A HREF = "language.html#COMP_CALLFUNC">the neater-than-usual $function calling syntax</A> in these examples, which is new in V2.0, and applies to all $functions, not just these $WEBxxx ones.
+
+<P>Sometimes it may be inappropriate or impossible to build the output data in a line-wise fashion, so there are some more $functions that can be used...
+
+<P><U>3. Single items of text or data</U>
+<BR>The <A HREF = "language.html#FUNC_WEB_PUT">$WEB_PUT</A> function takes a string expression and places it, with no translation, and no terminating CRLF, into the HTTP buffer.  You could use this simply to build a page of HTML in a more piecemeal way than above, or if you didn't want the CRLF for some reason, or to insert non-textual or non-printable data into a page.  In a slightly contrived example we could rewrite the start of the above code as:
+
+<PRE CLASS=code>
+B
+%CRLF = $X2C('0D0A')
+$WEB_PUT('&ltHTML&gt' WITH %CRLF)
+$WEB_PUT('&ltTITLE&gtEmployee Information&lt/TITLE&gt' WITH %CRLF)
+</PRE>
+
+<P><U>4. Incorporating data from a file</U>
+<BR>The <A HREF = "language.html#FUNC_WEB_PUT_FILE">$WEB_PUT_FILE</A> function allows files of already-formatted HTML or other content to be incorporated into a piece of dynamic content, for example a multipart data block.  Recoding the above script we could place the raw HTML for the fixed parts in separate files:
+
+<P>page_header.html:
+<PRE CLASS=code>
+&ltHTML&gt
+&ltTITLE&gtEmployee Information&lt/TITLE&gt
+
+</PRE>
+
+<P>page_trailer.html:
+<PRE CLASS=code>
+&lt! Standard page small print&gt
+&ltP&gt&ltFONT SIZE = 1&gtThe information on this page is copyright ...&lt/FONT&gt
+&ltP&gt&ltFONT SIZE = 1&gtblah yawn blah&lt/FONT&gt
+&lt/HTML&gt
+</PRE>
+
+Then the original code would look like this:
+
+<PRE CLASS=code>
+B
+$WEB_PUT_FILE('page_header.html')
+
+%N = $WEB_GET_URI_PARM('NAME')
+IN EMPLOYEE FR WHERE NAME = %N
+    WEBPRINT '&ltP&gt' WITH FIRSTNAME AND SURNAME
+    WEBPRINT '&ltBR&gt&ltIMG SRC="photos/' SURNAME '_' FIRSTNAME '.jpg"&gt'
+END FOR
+
+$WEB_PUT_FILE('page_trailer.html')
+END
+</PRE>
+
+<P>This technique is useful when there are smallish pieces of static content to be included in a relatively large amount of dynamic content.  In many cases however the opposite is true, and it can make more sense to use a strategy based on the standard <A HREF = #HTTPSSI>server side include</A> method, where dynamic content is inserted into static, rather than the other way round.  There are pros and cons of both methods, and in many cases, as illustrated in the sample web application, they can be used in combination.
+
+
+<!************************************>
+<A NAME = Coding_Errors></A>
+<H3>Error handling</H3>
+At the point where your dynamic content would normally be sent to the client, (either return to command level or $WEB_FINISH), DPT makes a check against the highest MSGCTL error code encountered during the procedure.  If this exceeds a certain value (<A HREF = "language.html#FUNC_WEB_AUTO_ERROR">$WEB_AUTO_ERROR</A>), your content is discarded and an error report page returned instead.  Depending on the <A HREF = "m204xref.html#WEBFLAGS">WEBFLAGS</A> parameter value the page may or may not contain the current $FSTERR, $ERRMSG, $STATUS and $STATUSD, and other detailed diagnostics.
+
+<P>In situations where your code catches an application-level error it would be most reasonable to prepare a formatted error page yourself, in which case you could then tell the automatic error handler not to run by calling e.g. <A HREF = "language.html#FUNC_THREADCODE">$THREADCODE</A>.  Perhaps in other cases if the error was unlikely and/or you were feeling lazy, you might trick the automatic error processing into running when it would not otherwise have run, again with a call to $THREADCODE.
+
+<P>Incidentally the script auto-error page is an example of the DPT web server <A HREF = #HTTPErrors>standard error page</A> with HTTP response code 500 (general server error), even if the reason for the error was something that might reasonably correspond to another standard HTTP code, such as record-locking (409?) or nonexistent-record-referenced (410?).  Note also that if server daemons are bumped, an in-flight request is sent a 503 response (Server Unavailable).
+
+
+
+<A NAME = Coding_Special></A>
+<H3>Specialized coding topics and ideas</H3>
+
+<UL>
+	<LI> <A HREF = #Coding_Cookies> Cookies </A>
+	<LI> <A HREF = #Coding_Caching> Browser content caching </A>
+	<LI> <A HREF= #Coding_Command > M204 command output </A>
+	<LI> <A HREF = #CaseTran> Issues with lowercase/uppercase code and displays </A>
+</UL>
+
+<A NAME = Coding_Cookies></A>
+<U>Using cookies</U>
+<BR>Cookies are one way to add continuity to conversations between browsers and servers, since technically each HTTP request/response exchange starts afresh, with no state information preserved from one to the next.  When a server sends a response message it can add information to the message and tell the browser to "remind me of this next time you request something".  Such items of information are called cookies, and the browser stores them on its local disk.  As the cookies go back and forth between the server and browser they effectively constitite a preserved session state.
+
+<P>Cookies are exchanged as specially-formatted <A HREF = #HTTP_Processing>HTTP header lines</A>.  The server tells the browser what cookies to store (and various other information about how to store them and for how long) using the "Set-Cookie" header.  The values are returned when appropriate from the browser in the "Cookie" header.
+
+<P>For example on the home page of your website you could ask the user to log on, and send them a cookie with a pass key which gives them access to other private pages on the site.  The browser would then automatically send this pass key when the user visits other pages, saving them having to log on individually to each page.  When the user returns on some future occasion, the same key might or might not have expired, but the site could at least welcome the user by name.  Another example might be on a shopping site where the server sets a  cookie when the user purchases something.  Then whenever the user visits the site in the future the server is reminded by the returning cookie of the user's preferences, and can make relevant product suggestions.
+
+<P>Using cookies on DPT is very simple.  Your handler code sends cookies to the browser with <A HREF = "language.html#FUNC_WEB_PUT_COOKIE">$WEB_PUT_COOKIE</A> and retrieves them on future occasions using <A HREF = "language.html#FUNC_WEB_GET_COOKIE">$WEB_GET_COOKIE</A>.
+
+
+<A NAME = Coding_Caching></A>
+<P><U>Control of browser caching</U>
+<BR>When serving static content, the DPT web server supports browser caching of non-changing data by co-operating with browser's use of <A HREF = #HTTPStatic>certain header fields</A>.  In the dynamic situation your handler procedure can avoid repeatedly sending the same application data by programmatically doing the same thing.
+
+<P>Firstly, to tell the browser to cache some content, set the "Modified-Date" header into a response - usually to the current date and time.  Then the next time the browser requests the same URI (assuming the browser has caching enabled and the user didn't explicitly request a fresh copy) it will automatically put an "If-Modified-Since" header into the request, indicating that it is prepared to use its local copy.  So your handler procedure can use the <A HREF = "language.html#FUNC_WEB_GET_HEADER">$WEB_GET_HEADER function</A> to retrieve this header, compare it with application database time-stamps, and if appropriate send a code 304 response.  The demo application contains an example of this.
+
+<P>In certain applications you could also take a more proactive approach to save the browser even having to ask if the data is updated.  For example if you know there will be a database update in 3 days, additionally send the "Expires: {datetime}" header with the original response.  The browser would then know that its cached copy is invalid after that period, and request a fresh copy straight away next time.
+
+<P>Note that browsers cache content based on URI.  This means that a request for, say, some records from a database using POST-style parameters (see earlier) might or might not contain sufficient information for you to decide whether to send fresh content, since the URI would be the same whatever records were requested.  It would depend on the level within your application database at which timestamps were held.  You can supplement the automatic "If-Modified-Since" processing  with your own cache control information if you like.  For example there is an HTTP standard header called "Cache-Control" which gives finer control, and you can also set up schemes based on cookies or "hidden" input fields in HTML forms you generate.  All these ideas are commonly used, but they are outside the scope of this document.
+
+
+<!************************************>
+<A NAME = Coding_Command></A>
+<P><U>M204 command output</U>
+<BR>Incorporating the output of a command into a web page is a common requirement, and it can be handled in a number of ways using the previously-described facilities.  For example the input form might generate a request for "handler.dptw" with some POST parameters identifying a sequence of commands to issue.  The script could pick out the parameters and use $COMMBG, or set them into globals, and use ?& dummy strings to issue them as commands.
+
+<P>In simple cases however can be neater to use a special built-in script provided for this purpose called "=COMMAND".  This causes the daemon to issue the command(s) named in the URI parameter, and add the output to the HTTP buffer. Some examples:
+
+<PRE CLASS=code>
+dptoolkit.com/=command.dptw?MONITOR DISKBUFF
+localhost/=command.dptw?openc refproc;in refproc display list
+www.elsewhere.com/=COMMAND.DPTW?b;print 'The local time here is ' $time;end
+</PRE>
+
+When this method is used the "script" is considered to be complete when the supplied input runs out (e.g. in the second example above two commands will actually get issued).  By default, the automatic error handling trigger level is set so as not to be invoked using this facility.  So for example the output of "=command?FOOBAR" will not be a formatted error report but the "Invalid Model 204 command" message, which would perhaps be more useful in typical situations.  
+
+<P>The <A HREF = "m204xref.html#WEBFLAGS">WEBFLAGS parameter</A>'s X'00000004' and X'00020000' bits control whether this feature is enabled at all and how errors are handled.
+
+<P>Note that the command output is plain text, so if it's getting inserted into a page of HTML, (for example commonly in a <A HREF = #HTTPSSI>SSI scenario</A>), wrap it with appropriate tags (e.g. &ltPRE&gt ... &lt/PRE&gt) to get the correct tabulation and line breaks.  Note also that the text of the input command is uppercased or not according to the <A HREF = "m204xref.html#WEBFLAGS">WEBFLAGS X'100' bit</A>, and not the value of the CASE parameter (*UPPER etc.)
+
+
+<A NAME = CaseTran></A>
+<P><U>Issues with lowercase/uppercase code and displays</U>
+
+<BR>Legacy mainframe applications are often all in uppercase as regards user I/O, and it has been common practice to write M204 code in an editor where everything is uppercased automatically.  On the other hand, client-side parts of a web application such as HTML input forms are fundamentally written in mixed case, both code-wise and in the handling of user I/O. As a result, areas where the client and server meet could easily become a source of irritating misunderstandings.  Things are also complicated by the fact that some parts of the overall web infrastructure are case-sensitive (e.g. cookies) and some aren't (URIs in many situations, HTTP header names).
+
+<P>Nobody wants to write an application where everything is in uppercase, especially when values are entered by, or echoed back to, an end user, so DPT addresses the issue in several ways:
+
+<UL>
+	<LI>The editor has been made more accommodating to the use of <A HREF = "language.html#SIRIUS_MIXCASE">mixed case in User Language</A>, with some <A HREF = "ideuser.html#Case_Handling">special editor functionality</A> like the Ctrl+U and Ctrl+L functions.
+	<LI>The editor now turns off automatic uppercasing when it detects that <A HREF = "ideuser.html#Editor_NonUL">non-UL code such as HTML</A> is being edited.
+	<LI>Some parameter <A HREF = "m204xref.html#WEBFLAGS">control switches</A> are available for standardizing the case of incoming and outgoing HTTP message elements, and can make case less of an issue for server side code.
+</UL>
+
+
+<A NAME = Coding_Debugging></A>
+<H3>Building and debugging web code</H3>
+
+The methods you adopt are obviously up to you, but the following comments may be helpful.  
+
+<P><U>Testing at the command line ("&gt")</U>
+<BR>Firstly note that a web page handler procedure can simply be included at the chevron or F-fived in the editor like any other procedure.  This is convenient, especially in the early stages of writing a script, because it saves you having to constantly switch over to your browser to initiate page requests.  The traditional [GO, edit, modify]... cycle can be used, with or without the debugger active, and this is a speedy way to build code.
+
+<P>There are a couple of drawbacks to working purely at the command line, the most obvious being that when the procedure comes to an end (or you call <A HREF = "language.html#FUNC_WEB_FINISH">$WEB_FINISH</A>), any HTML built by the procedure has no browser to get sent back to and just gets shown on the terminal.  This is often enough to see whether the script is working correctly though.
+
+<P>Some other issues are also worth mentioning.
+
+<UL>
+	<LI><B>Testing parameterized procedures</B>
+	<BR>When your script is a handler for an HTML input form page, it will not have access to any parameters because the input form would not have been run first.  You can get round this by "patching in" some parameters using a <A HREF = "language.html#FUNC_WEB_PATCH_URI_PARM">special set of $functions</A>, and in fact this is a good way to run a series of tests for parameter values that would be tricky or time-consuming to send manually via the input form.
+	<LI><B>Unexpected error handler invocation</B>
+	<BR>On rare occasions when you run a script at the terminal the automatic error processing will kick in because of an error that occurred some time ago.  This is caused by internal $ERRMSG synchronization when the system realizes you are running a script and not doing "normal" terminal work.  If your script really contains no errors it will work properly if you simply run it again straight away.
+</UL>
+
+<P><U>Testing "as-live"</U>
+<BR>A second approach is to make changes to handler procedures and view the results immediately through a browser.  That is, let the DPT web server daemons run your code and generate output as it's supposed to look.  This is the most streamlined way to work when you have nearly-complete web pages that just need changes to presentational frippery like layout, colours and so on.  
+
+<P>When making code changes, simply save (F6) in the editor and then refresh (F5 or Ctrl+F5) in the browser to invoke the changed script.  (Unless the script is an input form handler with POSTed parameters, in which case you'd have to fill out the form again - see earlier notes).
+
+<P>When working like this it is more difficult to find errors in scripts, since they are being run by a daemon and you will not have immediate access to so much diagnostic information.  The audit trail will contain some messages, which can also be enhanced with the procedure name and line number (set the <A HREF = "m204xref.html#MSGCTL">MSGCTL parameter 32 bit</A> in the daemon login proc).  Normal "terminal" messages issued on the daemon are not discarded either, although they are somewhat less accessible than the audit trail (in the #DAEMON directory).  With more subtle errors you may want to debug the script, which is the subject of the next paragraph.
+
+<P><U>Debugging as a daemon</U>
+<BR>A halfway house between the above two approaches is to pretend to become a server daemon and handle a page request on your own terminal session.  This combines the advantages of proper browser interaction, and having the debugger available as the handler procedure runs, but it is a little more awkward to set up:
+
+<UL>
+	<LI>Set the WEBNDAEM parameter to zero so that all the real daemons log off. (Simply bumping them is insufficient as they would respawn).
+	<LI>Activate the debugger if desired.
+	<LI>Issue the <A HREF ="language.html#PSTWEB">=PSTWEB</A> command with the parameter saying you just want to handle a small number "N" of requests.  
+	<LI>If you activated the debugger and there is any UL code in the daemon login proc and/or init proc, F5 through it.  Eventually your terminal session will block - it is now waiting for an incoming HTTP request.
+	<LI>Repeat for each HTTP request (N times):
+	<UL>
+	<LI>Once your terminal session is blocked, switch to a browser and ask for a page located on the DPT server.
+	<LI>Your terminal session will pick up the request and invoke the handler proc.
+	<LI>If you activated the debugger and there is any UL code in the handler proc, step through it as required.
+	</UL>
+	<LI>After N page requests you'll get the chevron back.
+</UL>
+
+<A NAME = Coding_Editing></A>
+<P><U>Coding and editing issues</U>
+
+<BR>When building a web application you'll probably find that in addition to what M204 programmers normally consider "procedures", containing M204 commands and User Language, you'll have a number of other files containing HTML, javascript, style sheets etc. which you are also actively making changes to.  These might be static pages of your website, or fragments that you are including in dynamic pages using $WEB_PUT_FILE and/or Server Side Includes.
+
+<P>The DPT client is not a sophisticated multi-language editor, but even so it can be very convenient to have both User Language and other types of code accessible within the same IDE rather than using separate editor tools, and to support this kind of usage DPT has a couple of new features.   Firstly the editor has some <A HREF = "ideuser.html#Editor_NonUL">simple functions</A>, for handling files which don't contain User Language, and specifically HTML.  Secondly you can allocate directories to the host <A HREF = "dbaguide.html#Alloc_ProcDir">with non-default extensions</A>, which gives you the option of using commands and DPT GUI facilities to access them as if they were procedures.  This is a neat way to work, and is how the demo installation is configured.
+
+<A NAME = Coding_Daemon></A>
+<H3>Miscellaneous daemon processing issues </H3>
+
+<P><U>Session corruption</U>
+<BR>In the normal course of events each daemon includes the <A HREF = "m204xref.html#WEBDMLGN">login procedure</A> once only.  If your application "messes up" the daemon session so much that it seems simpler to reinitialize it somehow than try to tidy up, you might include the login proc again explicitly, or, probably better, code a LOGOFF, in which case a fresh daemon will start automatically.
+
+<P>One common issue might be when different scripts require different parameter settings, since parameter settings are part of the persistent state of a server daemon between web page requests.  It is the programmer's responsibility to deal with this.  For example install a set of parameters in the daemon login proc that caters for all requests, or alternatively have each script install all the parameter settings it needs.
+
+<P><U>Line IO</U>
+<BR>As with any other daemon (IODev 99) or robot thread (IODev 1 or 3) operations like $READ and ?? dummy strings, which require user input, can cause the daemon to terminate, since it has no user to prompt.  So if you write web application code which uses $READ and it works when you test it at the terminal, the chances are it won't work in the real web situation where the code gets run by a daemon.
+
+<P>For the purposes of the WEBPRINT statement, OUTMRL is always 32K (i.e. just like the AUDIT statement).
+
+<P>It's also worth mentioning that server daemons do not enqueue procedures during script processing in the same way that terminal users do.  This feature was specifically put in to allow you to have handler code open in the editor on your terminal session at the same time as testing it via a daemon (see earlier notes).
+
+<P><U>End-of-Procedure</U>
+<BR>An automatic error response page is sent if your handler procedure comes to an end and there are mismatched quotes, block comment delimiters or BEGIN/END pairs.  On any other kind of thread this is OK as the command line interpreter just takes more input and lets the mismatches resolve naturally - most UL programmers are familiar with the informational message "Waiting for close quote" for example.  The web server daemon on the other hand has no way of prompting for closure, so it treats the whole script as invalid.
+
+<P>There is always an implied database commit at the end of request handler procedures.
+
+
+
+
+<P><HR><HR>
+<!****************************************************************************>
+<H1>Appendixes</H1>
+<P><HR>
+
+<A NAME = Terms></A> 
+<H2> Appendix 1: Terminology</H2>
+
+<UL>
+	<LI>HTML
+	<BR>Hyper<B>t</B>ext Markup Language. Defines the layout of web pages.  Generally when we create dynamic web page content we are writing code in User Language to auto-generate HTML at run time.
+	<LI>HTTP
+	<BR>Hyper<B>t</B>ext Transfer Protocol.  This defines the structure of messages between web browsers and servers.  A HTTP request for a web page usually results in a HTTP response message from the server to the browser containing various header fields and block of data.  <A HREF = #HTTP_Processing>See appendix for more details</A>.
+	<LI>MIME
+	<BR>Multipart Internet Mail Extensions.  This is a convention for describing the type of content in files, which is more structured than simply going by the file extension.  One of the headers in an HTTP host response usually contains a MIME content type code.  Multipart content as such is discussed elsewhere in this document.
+	<LI>"Request"
+	<BR>In this document this term usually refers to an HTTP request, which is to say a message from a browser to the server, asking for some resource.  Where there might be confusion between these and User Language requests, they are explicitly called HTTP requests and UL requests.
+	<LI>"Script"
+	<BR>The user-written handler procedure which services a request is often referred to either as a script, or a request handler.  This is just for variation and readability.
+</UL>
+
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = HTTP_Processing></A> 
+<H2> Appendix 2: HTTP Message Processing on DPT</H2>
+
+<UL>
+	<LI><A HREF = #HTTPMsgSumm> Message structure summary</A>
+	<LI><A HREF = #HTTPDPT> What DPT does automatically during...</A>
+	<UL>
+		<LI><A HREF = #HTTPDPT> ... all requests </A>
+		<LI><A HREF = #HTTPStatic> ... static file request processing</A>
+		<LI><A HREF = #HTTPDynamic> ... dynamic (user script) processing</A>
+	</UL>
+	<LI><A HREF = #HTTPDates> HTTP date handling</A>
+	<LI><A HREF = #HTTPSSI> Server side includes </A>
+	<LI><A HREF = #HTTPErrors> The standard error page </A>
+</UL>
+
+
+<A NAME = HTTPMsgSumm></A> 
+<H3>Message structure summary</H3>
+A <A HREF = #Terms>HTTP</A> message is a chunk of data sent across a TCP/IP connection.  It is in human-readable form, broken into lines by line separator characters (CRLF), as follows.
+
+<UL>
+	<LI>Always
+	<UL>
+		<LI>Title line
+	</UL>
+	<LI>Depending on the type of message
+	<UL>
+		<LI>n x [Header line]
+		<LI>A block of data in any format
+	</UL>
+</UL>
+
+<P><U>Title lines</U>
+<BR>The request message title line identifies the resource required from the server. e.g.
+
+<PRE CLASS=code>
+GET homepage.html HTTP/1.1
+</PRE>
+
+<P>The response title line gives a numerical success/failure code and simple descriptive text.  e.g.
+
+<PRE CLASS=code>
+HTTP/1.1 200 OK
+</PRE>
+
+<P>In this case (OK) the response would be followed by the page data.  In other cases such as e.g. commonly 404 (Not Found) or 500 (Server Error) there might be no page data following.  Or the server might instead send more detailed information in a small formatted error report, which is what the DPT web server does.  (Although see <A HREF = #HTTPErrors>general comments on error response messages</A>).
+
+<P>The full set of HTTP response codes are not listed here (surf them up) but are grouped into standard ranges:
+<BR>1xx: Information 
+<BR>2xx: Success
+<BR>3xx: Redirections
+<BR>4xx: Client errors
+<BR>5xx: Server errors
+
+
+<A NAME = HTTPHeaders></A>
+<P><U>Header lines</U>
+<BR>These are name=value pairs, and the message receiver knows it's the last one when there is a blank line.  There may be no headers, in which case there will still be just the blank line.  Many standard header names are used for HTTP protocol control reasons, but any free-format headers can also be inserted for application use.  First consider a few standard headers - the above response title might have continued as follows:
+
+<PRE CLASS=code>
+HTTP/1.1 200 OK
+Date: Fri, 08 Sep 2006 13:29:02 GMT
+Content-Type: text/html
+Content-Length: 107
+
+...contents of file (107 bytes)...
+</PRE>
+
+<P>The time is an important field for client/server synchronization, since the two ends of the conversation might be in different time zones.  More on this later.
+
+<P>The content type tells the receiver how to interpret the upcoming data (is it an image, a video, a spreadsheet) etc?  In many cases the file extension also carries this meaning, but other times the request may have been for a script to be run which could have generated various types of content, in which case this header is more important.  In any case it is usually present.  The two-part slash-separated value of this header is a "MIME" code (more later).
+
+<P>Finally in this example the content length header is essential so that the receiver will know how much data to wait for.
+
+<P>A few more standard headers are mentioned in the following sections, and if you are interested there is of course a wealth of information out on the internet.  Generally speaking however, user script code does not have to do too much interaction with the HTTP headers.  <A HREF = #Coding_Special>Cookies and cache-control headers</A> are the most common exceptions.
+
+
+<P><U>The data block</U>
+<BR>The data, or "message body" is present most commonly on response messages, in which case it contains either the data of the requested resource, or some kind of error report.  
+
+<P>In the case of a "GET" style request such as the one shown above, there is no message body on the request message.  However, with "POST" style requests (typically used with HTML input forms) the body contains the values of the input fields as entered by the user, which are effectively parameters to the request.  Retrieving these is discussed elswhere in this document.  A third type of request, "HEAD" asks that the response message contains everything as per "GET" except the data, and is sometimes used by browsers to find out how large a particular file is before actually requesting the data.
+
+
+
+<!****************************************************************************>
+<A NAME = HTTPDPT></A> 
+<H3>What DPT does automatically (all request types)</H3>
+
+<P><U>Request validation</U>
+<BR>Obviously to service a web request DPT must understand what's being requested.  There can be various misunderstandings between client and server, but to summarise, DPT requires that the request
+
+<UL>
+	<LI>Always
+	<UL>
+	<LI>Is in HTTP 1.1 or 1.0 standard format
+	<LI>Has request type GET, POST or HEAD
+	<LI>If POST, contains data; if GET/HEAD, does not contain data
+	<LI>Has valid headers, where given
+	<LI>Contains the "Host:" header (if HTTP 1.1)
+	</UL>
+	<LI>Depending on parameter settings
+	<UL>
+	<LI>Is not for a directory listing
+	<LI>Is not for a resource below "root" level
+	<LI>Does not contain an excessively large data block (POST only)
+	</UL>
+</UL>
+
+If any of the above conditions are not met, a message with the appropriate code (usually 400) is sent back, containing a <A HREF = #HTTPErrors>small formatted error report</A> as its message body.
+
+<P>Note that under no circumstances (in the current release) does DPT take any notice of information concerning the character set or encoding of incoming data, and if this is a concern it must be handled at the application level.  (Strictly speaking this may be HTTP 1.1 non-compliance and rather naughty, but it keeps things simple and can easily be added later).
+
+
+<P><U>Server availablilty check</U>
+<BR>Under certain circumstances the DPT web server will be unable to even process requests.  For information, the following responses may sometimes be seen: 
+
+<UL>
+<LI>408 - Client timeout (see <A HREF = "m204xref.html#WEBCONTO">WEBCONTO</A> parameter)
+<LI>409 - Any kind of internal resource contention (but not record locking - applications could send their own 409 if desired then)
+<LI>413 - Requested static file is too large, or too much data written to buffer by script proc
+<LI>503 - Server daemons are overloaded or otherwise unavailable
+</UL>
+
+<P><U>URI standardization</U>
+<BR>Here are some examples of potential incoming request URIs.  Note that the browser will have removed the web site name, so that at the server end we only see the requested resource name.
+
+<PRE CLASS=code>
+homepage.html                           * simple
+/                                       * user wants default page
+home+page.html                          * space replaced by + (common convention)
+home%20page.html                        * special character given %hexhex encoding 
+homepage.html?name=Luke                 * URI-encoded form parameter
+homepage.html?name=Luke&ship=X%20wing   * two parms
+/homepage.html                          * preceding slash ignored here
+</PRE>
+
+<P>DPT will reformat these and try to locate the following resources:
+
+<PRE CLASS=code>
+homepage.html
+index.html                              * or as per WEBHOME parameter
+home page.html
+home page.html
+homepage.html                           * form parm ignored if static (see later)
+homepage.html
+homepage.html
+</PRE>
+
+
+<A NAME = HTTPResponseHeaders> </A>
+<P><U>Response message headers</U>
+<BR>These headers are always included in all types of response, so user code never needs to set them up.
+
+<UL>
+<LI><B>Server:</B> 
+<BR>Database Programmer's Toolkit/Vxxx
+<LI><B>Date:</B> 
+<BR>Current date/time in <A HREF = #HTTPDates>HTTP standard format</A>
+<LI><B>Connection:</B>
+<BR>Either "close" or "keep-alive" depending on what the request asked for.  In HTTP 1.1 the default is "keep-alive".
+<LI><B>Content-Length:</B> 
+<BR>If a message body is being sent, this header is included, otherwise it is usually not (but sometimes is with a value of 0)
+</UL>
+
+
+<!****************************************************************************>
+<A NAME = HTTPStatic></A> 
+<H3>What DPT does automatically during static file request processing</H3>
+
+<P>This means requests for resources having a file extension which does *not* match WEBEXTN.  In other words all the requests for .gif, .html, .doc etc.
+
+<P><U>Request validation</U>
+<BR>Static file requests must be *retrieval* requests for the resource, and may therefore not have the POST message type.  Put another way, DPT does not support "blind" file transfers from client to server.  To perform file transfers you must go via a host-side script you write, so you can then apply appropriate intelligence to the details of exactly what to store and where to store it. 
+
+<P>URI parameters on requests for static content may sometimes be used by browsers for their own purposes, so DPT ignores these and simply issues an audit trail message.
+
+<P><U>Browser cache support</U>
+<BR>Most browsers keep a local copy of all files they get from web sites, so that if the user requests them again, the cached copy can be used, and network bandwidth and time saved.  This is usually enabled by the browser asking the server "has this file been changed or can I use my cached copy?", and the server replying either "yes it's been changed, here's the new version", or "no, go ahead and use your copy".  Put more technically, the browser might send the following header along with its GET request:
+
+<PRE CLASS=code>
+If-Modified-Since: Wed, 22 Nov 2006 21:32:07 GMT
+</PRE>
+
+DPT compares the last-modified date/time of the requested file and either sends it as normal, or sends a 304 response (Not Modified), which is obviously quicker.  
+
+
+<P><U>Other request headers with special meanings</U>
+
+<UL>
+<LI><B>If-Not-Modified-Since:</B>
+<BR>DPT handles this header similarly to the above, where the response code when not sending the data is 412 (Precondition Failed) instead of 304.  Note that this is the only other piece of automatic caching support.  DPT does not attempt anything proactive, for example using the "Cache-Control" header.
+
+<LI><B>Expect: 100-Continue</B>
+<BR>This header/value combination is handled by sending the 100 response and ... er ... continuing.  All other "Expect: " header values cause DPT to send a 417 (Expectation Failed) error response message.
+
+<LI><B>Content-Type</B> or <B>Content-Length</B>
+<BR>On a POST request, these obviously describe the POSTed data.  Given that POST requests must be dynamic, and GET requests for static resources need no data portion, the appearance of either of these headers results in an immediate 406 (Not Acceptable) response.  
+
+<LI><B>Others</B>
+<BR>No other headers are given any special treatment.  For example there is no support for content negotiation procedures based on the "Accept" header, and attempts to POST data with a "chunked" encoding will fail.  Whistles and bells like this can be added later if needed.
+
+</UL>
+
+
+<P><U>Special request types</U>
+
+<UL>
+	<LI><B>Directory listings:</B> 
+	<BR>If the requested resource either ends in "/", or contains any "*", DPT will build and send an interactive directory listing page.  Note that this feature can be disabled with the WEBFLAGS parameter.
+	<LI><B>SSI in HTML:</B> 
+	<BR>If the requested resource is an HTML file, DPT can invoke <A HREF = #HTTPSSI>server side include</A> processing.
+</UL>
+
+
+<P><U>Response message: Header values sent with static content</U>
+
+<UL>
+
+<LI><B>Modified-Date:</B>
+<BR>If the requested file is being sent, this header is always sent too, since it will form the starting point for the browser's content caching.
+
+<LI><B>Content-Type:</B>
+<BR>DPT performs a simple lookup on an <A HREF = "language.html#BBMIME">internal reference table</A> using the requested file extension. If an entry is present, the Content-Type header is added to the response, otherwise it is left blank and the browser will have to decide what the data is.  (Modern browsers should have no difficulty).
+
+<BR>Note that, as with the incoming message, character sets and encodings are not processed.  You can however get sub-values such as "charset" added to this header if appropriate, using the <A HREF = "language.html#BBMIME">=MIME command</A>.
+
+</UL>
+
+
+
+<!****************************************************************************>
+<A NAME = HTTPDynamic></A> 
+<H3>What DPT does automatically during dynamic (user script) processing</H3>
+
+<P>The mechanics of including the script procedure and routing its output are discussed in the programming section, as are some general points about <A HREF = #Coding_Parms>request parameters</A>, which DPT automatically parses from the various parts of the message and makes available via <A HREF = "language.html"language.html#FUNC_WEB">$functions</A>.  
+
+<P>Parameter names and textual values and header names and values can be automatically uppercased depending on the WEBFLAGS setting.  Note that the <A HREF = "dbaguide.html#Proc_OSNames">case of the handler procedure name</A> in the URI does not matter.
+
+
+<A NAME = HTTP_InputForm></A>
+<P><U>HTML input form element types </U>
+<BR>Most input elements send a simple text value as entered by the user.  The the following notes may also be of interest.
+
+<UL>
+	<LI><B>INPUT type=file:</B> 
+	<BR>The data of the file is presented as a single string value.  The file name and type are accessible via the extra options on <A HREF = "language.html#FUNC_WEB_GET_POST_PARM">$WEB_GET_POST_PARM</A>.
+	<LI><B>TEXTAREA: </B>
+	<BR>The data is a single CRLF-delimited string.  Use one of the <A HREF = "language.html#FUNC_TOKEN">$TOKENxxx</A> functions  to access individual lines if desired.
+</UL>
+
+
+<P><U>POST message data unpacking details</U>
+<BR> DPT attempts to extract information and make it available to the user script via <A HREF = "language.html#FUNC_WEB_GET_POST_PARM">$WEB_GET_POST_PARM</A>.  Different processing is applied depending on the Content-Type header of the message, as follows.
+
+<UL>
+	<LI><B>application/x-www-urlencoded</B>
+	<UL>
+	<LI>Often used for simple form parameters.
+	<LI>The data block contains a string which looks just like the one which you see after the question mark in a URL.
+	<LI>DPT parses out the parameters and values automatically, each 'name=value' pair resulting in a single parameter accessible via the $function.
+	</UL>
+	<LI><B>multipart/form-data</B>
+	<UL>
+	<LI>A more complex but more flexible data block.
+	<LI>Each part is unpacked and results in a single parameter accessible via the $function.
+	<LI>Each part has its own HTTP header fields, which are parsed for certain information to make available via the $function but otherwise discarded.  Currently this means the parameter name (taken from the 'name' option of the 'Content-Disposition' header), the MIME type (taken from 'Content-Type') and the client-local file name if it's file-tranfer data (also taken from 'Content-Disposition').
+	<LI>Most parameters have type 'text/plain', or indeed no type at all in which case text can be assumed.
+	<LI>Note that input forms can be constructed which send multipart data blocks where one or more parts are themselves multipart blocks.  DPT does not currently support recursive unpacking of the parts, so any multipart blocks below the topmost level will be delivered by the $function in their unpacked form.  The best advice is to avoid such complex input forms.
+	</UL>
+	<LI><B>anything else</B>
+	<UL>
+	<LI>For the purposes enabling user code to call the $WEB_GET_POST_PARM function, the data block is considered as a single parameter.
+	<LI>'TYPE' will be returned as per the CONTENT-TYPE header of the request as a whole.
+	<LI>If the request as a whole had a 'Content-Disposition' header it will be parsed for the parameter name and file name, but otherwise $WEB_GET_POST_PARM will return null for those.
+	</UL>	
+</UL>
+
+
+<P><U>Posted file data</U>
+<BR>File data can be posted either from an HTML input form or as an arbitrary POST request from any HTTP client.  The data is held in memory for use by a script but not stored as a host-local file unless application code explicitly stores it. 
+
+<P>To cater for the situation where a client posts very large files, perhaps maliciously, you can set a limit on the size of a single file, or the aggregate size over a period using the <A HREF = "m204xref.html#WEBPMAX">WEBPMAX and WEBPMAXT</A> parameters.
+
+
+
+
+<A NAME = HTTPDates></A>
+<H3>HTTP date handling</H3>
+This section is here mainly to provide some background to the required format of dates if you ever want to put them into standard HTTP headers such as "Modified-Date".  For all other purposes you can use dates and times in any formats appropriate for the application, although remember that when client and host might be in different time zones any date/time values passed between them should either specify the time zone they relate to, or better still use GMT.
+
+<P>The HTTP 1.1 protocol defined the following 3 formats as acceptable.  However, the second and third were included for historical reasons, and the protocol specified that all new applications should use the first format.  (Note that HTTP 1.1 has been surprisingly resilient, and the term "new applications" meant new back in the late 90s).
+
+<PRE CLASS=code>
+1. Fri, 31 Dec 1999 23:59:59 GMT      * recommended
+2. Friday, 31-Dec-99 23:59:59 GMT
+3. Fri Dec 31 23:59:59 1999
+</PRE>
+
+To facilitate working with the HTTP format if required for use with HTTP headers, or if desired for other general purposes, DPT comes with some <A HREF = "language.html#FUNC_DATEXXX">new options</A> for use with all the User Language $DATExxx functions.  
+
+
+<A NAME = HTTPSSI></A> 
+<H3>Server side includes (SSI)</H3>
+
+This is a simple and popular technique, supported by most web servers, allowing you to create web pages containing content from several different sources, including both static and dynamic sections. For example many good-looking web sites contain large amounts of standard graphics and containers which appear on every page, plus a smaller amount of content specific to each page.  The main idea is very similar to the M204 INCLUDE directive, and is best illustrated by an example:
+
+<P>mypage.html:
+<PRE CLASS=code>
+&ltHTML&gt  
+&lt!--#include virtual="graphics/banners.html?My Results Page" --&gt
+
+&ltTABLE BORDER&gt&ltTR&gt&ltTD&gt
+  &lt!--#include virtual="results.dptw" --&gt
+&lt/TABLE&gt
+
+&lt!--#include file="smallprint.html" --&gt
+&lt/HTML&gt
+</PRE>
+
+In this case the host sends a single page in response to a request for mypage.html, which contains the contents of "banners.html", followed by the dynamic content generated by the script "results.dptw" in a box, followed by the contents of "smallprint.html".  The calling-in of these elements is handled at the host end and requires no network traffic or interactions with the browser.
+
+<P>Note that SSI directives are always wrapped in HTML comments, since you don't want the browser to show the directives themselves.  What's more their format is quite tightly defined.  There must be two hyphens before the #xxxxx, and a space and two hyphens after the resource name, which may have optional quotes.  Any mistakes in this format are liable to mess up the whole page, for example commonly forgetting the space.  The server replaces the entire comment with the included resource, or a short error message if e.g. the resource could not be found.
+
+<P>DPT supports a small subset of the wide range of standard SSI directives, as follows.
+
+<UL>
+	<LI><TT><B>#include virtual=URI</B></TT>
+	<BR>The resource is located exactly as if it had been requested as the primary URI by the browser, with all that entails.  For example it can be a static file, directory listing or dynamic script; access control is applied depending on WEBFLAGS; etc.
+
+	<P>
+	<LI><TT><B>#include file=filename</B></TT>
+	<BR>The resource is assumed to be a static file, and must be located in the same directory as the file containing the #include (or a subdirectory of it).  Note therefore that the "virtual" option must be used to run a script.
+
+	<P>
+	<LI><TT><B>#echo var=environment-variable-name</B></TT>
+	<BR>Inserts the value into the resulting page.  The only standard environment variable currently supported is "QUERY_STRING", which is the value after the question mark on the requested URI.  A useful variation on this is "SSI_QUERY_STRING" which is the same thing except that it picks up the value from the URI specified at the SSI nesting level immediately above, rather than the "top level" URI actually requested by the user. In the above example the file "banners.html" might contain some standard graphics as well as an #echo to tailor the banners with the string "My Results Page":
+<PRE CLASS=code>
+&lt!--#echo var=SSI_QUERY_STRING --*&gt
+</PRE>
+
+	<P>
+	<LI><TT><B>#echo getg=global-name</B></TT>
+	<BR>This is a DPT custom option, and works the same as "#echo var" except that the value is obtained from the global table of the daemon performing the work.  You might #include a script immediately beforehand to set up appropriate globals, or they might have been defined earlier in the login proc.  If the global doesn't exist, the "#echo getg" directive is ignored.
+	<P>
+	<LI><TT><B>#exec cmd=cmdline</B></TT>
+	<BR>As on Sirius JanWeb this is interpreted as a request for a M204 <A HREF = #Coding_Command>command's output</A> to be inserted into the page.  It is largely equivalent to using the special =COMMAND script, but also allows newlines to be inserted to run short in-line programs (although including a procedure would often be best).
+<PRE CLASS=code>
+&lt!--#exec cmd=d list --*&gt                            //This
+&lt!--#include virtual="=command.dptw?d list" --&gt      // is neater than this.
+&lt!--#exec cmd=                                       //But this
+  B                                                  // might be
+  $SETG('ONEMORE', $VIEW('WEBNDAEM') + 1)            // better off
+  END                                                // in a procedure.
+  RESET WEBNDAEM ?&ONEMORE
+  --*&gt
+</PRE>
+</UL>
+
+<U>Notes</U>
+
+<UL>
+	<LI>Server side includes are enabled by the <A HREF = "m204xref.html#WEBSSI">WEBSSI parameter</A>.
+	<LI>SSI processing only occurs in static files with a content type of "text/html", which means that at least one entry has to be defined with the <A HREF = "language.html#BBMIME">=MIME command</A>.
+	<LI>SSI includes can be nested, but only where the included resources are also static HTML files.
+	<LI>The content type of the single page sent back is always "text/html", so it is up to you to wrap included data with appropriate HTML tags if neccessary  (e.g. &ltPRE&gt ... &lt/PRE&gt for plain text) to achieve the desired presentation.
+	<LI>Caching (processing of e.g. If-Modified-Since) is only invoked on the top-level page, since of course the browser will know the entire assembled page just by that name.  Note therefore that if included files have been modified but the top-level page hasn't, you have to force a full page refresh in the browser (e.g. Ctrl-F5) to see the updated component.  You can prevent users getting this problem when deploying a page on a live web site by also re-saving the top level page when modifying any of the components.
+	<LI>On a related subject, any time an SSI page includes a script or command, DPT suppresses the "Modified-Date" header in the final returned page, thus ensuring that the browser doesn't even try to cache the page at all.
+	<LI>Any errors encountered in locating the included resource, or running its script, result in a simple text message being inserted into the final page instead of the resource content.  This common convention means the system can still display most of a complex multimedia page rather than abandoning the whole thing or ruining its appearance with obtrusive error diagnostics.
+</UL>
+
+<U>Notes specifically on SSI-included scripts</U>
+
+<UL>
+	<LI>You must use the "virtual" option to #include script output.			<LI>Even if the content type of the output from your script is "text/html", DPT by default does not perform recursive SSI processing on it.  You can however change this using the flag parameter on <A HREF = "language.html#FUNC_WEB_FINISH">$WEB_FINISH</A>.  In many cases note that calling <A HREF = "language.html#FUNC_WEB_PUT_FILE">$WEB_PUT_FILE</A> could do the same thing and be more efficient.
+	<LI>When a script is running as part of the SSI construction of a "parent" HTML page, the User Language $functions which access HTTP request and response information usually apply to the parent.  So in the above example if the user had requested "mypage.html?team=spurs", the script "results.dptw" would be able to access "team=spurs" using $WEB_GET_URI_PARM.  This behaviour can be altered slightly in the case of URI parameters, by giving the optional third parameter on the <A HREF = "language.html#FUNC_WEB_GET_URI_PARM">$WEB_GET_URI_PARM</A> call, which tells the function to retrieve parameters from the query string specified when #including the script rather than the "top level" URI entered by the user.  (See also #echo var=SSI_QUERY_STRING above).
+	<LI>Exceptions to this are $WEB_PUT_DATATYPE and $WEB_PUT_RESPCODE which have no effect in this situation.  (The final complete SSI page will always have data type "text/html", and the response code will be determined by the success of the page request as a whole).
+	<LI>If such a script sets a cookie with no explicit path, DPT uses the parent HTML resource name, rather than the script name.
+	<LI>When using "#exec cmd=xxx" or "#include virtual==COMMAND.dptw?xxx" the command can be given either on the SSI directive or left blank in which case the query string given in the original "parent" request is used.
+</UL>
+
+
+
+<A NAME = HTTPErrors></A> 
+<H3>DPT web server standard error page</H3>
+
+DPT generates a very simple formatted HTML error page containing some diagnostic information, in two groups of situations:
+
+<OL>
+	<LI>Resource location or conflict situations such as "not found" etc. as mentioned in various places above
+	<LI>Problems with application code which trigger the automatic end-of script error handling
+</OL>
+
+By default these pages are sent back to the browser as HTTP messages with an appropriate HTTP response code.  However, depending on how the browser and DPT are configured, you may or may not see the page.  This is because some browsers have an option where they will display their own error page when certain "non-success" HTTP response codes are received, in preference to any page content the server might have sent with its response message.  This can be nice as it puts a familiar face on various common server errors, but as a webmaster you might want to exert more control.
+
+<P>One way to affect this browser behaviour is to turn off the option in all your users' browsers, although this would obviously not always be possible.  Another option is to set the <A HREF = "m204xref.html#WEBFLAGS">DPT control flag</A> which says send error page responses with an HTTP code of 200 (success), thus "tricking" the browser into displaying them.  This is the setting in effect on the DPT demo installation, since we want to see as much information as possible there.  It's up to you how you handle this in your application - perhaps leaving it up to the browser for general use and turning on the more informative server option when investigating error situations.
+
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Quickstart></A> 
+<H2>Appendix 3: Quick-Start Programming Tutorial</H2>
+
+<P>If you want to build dynamic web pages as soon as possible but don't feel like reading this entire document right now, you've come to the right place!  Building a web application is a little bit more complicated than a terminal application, but not that much, and the good thing is that once you're an expert doing it in User Language on DPT you'll know a lot of what you need to work with PHP, ASP and all those other sexy things.
+
+<UL>
+	<LI> <A HREF = #Tutorial_Step1>Step 1: A basic User Language script</A>
+	<LI> <A HREF = #Tutorial_Step2>Step 2: Running the script from a browser</A>
+	<LI> <A HREF = #Tutorial_Step3>Step 3: Techniques for more realistic pages</A>
+</UL>
+
+<A NAME = Tutorial_Step1> </A>
+<H3>Step 1: A basic User Language script</H3>
+<P>Let's start with a simple User Language terminal program.  At the DPT command line, enter 'OPEN WEBPROC' and then create a new procedure with Ctrl+Shift+N.  Type in the following and hit F5.
+
+<PRE CLASS=code>
+B
+PRINT 'DPT is awesome!'
+END
+</PRE>
+
+If you've ever used DPT or M204 before you won't be surprised to see a single line of output come to the terminal.  You may also not be surprised if the text got uppercased too (we'll come back to that).
+
+<PRE CLASS=code>
+DPT IS AWESOME!
+</PRE>
+
+This isn't quite a web page yet - for one thing the output has to be sent to a browser instead of your terminal.  Re-edit the program (Ctrl+Tab) as follows:
+
+<PRE CLASS=code>
+B
+$WEB_USE('ON')
+PRINT 'DPT is awesome!'
+END
+</PRE>
+
+There are <A HREF = #Coding_BufferWrites>several ways of sending data to a browser</A>, and with this one we're just asking to redirect the result of the PRINT statement.  
+
+<P>While you're in there, if your editor uppercased the text in quotes, why not select "is awesome" and lowercase it again (Ctrl+L).  User I/O that's all in upper case is really not the done thing in a web application, even if you can usually get away with it in a legacy 3270 application! The issue is covered in more detail <A HREF = #CaseTran>in the programming section</A> elsewhere in this document.
+
+<P>Run it again and you should see something like this:
+
+<PRE CLASS=code>
+HTTP/1.1 200 OK
+Server: Database Programmer's Toolkit/1.3a
+Date: Tue, 28 Nov 2006 19:01:15 GMT
+Content-Length: 17
+Content-Type: text/html
+--------------------------------------------------------------------------------
+DPT is awesome!
+--------------------------------------------------------------------------------
+</PRE>
+
+It's different but it's still not a web page, is it?  Well, it's closer than you might think.  By using one of the special <A HREF = "language.html#FUNC_WEB">web-related $functions</A> we told DPT that this is a web page script, and it responded by creating a variety of extra <A HREF = #Terms>"HTTP"</A> control information that would be required by a browser.  Unfortunately we still don't have a browser connected, so DPT mocked up a version of what it would have sent, and displayed it at the terminal instead.  
+
+<P>Working purely at the terminal like this is a good way of doing the early construction of a web page, as it's quick, easy and familiar, and we can debug the program if we want to using the DPT debugger (Ctrl-F1).
+
+
+
+<A NAME = Tutorial_Step2> </A>
+<H3>Step 2: Running the script from a browser</H3>
+<P>Now we've got a rudimentary script built, let's run it from a web browser and see what we get.  If you're working on the DPT demo installation, you should be able to open up your browser and type in the address:
+
+<PRE CLASS=code>
+localhost/yourproc.dptw
+</PRE>
+
+<UL>
+<LI>"localhost" is the local machine on which the DPT host is waiting for your connection
+<LI>"yourproc" is whatever you called your procedure in WEBPROC
+<LI>The <A HREF = #Intro_StatDynam>special suffix</A> "dptw" tells the DPT host to run your script to create the page (don't put ".dptw" on the end of your proc name)
+</UL>
+
+<P>Depending on how your browser is configured, you may have to "persuade" it that you really want to look at a web site on your local machine, but this is simply a matter of clicking the appropriate buttons when offered.  For example In MS Explorer (Win XP and before) click "work offline" then "connect", or in Vista it may prompt you to enable "intranet" settings in the tools menu.  It's also possible you'll get objections from a local firewall, which you can suppress by allowing localhost (loopback) connections on port 80 (the default WEBPORT parameter).
+
+<P>To make the page look a little more attractive, how about editing the script to look like this:
+
+<PRE CLASS=code>
+B
+WEBPRINT '&ltHTML&gt'
+WEBPRINT '&ltH2&gtThis page was created in User Language&lt/H2&gt'
+WEBPRINT '&ltHR&gt'
+WEBPRINT '&ltP&gtThe local time is &ltTT&gt&ltB&gt' $TIME '&lt/TT&gt&lt/B&gt'
+END
+</PRE>
+
+<P>Here we've inserted some HTML tags into the page to lay it out more nicely.  Also note that the PRINT statement has been replaced with <A HREF = #Coding_BufferWrites>WEBPRINT</A>, which does the same thing, but saves us having to issue $WEB_USE beforehand since WEBPRINT automatically generates browser output lines.
+
+<P>Now either save it (F6), or better still save-and-run it (F5) to check it compiles, and then hit refresh in the browser.  Every time you refresh you should see the time updating to show the script is being rerun each time.
+
+
+<A NAME = Tutorial_Step3> </A>
+<H3>Step 3: Techniques for more realistic pages</H3>
+
+<P>OK, that's pretty much all there is to it!  Everything else is just elaborating on this theme, and now it's up to you. Elsewhere in this and the other DPT manuals lots of ideas are covered for building complex web pages, as follows.  (Plus there is a fair amount of sample script code distributed with the download).
+
+<UL>
+	<LI> <A HREF = #Coding_Parms>Input forms and request parameters</A>
+	<LI> <A HREF = #HTTPSSI>Server side includes</A>
+	<LI> <A HREF = #Coding_Special>Cookies</A>
+	<LI> <A HREF = #Coding_Command>M204 command output</A>
+	<LI> <A HREF = #Coding_Debugging>Building and debugging code</A>
+	<BR><BR>
+	<LI><A HREF = #Top>Now return to the top and read this manual properly all the way through...!</A>
+</UL>
+
+<P><HR>
+
+</HTML>

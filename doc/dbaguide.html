@@ -1,0 +1,1425 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>DPT DBA Guide</TITLE>
+
+<H1 ALIGN = "Center">Database Programmer's Toolkit</H1>
+<H1 ALIGN = "Center">DBA Guide</H1>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.
+
+<H2>Contents</H2>
+
+<UL>
+	<LI><A HREF= #General_Background  > General Background                              </A>
+	<LI><A HREF= #Structures          > File Structures</A>
+	<LI><A HREF= #Allocating_Files    > Allocating Files to DPT                     </A>
+	<LI><A HREF= #File_Administration > File Creation and General Management   </A>
+	<LI><A HREF= #LOADING             > Data Loading                                </A>
+	<LI><A HREF= #Groups              > Groups                                          </A>
+	<LI><A HREF= #Procedures          > Procedures and Procedure Files</A>
+	<LI><A HREF= #BLOBs               > Binary Large Objects</A>
+	<LI><A HREF= #File_Sharing        > File Sharing Considerations                     </A>
+	<LI><A HREF= #Miscnotes           > Miscellaneous Topics</A>
+	<LI><A HREF= #Appendixes          > Appendixes</A>
+	<UL>
+		<LI><A HREF= #App1> 1. Multi-step deferred update record formats </A>
+		<LI><A HREF= #App2> 2. Fast load I/O file formats </A>
+	</UL>
+</UL>
+
+<HR>
+<!****************************************************************************>
+<A NAME = General_Background> <H2> General Background </H2> </A>
+
+The DPT file system has a somewhat smaller range of features than Model 204, the intention being to compile and run as many User Language applications as possible.  Keeping things simple does not mean the same as dumbing down though, and important concepts like transaction backout and checkpointing are represented.  This follows Einstein's dictum that things should be made "as simple as possible, but no simpler".
+
+<P>Therefore the choice of which file system features to include and exclude has primarily meant concentrating on things that add functionality, while leaving out things that are only there on Model 204 to achieve an extra bit of speed.  For example the absence of the "Key", "Numeric Range" and "FRV" field attributes was deemed acceptable, since the b-trees used by the "ordered" attribute provide the same functionality.  On the other hand, invisible indexes were not left out because they are required to support the astronomically useful FILE RECORDS statement..
+
+<P>Almost all User Language database-related functionality is currently supported.
+
+<H3>Platform and OS factors</H3>
+<P>In addition to being less functionally overloaded than the Model 204 file system, DPT has to take account of some major differences resulting from the fact that we are not on the mainframe.  To take the initial implementation on Windows as a case in point:
+
+<UL>
+	<LI>There are no standard OS facilities for specification of record lengths or block sizes.  Applications must manage these things themselves.  Record format (RECFM) is in part specified by the file extension, with common formats (e.g. .txt, .bmp) having some standard meanings, but there are no standard equivalents to RECFM=FB or VB.
+	<LI>There are no standard OS facilities for setting fixed space allocations for files.  The most common convention is for applications to expand files as required, and the OS is always happy with this (disk space permitting).  PC users are typically familiar with the fragmentation implications of gradual file expansion.
+	<LI>Files are organized in directories instead of via dataset name qualifiers and dots.  This has minimal impact really however, since the conventional PC file name notation can be thought of as simply having slashes as an alternative to mainframe-style dots.  You can usually specify either forward or backslashes these days on Windows with the same effect.
+</UL>
+
+The solutions to these issues will hopefully cause the minimum amount of culture-shock for experienced Model 204 DBAs, and are discussed in more detail where they come up in the remainder of this guide.
+
+<P><A HREF= #Top>Top</A>
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = Structures> <H2> File Structures</H2> </A>
+
+<UL>
+	<LI><A HREF= #Struc_Summary > Summary</A>
+	<LI><A HREF= #Struc_Parms > File and Field Parameters</A>
+	<LI><A HREF= #Struc_Details > Some More Details</A>
+</UL>
+
+<A NAME = Struc_Summary></A><H3>Summary</H3>
+The famous Model 204 file system is in some ways quite straightforward, being just a good implementation of some industry-standard techniques.  A file created on Database Programmer's Toolkit can be thought of as a dish containing many of the same ingredients, prepared to a similar recipe, and tasting close enough to the real thing for everyone except the connoisseur.
+
+<P>The key ingredients are:
+
+<UL>
+	<LI>A file data area arranged in variable-blocked format, where the file designer specifies the number of records per block, but the block size is fixed by the system (i.e. one "page").
+
+	<LI>Multiple indexes to taste, each maintained as a b-tree.
+
+	<LI>Inverted lists (lists of record IDs associated with non-unique index entries) maintained in various ways, including bitmaps for highly non-unique values.
+	
+	<LI>Multiply-occurring and index-only ("invisible") fields, both well-loved and well-used facilities on Model 204.
+
+</UL>
+
+DPT also adds some extra spices of its own, but these are rarely of interest to the user, and most are not covered in this document.
+
+<A NAME = Struc_Parms></A><H3>File and Field Parameters</H3>
+In most cases the same names are used for control parameters which do a similar job to the equivalent M204 parameters.  See the features X-ref document for details of which <A HREF = "m204xref.html#Parameters">file parameters</A> and <A HREF = "m204xref.html#Database">field attributes</A> are currently supported.
+
+<P>In the case of field-level b-tree structural control settings, the only one available is SPLITPCT.  In other words NRES and LRES are not used (SPLITPCT has the same function but might therefore need to be changed after a load on DPT).  The IMMED parameter is not used either.  DPT applies various IMMED-style measures within the index structures, but these are under automatic control.
+
+<A NAME = Struc_Details></A><H3>Some More Details</H3>
+There are only a few cases where it's essential to know low-level implementation details, specifically where they might cause confusion because of a significant difference from Model 204.  The following may be of interest (this section can easily be expanded if anybody wants).  See also <A HREF = #Miscnotes>miscellaneous topics</A>.
+
+<A NAME = Struc_Heap></A>
+<P><U>Overall structure</U>
+<BR>
+A DPT file consists of two main parts, namely:
+
+<UL>
+<LI>The blocked data area
+<LI>Everything else (sometimes called "the heap" in this document)
+</UL>
+
+In Model 204 terms these two areas correspond to tables B and D, and the same sizing parameters are used so as to allow existing Model 204 DDL programs to work with as few changes as possible.  Continuing to use Model 204 terms, a DPT file has no specific areas corresponding to tables A, C or E.  Field definitions and <A HREF = #BLOBs>BLOBs</A> are stored in the heap area, so table A and table E can be thought of as substructures within table D.  There are no hashed indexes, and therefore no table C.
+
+<A NAME = MAGICNUMBERS></A>
+<P><U>Magic numbers</U>
+
+<UL>
+<LI>
+Page size
+<BR>
+The page size on DPT is 8K (8192 bytes).  Internally this number has quite a happy power-of-two synergy with the file data structures used, and in addition sits nicely with typical PC disk sector sizes.  8K also allows people to pretend it's the M204 size of 6K with few ill effects.  The main time the page size is relevant to the DBA is during BRECPPG calculations.  (Most page types, including "table B" pages, have a 32 byte reserved area, leaving 8160 usable bytes).
+
+<LI>
+Record numbers
+<BR>
+These are 31 bit values, which means in theory a DPT file can hold 2G records. In addition there is a custom parameter <A HREF = "m204xref.html#Parms_Custom">MAXRECNO</A> which by default is set to the M204 maximum of 16777215 and imposes an artificial limit, purely for compatibility reasons.
+
+<LI>
+Page numbers
+<BR>
+These are also 31 bit values, meaning that a file could in theory contain 2G pages.  This means a 16Tb file would be the theoretical maximum in space terms.
+
+</UL>
+
+<P><U>B-trees</U>
+<BR>
+DPT's b-tree implementation undoubtedly differs from Model 204's in many details.  However there is one particularly large point of contrast, which is that each field has its own b-tree with root page etc., instead of all fields sharing a single tree with entries prefixed with the field code, as on M204.  In general usage this difference should not really be noticeable.
+
+<P>The root page for each field, as well as being the root of the tree, maintains various information which DPT can use to improve its handling of the tree in general use.
+
+<P><U>Inverted lists</U>
+<BR>DPT files do not keep any inverted list information in the b-tree leaf pages, instead storing them as entirely separate entities.  This means the growth characteristics of b-tree data structures do not get mixed up with those of inverted list data structures, and makes things much easier to handle internally.  
+
+<P>In practice the difference means that DPT b-trees are likely to be more compact than their M204 equivalents, and many kinds of value and search processing will require a few less disk reads.  Of course there are no free lunches, and other kinds of processing, specifically when lots of inverted lists are accessed, will require a few more disk reads.
+
+<P>The <A HREF = "Language.html#ANALYZE">ANALYZE command</A> can show in more detail what's going on in any particular situation, and also has some extra interesting DPT custom options.
+
+<P><U>BLOBs</U>
+<BR>The BLOBs chapter later on includes some <A HREF = #BLOBSTRUCTURES>notes on BLOB data structures on DPT</A>. 
+<BR><A HREF= #Top><BR>Top</A>
+
+<HR>
+<!****************************************************************************>
+
+<A NAME = Allocating_Files> <H2> Allocating Files to DPT </H2> </A>
+
+<UL>
+	<LI><A HREF= #Alloc_Fnames > File names and extensions</A>
+	<LI><A HREF= #Alloc_DirLoc > Directory location of OS files</A>
+	<LI><A HREF= #Alloc_NewFiles > New files and "dataset parameters"</A>
+	<LI><A HREF= #Alloc_RecLen > Sequential files: record length and record format (including Unicode)</A>
+	<LI><A HREF= #Alloc_ProcDir > Special considerations for procedure directories</A>
+	<LI><A HREF= #Alloc_Numerous > Large numbers of files</A>
+</UL>
+
+
+
+
+
+Since there is no JCL on the PC, files are always attached using the <A HREF = "language.html#ALLOCATE">ALLOCATE command</A>.  Note that this means "attached" in the mainframe sense, as "DDs".  DPT provides a variety of other ways to access native OS files directly.
+
+<P>The minimalist forms of the command are:
+<PRE CLASS=code>
+ALLOCATE MYFILE MYFILE.DPT                  //database file
+ALLOCATE OUTDATA OUTDATA.SEQ                //sequential file
+ALLOCATE STDPROC STDPROC                    //<A HREF = #Procedures>procedure directory</A>
+</PRE>
+
+<A NAME= Alloc_Fnames ></A> <H3>File names and extensions</H3>
+Above, the system took its cue from the file extensions, so that the DIRECT, SEQUENTIAL or PROCDIR options on the command were not required.  These file extensions are descriptive and appropriate, but in the sequential case not compulsory, so that
+
+<PRE CLASS=code>
+ALLOCATE MYFILE MYFILE.OLD DIRECT           //error - must have DPT extension
+ALLOCATE OUTDATA OUTDATA.OLD SEQUENTIAL     //OK - sequential file need not be .SEQ
+ALLOCATE OUTDATA OUTDATA.DPT SEQUENTIAL     //error - sequential file must not be .DPT
+ALLOCATE STDPROC OUTDATA.DPT PROCDIR        //error - must be a directory not a file
+</PRE>
+
+As on the mainframe, there need be no correspondence between the "DD name" (MYFILE here) and the "dataset name" (MYFILE.DPT).  However, unlike Model 204, the physical file contains no information relating to the DD name, meaning there is no difficulty in "renaming" a file, for example as DBAs often have to achieve on Model 204 by using the RESTORE 192 option.  In this example MYFILE.DPT could be used as MYTEST simply by re-allocating it:
+
+<PRE CLASS=code>
+FREE MYFILE
+ALLOCATE MYTEST MYFILE.DPT
+</PRE>
+
+The "DSN" (MYFILE.DPT in the above example) is held in the FCT, and viewable as parameter OSNAME.  If you do rename the OS file, DPT issues an informational message the next time the file is opened.  Note that OSNAME does not hold the full path of the file, only the actual file name.
+
+<A NAME= Alloc_DirLoc ></A> <H3>Directory location of OS files</H3>
+
+File names specified in ALLOCATE commands are passed as entered (minus optional quotes) to the operating system, which attempts to locate the file.  This means that to specify files in different locations, OS conventions can be used.  On Windows, unless otherwise specified, files are initially searched for in the "current working directory", which means the directory where the command prompt was when the host application was invoked, or the value specified in the "start in" box of the Windows shortcut.  For example:
+
+<PRE CLASS=code>
+ALLOCATE DB DB.DPT                            //dpt\DB.DPT
+ALLOCATE MYFILE 'MY DATA\MYFILE.DPT'          //dpt\My Data\MYFILE.DPT
+ALLOCATE MISCHIEF C:\SYSTEM.INI SEQUENTIAL    //absolute file name
+ALLOCATE WORKDIR .                            //dpt base directory (two dots would be the parent of that)
+</PRE>
+
+The commands shown here are all in upper case, as per the most common M204 CASE parameter setting.  However, file names on Windows and some other operating systems are not case sensitive, meaning that the actual file names may be a mixture of cases and these commands will still work.  The values for the "DD" and "DSN" are uppercased for internal DPT use anyway (e.g. if you VIEW OSNAME).
+
+<P>Like Model 204, DPT writes control information to the FCT page of a database file, even if no explicit updating is going to happen to the actual data in the file.  This means that database files on read-only media such as CD-ROM cannot be accessed.  Depending on how the drive is mapped, a CD-RW file might or might not work.  Sequential files can be read from read-only media so long as they are declared as such at allocate time (see below).
+
+<A NAME= Alloc_NewFiles ></A> <H3>New files and "dataset parameters"</H3>
+The dispositions provided for database files are NEW, OLD and COND.  For sequential files MOD, READONLY and TEMP are also allowed.
+
+<PRE CLASS=code>
+ALLOCATE DEMO DEMO.DPT NEW             //NB. the default is OLD
+ALLOCATE DEMO1 DEMO1.DPT COND          //OLD if it exists, NEW if it doesn't
+ALLOCATE DEMO2 DEMO3.SEQ MOD           //start writing at the end 
+ALLOCATE INDATA T1.DAT SEQ READONLY    //might be on CD-ROM or tape
+ALLOCATE SCRATCH TEMP                  //system generated dsn in #SEQTEMP dir
+</PRE>
+
+In the case of NEW or COND, we also need to think about space parameters.  When an "empty" file is created on Windows, it has zero space allocation  and notionally occupies no disk space.  What's more, as mentioned earlier, it is up to applications to control file sizes themselves - the OS will never tell us that a file is "full" like MVS does with a B37 abend, only when the disk is full.  Therefore, the notion of specifying space parameters on an <A HREF = "language.html#ALLOCATE">ALLOCATE command</A> for a new file could not have the same meaning.
+
+<P>If the file is to become a database file, space parameters will in any case be specified with the CREATE command (BSIZE etc.), as described later, so there is no need to do so now.  If the file is to be used as a sequential output file, setting a maximum size is worthwhile, to prevent runaway processing.  All the mainframe parameters pertaining to file size are distilled into a single custom parameter, namely MAXSIZE, which can be given whatever the disposition (i.e. OLD too).  The value is in units of 1K (1024 bytes), and can range from 0 (no check) to 2G (so max file size 2TB).  When executing an image write or print to a USE file, if the file is larger than this an IO error is reported.
+
+<P><U>Temp files</U>
+<BR>TEMP sequential files are placed, logically enough, in the #SEQTEMP directory.  DPT uses a system-generated DSN, and any other DSN specified is ignored.  These files are useful to avoid cleanup work, because DPT automatically deletes the underlying file after the FREE command is issued, or at system closedown.
+
+
+
+<A NAME= Alloc_RecLen ></A> <H3>Sequential files: record length and record format (including Unicode)</H3>
+<P>Next the tricky area of record format and length.  The most common convention on the PC is for "sequential" data files to contain records of arbitrary length, with line separator characters or character sequences denoting the ends of records.  In fact this is so prevalent, despite the restriction it puts on what can be in the actual data, that both USE and image IO work like this on DPT by default.  The end-of-record separator on Windows is the 2-character CRLF sequence. On Unix or Mac if DPT ever goes there it might be just LF, or just CR, respectively.  A less universal convention is whether such files of "records" have a final terminator after the last record.  READ IMAGE will handle it either way.  WRITE IMAGE and USE output will always write the final EOR.
+
+<P><U>Fixed/variable length</U>
+<BR>Despite the use of the above convention, there is still a role for a record length option on ALLOCATE.  If no LRECL is specified, the file behaves as if variable length records were being processed.  In other words USE DD + PRINT will not truncate on output, and READLEN after READ IMAGE will vary. 
+
+<PRE CLASS=code>
+ALLOCATE TESTC TESTC.SEQ LRECL 2000       //CRLF present but simulate fixed length records
+</PRE>
+
+<P>In this case the file will now behave as if fixed length records were being processed, although at the actual disk level they are variable in length and terminated with CRLF as per the default.  So USE and WRITE IMAGE will produce records padded or truncated to 2000 actual data characters (i.e. 2002 bytes on disk including the CRLF).  During READ IMAGE the image is populated as if the input record were 2000 bytes long, even if much shorter on disk.  And READLEN will be 2000.  
+
+<P><U>Fixed length pad</U>
+<BR>You also have the option to control the pad character used during WRITE or USE.  It is given as a number which is the ASCII code (in decimal format) for the desired character.  The default is 32 which is a space.
+
+<PRE CLASS=code>
+ALLOCATE TESTC TESTC.SEQ LRECL 2000 PAD 0       //pad with ascii 0 characters
+</PRE>
+
+<P><U>True fixed length</U>
+<BR>Yet another option makes it so that true fixed length records are read/written, with no CRLFs in between.  This option is essential when using READ IMAGE with floating point data, since such items may contain CR and LF characters within the FP bit pattern.  It does however require more coordination between the processes that write and read the file, since the disk record is not free to vary in length and still get processed successfully by READ IMAGE.
+
+<PRE CLASS=code>
+ALLOCATE TESTC TESTC.SEQ LRECL 2000 PAD 0 NOCRLF       //as above but change EOR convention
+</PRE>
+
+<P><U>Unicode</U>
+<BR>Finally there is an option to instruct DPT that data coming in from this file should be converted from Unicode to ASCII, and data going out converted the other way. When using this option the following considerations apply: 
+<UL>
+<LI>Two bytes are read from/written to the file per User Language character.
+<LI>The Unicode byte order defaults to little-endian (Windows) unless BIG is specified, which forces big-endian.
+<LI>When reading a sequential file, the first two bytes can contain a byte order mark, of 0xFFFE (little-endian) or 0xFEFF (big-endian) which affects the translation of the rest of the file in the usual way, unless BIG or LITTLE was explicitly specified on the ALLOCATE command, in which case any BOM in the data is ignored.
+<LI>When writing a sequential file, a BOM is written only when writing at the start of the file, and only if BIG or LITTLE was explicitly specified on the ALLOCATE command. Otherwise no BOM is written, and the output is little-endian.
+<LI>The LRECL value specified refers to the number of User Language characters (<U><B>L</B></U>RECL means logical not physical record length).
+<LI>Any PAD value is specified as the ASCII character as normal.
+<LI>The EOR sequence, if used, is still CRLF, but the Unicode equivalent - e.g. 000D000A depending on the byte order.
+<LI>Automatic character conversion via this mechanism only happens with User Language processing of the allocated file, that is, image I/O and USE DD + PRINT. Fast load data is expected to be ASCII. DPT custom I/O using e.g. <A HREF = "language.html#FUNC_FILEIO">$FREAD etc.</A> should use the Unicode conversion functions <A HREF = "language.html#FUNC_UNICODE">$C2U and $U2C</A> as appropriate.
+<LI>See the <A HREF = "language.html#COMP_ASCII">notes in the language guide</A> for more about Unicode support on DPT.
+</UL>
+
+<PRE CLASS=code>
+ALLOCATE TESTC TESTC.SEQ LRECL UNICODE              //Basic variable-lengthed Unicode text lines
+ALLOCATE OUTTXT OUTTXT.TXT LRECL 2000 UNICODE BIG   //4004 o/p bytes for each record written, or 4006 for the first
+</PRE>
+
+
+<A NAME= Alloc_ProcDir ></A> 
+<H3>Special considerations for allocating procedure directories</H3>
+
+<U>Non-default file extensions for procedures</U>
+<BR>As of version 2 the <A HREF = "language.html#ALLOCATE">ALLOCATE command</A> can be used to exempt individual directories from the <A HREF = #Proc_OSNames>default PRSUFFIX processing</A> which says that the OS files representing procedures all have the same extension - usually ".txt".  The override can be useful for example when developing a web application and you have a directory containing ".html" and/or other file types.  Treating these as procedures and editing them at the command line or via the GUI can be <A HREF = "webguide.html#Coding_Editing">a convenient way to work</A> if the alternative is having to use multiple different tools.  
+
+<P>For example:
+
+<PRE CLASS =code>
+ALLOCATE MYHTML #WEB/HTML PRSUFFIX=.HTML
+ALLOCATE MISCWEB "Miscellaneous web stuff" PRSUFFIX=C''
+</PRE>
+
+After these commands any files in MYHTML with the extension .HTML (case-insensitive) can now be accessed via procedure commands and the client GUI without giving the extension.  Files in MISCWEB can also be accessed as "procedures" but we just have to give the file extensions too as part of the proc names.  This would be useful if the directory contained various types of file, or even if we just wanted to dispense here with the "hidden extension" scheme normally used to emulate Model 204 procedure names.
+
+<P>Note that if you create new procedures, either at the chevron with the PROCEDURE command or via the various GUI routes, DPT will give them uppercase names unless you issue *LOWER beforehand.  All procedure handling is case-insensitive, but you may prefer lowercase file names for aesthetic reasons.
+
+
+<P><U>Procedures and data in the "same file"</U>
+<BR>Some Model 204 applications operate with one or more files that contain both data and procedures.  This is handled on DPT with a special ALLOCATE parameter to get round the fact that the data file and the proc directory must be allocated on separate DDs. For example
+
+<PRE CLASS=code>
+ALLOCATE APPFILE  C:\DPT\APPFILE.DPT
+ALLOCATE APPFILEP C:\DPT\APPFILEP      ALTNAME=APPFILE
+</PRE>
+
+<P>The ALTNAME means that you can open and use the proc directory using either name.  A context called APPFILE can be opened against both the DDs above, and both procedure and data related processing can be performed in it.  Note that once you open a directory with either its normal DD name or its ALTNAME, that's the name you have to stick with for all "IN xxxxx" type processing. (Unless you open it both ways, which is allowed).
+
+<P>The FREE command can also be used with an ALTNAME, so for example in the above case "FREE APPFILE" would actually try to free two DDs, in a similar way to OPEN.
+
+<P>The <A HREF = "ideuser.html#System_Navigator">Navigator</A> pane on the client shows the ALTNAME whenever one is defined, on the assumption that if you have defined an ALTNAME that's the name you wish to use.
+ 
+
+<A NAME= Alloc_Numerous ></A> <H3>Large numbers of files</H3>
+DPT makes no use of the NFILES, NDIR and NDCBS parameters.  On Windows files can be opened at will until the operating system runs out of memory for its internal control blocks.  In addition there is no limit to the number of dynamic ALLOCATE or FREE commands that can be done for different files during a run.
+
+<P>Database file FCT pages are kept permanently in buffer while any user has the file open, so MAXBUF must be at least as many as the number of files that will be concurrently open in the run.
+
+<BR><A HREF= #Top><BR>Top</A>
+
+
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = File_Administration> <H2> File Creation and General Management </H2> </A>
+
+<UL>
+	<LI> <A HREF = #DBA_CREATING> Creating and initializing</A>
+	<LI> <A HREF = #EXPANSION> Managing file expansion in general use</A>
+	<LI> <A HREF = #REORGS> Reorganization </A>
+</UL>
+
+
+<A NAME = DBA_CREATING> </A>
+<H3>Creating and initializing a file</H3>
+The <A HREF = "language.html#CREATEFILE">CREATE command</A> is the same as on Model 204, apart from the fact that the <A HREF = "m204xref.html#Parameters">range of allowable  parameters</A> is much smaller.  It is at CREATE time that the OS file is expanded to take up a non-zero amount of disk space (in as few contiguous disk extents as possible).  If you re-CREATE an existing file, the file is always deleted and re-created, thus removing any fragmentation.  
+
+<P>From the point of view of the Model 204 FORMAT/NOFORMAT option, the command always behaves as if NOFORMAT were specified (i.e. the quick version), although with large files Windows can still take a few seconds to allocate disk sectors etc.  Fresh pages are formatted by DPT as the file grows.
+
+<P>The space occupied in bytes after CREATE is:
+<PRE>
+    (1 + BSIZE + DSIZE) * 8192
+</PRE>
+
+Where the 1 is the FCT page, and BSIZE/DSIZE are used for M204-familiarity reasons to size the main areas of the file.  
+
+<P>The <A HREF = "language.html#INITIALIZE">INITIALIZE command</A> works much as it does on M204.
+
+
+<!****************************************************************************>
+<A NAME = EXPANSION>
+<H3>Managing file expansion in general use</H3></A>
+If a file fills up one of its tables, UL or API programs will fail in a controlled way, as you would expect.  At that point a Model 204 DBA would consider a number of options, the main relevant one here being INCREASE TABLEx.  With DPT, if there is space left on the disk, the INCREASE command expands a file into it - the space does not come from FREESIZE.  There is no FREESIZE parameter.
+
+<P>Repeated expansion of a file on any platform often causes fragmentation.  On a system like M204, which manages its own data structures within a single OS file entity, repeated expansion of the internal managed structures causes internal fragmentation as well (e.g. repeated alternate INCREASEs of tables B and D), meaning that there are potentially two levels of fragmentation, with the consequent potential performance degradation.  There is currently no facility on DPT to allow the obvious simple solution of over-allocating and then shrrinking to fit (DECREASE is not supported).  This issue may be addressed in future releases.
+
+<P>Finally a note on field definitions.  These are stored in the file in a sequence of pages that will happily extend itself as more fields are defined, so long as there is room in the file.  Therefore, as with M204, it is possible that DEFINE FIELD will cause a file-full condition, but it will be when DSIZE is reached, not ATRPG.  The current usage level of field attribute pages can be seen by looking at the ATRPG parameter (i.e. the existing M204 parameter has a slightly different meaning) and ATRFLD (new parameter).
+
+
+
+<A NAME = REORGS></A>
+<H3>Reorganization</H3>
+
+Various DBA-related operations fall under this heading.  On Model 204, DBAs often use the same Sirius products to perform a variety of miscellaneous alterations and maintenance to files in a relatively straightforward way.  In some cases the same approach can be used on DPT, and in other cases it's even easier, using a single automated command.
+
+<P>On DPT reorganizations can be performed in the following 3 main ways.
+
+<UL>
+	<LI>Index-only reorgs
+	<BR>These are neat and convenient on DPT, using the <A HREF = "language.html#REORG">REORGANIZE OI</A> command, which is much simpler to use than on Model 204.
+	<LI>Basic full-file reorgs
+	<BR>For routine situations the <A HREF = "language.html#REORG">REORGANIZE</A> command is again much simpler than the process on Model 204.
+	<LI>Unload and reload
+	<BR>For anything more complex, you can use a separate <A HREF = "language.html#UNLOADCMD">unload</A> and <A HREF = "language.html#BLOD">load</A>, with other actions in between as appropriate.
+</UL>
+
+
+<P>Since the first two are fully automated, the following are just examples of the third.
+
+<H4>Reorg recipe 1: Change file parameters</H4>
+Very straightforward - the data when reloaded gets stored according to the new parameters.
+
+<PRE class=code>
+=UNLOAD
+CREATE FILE SALES
+BRECPPG = 200
+FILEORG = x'24'
+END
+INITIALIZE
+=LOAD
+</PRE>
+
+<H4>Reorg recipe 2: Delete several fields</H4>
+It can be desirable to reorg in conjunction with the deletion of several fields, since significant table B space can be freed up.  In such cases simply tell the unload not to include anything for the the unwanted fields in the extract files.  Since no file parameters are changing, simply initializing the file is sufficient here.
+
+<PRE class=code>
+=UNLOAD EXCLUDING SALES_2001, SALES_2002
+INITIALIZE
+=LOAD
+</PRE>
+
+<A NAME = REORGS_REDEFINE></A>
+<H4>Reorg recipe 3: Redefine table B storage for several fields </H4>
+Using several <A HREF = "language.html#REDEFINEFIELD">REDEFINE FIELD</A> commands for this would mean DPT would make several read+write passes through table B.  So if you were going to do a reorg anyway it's definitely a good idea to combine that with the table B reformatting.
+
+<P>Insert extra commands after the INITIALIZE to DEFINE the fields with their new storage attributes.  All the other fields will be defined by the load as they were before from the <A HREF = #LOADING_FAST_TAPEF>TAPEF</A> information included in the default =UNLOAD.  During reload the data and/or index values for the affected fields are read in, interpreted as per the old format, then converted and stored in the new format.  (In some cases there may be issues with <A HREF = #NUMERICVAL> unconvertable numeric values</A> during this process).
+
+<PRE class=code>
+=UNLOAD
+INITIALIZE
+DEFINE FIELD PRODUCT_ID STRING ORD CHAR
+DEFINE FIELD COUNTRY_CODE FLOAT
+=LOAD
+</PRE>
+
+<A NAME = REORGS_REDEFINE_2></A>
+<H4>Other field attribute changes</H4>
+Several other options of the REDEFINE FIELD command can be performed on multiple fields during a reorg in the same way as above:
+
+<LI>UP/UE
+
+<LI>SPLITPCT
+<LI>VISIBLE to INVISIBLE
+<LI>NON-ORDERED to ORDERED
+<LI>ORDERED to NON-ORDERED
+
+<P>But some can not:
+
+<LI>INVISIBLE to VISIBLE
+
+<LI>ORD CHAR to ORD NUM or vice versa
+
+<P>Certainly these could be handy in occasional cases, but they are specialized features of the REDEFINE FIELD command which would significantly complicate the internal reorg processsing, and it's not really worth reinventing the wheel for rare cases.  If you need to do these things, in the first case issue the REDEFINE command(s) before the reorg so that the reorg then repacks table B for the larger records.  In the second case it probably doesn't make much difference whether it happens before or after.
+
+
+
+
+
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = LOADING> <H2> Data Loading </H2> </A>
+
+<UL>
+	<LI><A HREF = #LOADGENERAL>General Notes on Data Loading </A>
+	<UL>
+		<LI><A HREF = #NUMERICVAL>Numeric value conversion</A>
+		<LI><A HREF = #STRINGORDNUM>Unusual field attribute combos</A>
+		<LI><A HREF = #LOADSYS>System settings</A>
+	</UL>
+	<LI><A HREF = #LOADM204>Loading data from the mainframe/Model 204 </A>
+	<LI><A HREF = #LOADING_FAST>Fast Unload and Fast Load</A>
+	<LI><A HREF = #DEFERRED>Deferred Index Updates</A>
+	<UL>
+		<LI><A HREF = #DEFERMULTI>Multi-step</A>
+		<LI><A HREF = #DEFERSINGLE>Single-step</A>
+	</UL>
+</UL>
+
+
+<P><HR WIDTH = 50%>
+
+
+<A NAME = LOADGENERAL></A>
+<H2>General Notes on Data Loading</H2>
+
+The following general notes apply to all data storage operations, however they are triggered, for example:
+
+<UL>
+<LI>User language STORE RECORD and/or ADD FIELD statements
+<LI>Fast load via the =LOAD command or $LOAD function
+<LI>REDEFINE FIELD where it triggers storage operations (e.g. non-ordered to ordered)
+<LI>Database API 3GL program
+</UL>
+
+ 
+<A NAME = NUMERICVAL></A>
+<H3>Numerical value conversion </H3>
+An important consideration is that whatever method is used, by default DPT does not allow non-numeric data to be stored in FLOAT fields as M204 does.  This can be thought of as similar to the situation on M204 when FILEMODL=1 for the file (numeric validation).  The DPT parameter FMODLDPT has a similar function, but with system-wide effect instead of file-specific.  Switching the 1 bit off will cause DPT to continue processing with an informational message, and store zero in the field. The same restriction applies to ORD NUM fields too (i.e. there is no "non-numeric" portion of the b-tree for each field).  
+
+<P>When redefining a field from NON-ORDERED or ORD CHAR to ORD NUM, the same comments apply as above.  In other words you can use the parameter to force it so that nun-numeric values in the STRING field on the table B record, or in the ORD CHAR index respectively, are allowed and all amalgamated under a single ORD NUM index entry for zero.
+
+
+<A NAME = STRINGORDNUM></A>
+<H3>Notes about fields with STRING ORD NUM or FLOAT ORD CHAR</H3>
+If you have fields with one of these attribute combinations, DPT is very keen to make the data and index remain synchronized, so there are some things to bear in mind when updating, as follows.  Generally it is simplest to avoid defining fields like this though.
+
+<P>The main thing is that DPT wants to keep things so that the standard conversion of the numeric component results in the string component exactly as it is stored.  To an end user this would mean that a User Language program could be written which would find the index entry given the value off the table B record, or find the record given the value from say an FRV loop.  Internally to the DBMS this conversion is crucial, since when deleting or changing fields on records the index entries must be located using the old values in table B.
+
+<P>One case where this is affects update operations is when a value is supplied in string format and conversion for the numeric component of the field fails.  In such cases (assuming FMODLDPT is set appropriately - see above) <U>both</U> components are stored as zero.  A less-obvious case is when a non-standard but valid numeric string such as "1E3" or "1000.000" is given.  With both of those values the numeric field component is stored as floating point 1,000, and the string component is stored as the standardized version which would be printed by a UL PRINT statement, namely "1000".
+
+<P>With a STRING ORD NUM field in particular, DPT <U>will</U> allow the table B data to be stored as the non-standard but valid number (e.g. 1E3) since it is then still possible for the DBMS during DELETE or CHANGE operations to locate the index entry.  This concession is controlled by the FMODLDPT X'02' bit which is by default active (allow).  Turning off this bit causes the table B data to be converted and stored in standard form ('1000').  You should remember that if you do a User Language DETETE or CHANGE by value, the form stored in table B is used to locate the old value, so for example CHANGE SCORE = '1000' to '2000' would not work if it had been stored as '1E3'.
+
+<P>FLOAT ORD CHAR fields are unaffected by the FMODLDPT X'02' bit.  The ORD CHAR b-tree entry will always be numerically standardized as previously described.
+
+<P>Finally note that if you use fast load and supply your own index information (TAPEI) the above format synchronization is not performed since the data and index updates happen at different times.  If the source is another DPT file or a Model 204 file this should not be a problem though.
+
+
+
+<A NAME = LOADSYS></A>
+<H3>System settings</H3>
+<P>On DPT, like M204, all database update work happens a great deal faster with <A HREF = "sysconfig.html#System_Integrity">TBO and checkpointing turned off</A>.  In fact deferred update mode (see later) actually requires TBO to be turned off.
+
+<P>Unlike general-purpose DBMS processing, dedicated large scale data-load jobs do not benefit from a large buffer pool (MAXBUF), since each page is only written once and not returned to.
+
+
+<P><HR WIDTH = 50%>
+
+<A NAME = LOADM204></A>
+<H2>Loading data from the Mainframe/Model 204</H2>
+
+DPT can not read actual database files created on Model 204, and it cannot read XML or anything like that unless you have your own User Language XML parsing programs.  Therefore data must be extracted from Model 204 to sequential files, transferred between machines (e.g. FTP) and loaded to DPT using either a User Language program, or most efficiently <A HREF = "dbaguide.html#LOADING_FAST">the fast load feature</A> as described later in this document.  A <A HREF = "DBAPI.html">database API</A> program in a lower level language like C++ is a possible third option but that's not for the faint-hearted.
+
+<P>DPT fast load accepts several different data formats (see <A HREF = #App2>appendix</A>), of which the simplest is "PAI" style, as traditionally used on Model 204 and generated by the sample program "DPT_EXTRACT" in DEMOPROC.  If you're prepared to make more effort, the lower-level formats reduce file transfer times and increase load speed at the DPT end (<A HREF = "relnotes_V3R0.html#FastBenchmarks">see benchmarks</A>).  It is also possible to extract and load existing index information rather than have DPT build it afresh during the data load.
+
+<P>So in summary there is a lot of scope for playing around with it, but the simplest data transfer process would be something like:
+
+<OL>
+<LI>Run a PAI program to create a sequential USE file out of Model 204
+<LI>FTP the file to the DPT machine as "<I>filename</I>_TAPED.DAT"
+<LI>Create and define fields to a DPT file (unless adding data to an existing file)
+<LI>Invoke the DPT <A HREF = "language.html#BLOD">=LOAD</A> command
+</OL>
+
+<P>Other general notes however you do it:
+
+<UL>
+<LI>If loading with a User Language program, special care should be taken with integer values extracted via <A HREF = "m204xref.html#Images">BINARY image items</A>, or the <A HREF = "language.html#FUNC_BINARY">$BINARY function</A> because of endianism differences between the mainframe and PC.
+
+<LI>It may or may not be best to enable EBCDIC/ASCII translation as part of the FTP stage.  If all the data is text it should be OK, but if there are binary values in the data, such translation will mess them up.  DPT can do EBCDIC/ASCII translation at its end, either in a UL program via <A HREF = "language.html#FUNC_CHARSET">$ASCII/$EBCDIC</A> or via the EBCDIC fast load option.
+
+<LI>Floating point field data can not be transferred in the binary form that comes out of M204, because of the <A HREF = LI"language.html#Number_Handling">HFP vs IEEE</A> issue, so those numbers must be transferred in string format.
+</UL>
+
+
+
+<P><HR WIDTH = 50%>
+
+<A NAME = LOADING_FAST></A>
+<H2>Fast Unload and Fast Load</H2>
+
+<UL>
+	<LI> <A HREF = #LOADING_FAST_OVERVIEW> Overview </A>
+	<LI> <A HREF = #LOADING_FAST_IO> I/O specifications </A>
+	<LI> <A HREF = #LOADING_FAST_MISC> Miscellaneous notes </A>
+</UL>
+
+<A NAME = LOADING_FAST_OVERVIEW></A>
+<H3>Overview</H3>
+
+This facility, introduced in DPT version 3.0, is a high-performance way of getting information in and out of DPT files.
+
+<P>The so-called "fast" processing is fast for several reasons.  Firstly, even in simple cases it easily beats the equivalent User Language + image program, by bypassing both the UL runtime and DPT's sequential file emulation layer.  Secondly, rather than necessarily generating index entries at load time from the incoming data, there is an option to supply some or all of them them pre-built.  Thirdly, DPT version 3.0 includes a lot of new optimized algorithms in critical places.  The main downside of fast load/unload is that the layout of the input/output files is not infinitely flexible like it is if you write your own load program.
+
+<P>Fast load/unload processing is invoked using DPT commands, or their equivalent UL $functions, all of which have more detailed notes in the DPT language guide - see <A HREF = "language.html#UNLOADCMD">=UNLOAD</A>, <A HREF = "language.html#BLOD">=LOAD</A>, <A HREF = "language.html#FUNC_UNLOAD">$UNLOAD</A>, <A HREF = "language.html#FUNC_LOAD">$LOAD</A>. The GUI interface in the <A HREF = "wizard.html">File Wizard</A> utility is also convenient for ad-hoc jobs.
+
+<P>Users and DBAs might typically make use of these features to perform 'custom' reorg as covered in the <A HREF = #REORGS>reorgs section</A> of this document, or to load data previously extracted from a Model 204 system on the mainframe.  In addition to these situations, DPT uses the fast unload/load functionality under the covers during processing of the <A HREF = "language.html#REORG">REORGANIZE</A> command and some <A HREF = "language.html#REDEFINEFIELD">REDEFINE FIELD</A> commands.
+
+
+
+
+<A NAME = LOADING_FAST_IO></A>
+<A NAME = LOADING_FAST_NAMES></A>
+<H3>I/O specifications </H3>
+
+The output generated by fast unload and the input required by fast load can be varied to a certain extent, but not infinitely.  The contents of the files is described in detail in <A HREF = #App2>Appendix 2</A>.
+
+<P>In addition, the files must always conform to the following naming convention (you can alter the directory with command options).
+
+<P><U>Unload</U>
+<BR>A complete unload creates the following output files:
+
+<UL>
+	<LI>1 x Field definitions
+	<LI>1 x Data from table B
+	<LI>N x Index information (1 per field extracted)  
+</UL>
+
+So, assuming a file "SALES" with two indexed fields "AGENT" and "REGION", the extract files would have the following names, respectively: 
+
+<UL>
+	<LI>SALES_TAPEF.DAT
+	<LI>SALES_TAPED.DAT
+	<LI>SALES_TAPEI_AGENT.DAT
+	<BR>SALES_TAPEI_REGION.DAT
+</UL>
+
+<P><U>Load</U>
+<BR>When issuing the =LOAD command, the type of information loaded depends entirely on which, if any, files matching the above name pattern are present in the input directory.  In addition, depending on options, the load is capable of accepting index information for all fields in a single file, namely:
+
+<UL>
+	<LI>SALES_TAPEI.DAT
+</UL>
+
+The internal structure of which is covered in <A HREF = #LOADING_FAST_TAPEI_SINGLE>appendix 2, here</A>.
+
+<A NAME = LOADING_FAST_MISC></A>
+<H3>Miscellaneous notes </H3>
+
+<P>Fast unload and fast load increment most stats but there are some they don't because they bypass the regular processing.  For example BADD is not incremented during a load, since table B records are usually written in a single block, and depending on the active options fast load may not even look at the fields within the record.
+
+<P>Fast load will take account of the reuse queue in RRN files, but if the reuse queue pages are highly fragmented that will severely hamper its ability to load records in large extents.  RRN files should be reorganized regularly anyway.
+
+
+<P><HR WIDTH = 50%>
+
+<A NAME = DEFERRED></A>
+<H2>Deferred index updates</H2>
+
+<UL>
+<LI><A HREF = #DEFEROVERVIEW>Overview </A>
+<LI><A HREF = #DEFERMULTI>Multi-step deferred updates</A>
+<LI><A HREF = #DEFERSINGLE>Single-step deferred updates</A>
+</UL>
+
+<A NAME = DEFEROVERVIEW></A>
+<H3>Overview</H3>
+
+Any or all files on DPT can be put in "deferred update mode", which means that as database changes are made, the data (table B) area of the file is written directly as usual, but the indexes (table D) are not.  All the index updates are kept back ("deferred") so that they can be collated and applied more efficiently later on.  Clearly the data and indexes get out of step, and searches issued before the index updates are finally applied may not return the expected results - a warning message is issued when files in this mode are opened, as on M204.
+
+<P>DPT's deferred update facilities are a little more basic than Model 204's. Specifically, the feature was added to DPT for use in straightforward load jobs rather than more general processing, and as such only allows record STORE and field ADD operations to be deferred.  Other types of update will fail when deferred update mode is active for a file.  Deferred update mode can also only be activated when the system as a whole has TBO turned off.
+
+<P>There are two flavours of deferred update processing covered in this section, as follows.
+
+<UL>
+<LI>The first (<A HREF = #DEFERMULTI>"multi-step"</A>) is where the index updates are written to sequential files, which you then sort externally and reapply in a later DPT job step.  This can be complex to configure (there is a sample .BAT job in the download), and requires an external sort facility.
+
+<LI>The second method (<A HREF = #DEFERSINGLE>"single-step"</A>, similar to Model 204's FILELOAD utility) is where the index updates are collected, sorted and applied, all within the main memory of the same DPT host run.  This is much simpler to set up, and much more efficient too.  It is preferable to multi-step mode in all situations.
+
+</UL>
+
+
+<P><HR WIDTH = 50%>
+<A NAME = DEFERMULTI></A>
+<H3>Multi-step deferred updates</H3>
+
+Note: As of version 2.14 this feature is not recommended.  It still works, but has been superseded by the faster and much simpler single-step process (see <A HREF = #DEFERSINGLE>later</A>).  These reference notes will remain here for the time being.
+
+<A NAME = DEFERRED></A>
+
+<H4>Step 1: Activating multi-step deferred update mode</H4>
+
+As with Model 204, this is achieved using a <A HREF = "language.html#OPEN">special form of the OPEN command</A>, giving two sequential file names, one to be used for updates to ORD NUM fields, and the second for updates to ORD CHAR fields.  You can also specify some options for altering the format in which index information is written to these files.
+
+<P>Note that like on Model 204, only the first OPEN statement for a file in any given run should have this special form.  After that, use plain OPEN or OPENC as normal, and the file remains in deferred update mode.  Further adorned OPEN commands fail.  If the file is freed, or the system restarted, a new adorned OPEN command must be issued before updates can be performed again (since the file remembers it is in deferred update mode even when the system is down - FISTAT X'20' is stored on the FCT page)
+
+<H4>Step 2: Make record updates</H4>
+
+<P>Once the deferred update sequential files are attached, field add operations from both STORE statements and explicit ADD statements get applied to the data part of the file directly, but not to the indexes.  Index updates are written to one of these two files.
+
+<H4>Step 3: Sorting the intermediate sequential files</H4>
+
+The apply step (below) will work if you don't sort the deferred index update records, but that would somewhat defeat the object of the exercise.  Both files should be sorted into {Field ID, value} order.  Sorting them by field ID means that the load step can build each field's index in turn, giving the best ultimate physical localization of logically adjacent b-tree and inverted list pages.  Sorting by value produces well-packed b-tree nodes.
+
+<P><A HREF = #App1>Appendix 1</A> contains a description of the various record layouts in which DPT might generate sequential deferred update data. If you don't simply crib the sample job, that information will be required to configure the sort program parameters.
+
+<P>Home users perhaps don't have a file sorting utilities to hand.  Well there are plenty available on the web, and some are even free.  Development of this area of DPT was been done using a freeware program called CMSORT (www.chmaas.handshake.de), which is a very basic easy-to-use tool, and works very well even on large files of tens of millions of deferred update records.  It is not really ideal though, mainly because it cannot sort raw floating point values.  The demo batch job which comes with the DPT download and uses CMSORT therefore uses numeric <A HREF = #App1>format N2</A> (stringized numbers). 
+
+<H4>Step 4: Applying the deferred index updates</H4>
+
+This is achieved using the <A HREF = "language.html#Z">Z command</A>.  Z assumes that there will be two sequential files allocated to the system, and in this case they must have specific DD names, TAPEN and TAPEA, with the obvious assumption of contents.  (The fact that these names must be used echoes the situation on Model 204 where the combined file at this stage must be called "SORT5").  In the case of the numeric file Z will assume the records are formatted as per the defer phase earlier.
+
+<P>When loading deferred updates that are well sorted, not only does it happen very quickly, but you can pack b-tree nodes much more tightly without fear of later values coming along and causing splits.  Set SPLITPCT for the indexed fields up to the percentage fullness that you would like the nodes to finish on.  The choice of this value would depend on how much further updating you were expecting after the load - for completely read-only files you may as well  pack nodes to the maximum degree (SPLITPCT=99 assuming ascending sort order).  If randomly-ordered new values are expected after the load, set SPLITPCT to something nearer its default value of 50 to minimize the number of splits caused by those later updates.
+
+<P>After Z has finished it is assumed by the system that the file is in a physically consistent state, and FISTAT X'20' is turned off.  It trusts that you (or the sort) haven't lost or corrupted any of the index updates.  If that happened, either the Z command would fail, or the file would crash later during general use.  To load a set of index updates in multiple file chunks for whatever reason requires that the file is re-opened into deferred update mode again after the Z for each chunk.
+
+<P>As with the first step of the process, a large buffer pool is of no real benefit here, since each b-tree node and inverted list page is only written once and never retrieved again.
+
+
+
+
+<P><HR WIDTH = 50%>
+
+<A NAME = DEFERSINGLE></A>
+<H3>Single-step deferred updates</H3>
+
+<P>Available from DPT V2.14, this mode is always preferable to multi-step, being much simpler to set up, and almost certainly much faster (e.g. see version 2.14 release notes <A HREF = "relnotes_V2RX.html#V214LOADS">benchmarks</A>.)  For typical data loads, the fast load feature is much faster still, but since they share a lot of code underneath, the following notes are not obsolete.
+
+  
+<H4>Processing overview</H4>
+In single-step mode, the deferred index [field=value] pairs are not written out one at a time to sequential files as above, but are held in memory 
+in data structures similar to the form they will eventually take in table D.  So when the time comes, this information can be used to build the final indexes with minimal further sorting or restructuring.  For example no separate sort step is required becuase the deferred index values are held in an ordered tree structure.  Inverted lists are built exactly as they will go into table D (arrays and bitmaps).
+
+<P>The index data is written out when the last user closes the file, or if there is more data than will fit in real memory, periodic partial flushes are performed as and when memory fills up.  The user has some control over exactly when and how these flushes happen.
+
+<P>Compared to the multi-step process, this scheme
+
+<UL>
+<LI>Saves a lot of sequential file I/O
+<LI>Bypasses many layers of code that the multi-step process invokes for M204 emulation reasons
+<LI>Sorts very efficiently by using compact data structures and linking the sort closely to the original record update process
+</UL>
+
+<H4>Loading data using single-step deferred updates</H4>
+Simply use the <A HREF = "language.html#OPEN">special form of the OPEN command</A> for one or more files, and then a User Language STORE/ADD program (or API program) as if updates were not being deferred.  When the affected files are finally closed, the load is complete - no extra job steps (sort or Z) are required.
+
+<P>Each time DPT performs a partial or final flush of the index data, a block of statistics and other information is written to the audit trail, so you can see how things are progressing, and tweak various file and field parameters etc. for next time if required.
+
+<H4>Use of memory</H4>
+Needless to say, the more memory you have installed the better.  DPT automatically tries to take advantage of what RAM there is, but you can restrict its appetite with the <A HREF = "m204xref.html#LOADXXXX">LOADMEMP parameter</A> if desired.
+
+<P>On a machine with other major applications running, specifying too high a figure here could cause memory wars and result in a lot of Windows page file access, thus defeating the whole point.  The best approach is of course to run loads on an otherwise-quiet system, and give DPT as much memory as possible.  The optimum value will depend on each machine (amount of RAM installed) and Windows version (Vista for example has a large working set, but reportedly suffers less from heap fragmentation).  Check Task Manager during the load - an increasing value in the 'page faults' column would indicate Windows swap file access, which is not good.  Note that many versions of Windows Task Manager under-report process memory usage, or at least the Task Manager interpretation of the data is not what you might expect.
+
+<P>If LOADMEMP is specified too low, a load may start but give up after one or more chunks (leaving the file physically inconsistent).  This is simply a consequence of the fact that below a certain point it is not really possible to equate Windows heap (virtual memory) usage with a "% physical RAM usage".  Generally it doesn't make sense to run with much less than the maximum anyway, in which case this shouldn't be a problem.
+
+<P>Like a multi-step load, this process does not benefit from a large "regular" (MAXBUF) buffer pool.  In fact, since every 8K buffer page allocated is 8K less for sorting deferred updates, the single-step process actually insists on a small buffer pool.
+
+<P>The single-step process makes heavy use of Windows heaps, which can become fragmented over time.  During a long load you may see the size of later chunks become a little smaller than earlier ones.  This is normal.
+
+
+
+
+<H4>Use of disk space</H4>
+In a large load there will be too much index information to fit in memory.  When memory is used up, DPT will do one of two things.  Accepting the default is always OK, but with some experimentation you may be able to shave a little off your load run times and save on temporary disk space usage.  The two options are:
+
+<OL>
+<LI>Write the sorted information to scratch files (default)
+<BR>Then when the file is finally closed, these files are merged and the index b-trees and inverted lists are built in one pass.  
+
+<LI>Go straight to table D
+<BR>Later chunks then add to the index information (b-tree inserts etc.)
+<BR>Select this option with the special DPT field attribute <A HREF = "language.html#DEFINEFIELD">"NO MERGE"</A>
+</OL>
+
+Option 1 uses potentially a lot of temporary disk space - at the end just before the merge there will be a set of scratch files occupying almost exactly the same disk space as the final table D structures in the DPT file.  Option 2 on the other hand does its "merging" in place in table D, using no other temporary files.  If all the index information for the entire load fits in memory, there is no difference between the two methods - DPT will not bother with a needless trip to a scratch file and back.
+
+<P>Depending on the data characteristics, building an index b-tree once and then  enlarging it again and again (option 2) can be extremely expensive, and this is why option 1 is the default.  However, choosing option 2 can give somewhat improved speed in some cases, by avoiding sequential I/O and the merge.  Specifically, it is worth trying for:
+
+<UL>
+<LI>Few-valued fields where the complete b-tree gets built in the first chunk (e.g. US STATE will have only 50 values).  Later chunks just have to write new bitmaps, which is very fast, although there is some extra BXFIND overhead.
+<LI>Many-valued fields which are loaded in order (e.g. CUSTOMER ID - usually only one such field per file).  With these fields chunks 2..N are just adding new b-tree leaves to the end, so NO MERGE doesn't even incur extra BXFINDs and is optimal.
+</UL>
+
+It's easy enough to experiment with your data to see if the NO MERGE option will be of any benefit.  The time savings are not usually enormous but can be worthwhile when the number of chunks becomes large (especially if file handles are an issue - see below).  Plus of course if you're really short on disk space you could even enable NO MERGE for more fields at the cost of a slower load.
+
+<H4>Other notes about the single-step process</H4>
+<P><U>SPLITPCT:</U> 
+<BR>B-tree entries are loaded in order by this process, so SPLITPCT=99 is right in most cases, assuming the file is empty to start with.  If you have some NO MERGE fields that will be getting some leaf splits, set SPLITPCT to some value less than 99 as appropriate.
+
+<P><U>Updating multiple files</U> 
+<BR>If several files are updated in single-step mode at the same time, updates are offloaded to temporary sequential files whenever any file update detects that LOADMEMP% has been reached.  Note however that the file only then offloads its own deferred updates.  Normally this is no problem, since if all files are getting plenty of updates each will offload occasionally and memory will get used productively, even if the average offloaded chunk size is a lot smaller than it would be in a single-file update situation.  However it is possible that one or more files might sit for some time hogging a lot of memory but neither getting closed nor receiving many more updates, thus causing other files to repeatedly offload sooner than necessary.  In cases like this make sure all users close files when their updates are finished, or if updates to one file come in bursts among updates to other files followed by long delays, the <A HREF = "language.html#Z1">=Z1</A> command allows you to request offloads explicitly, and you can issue this periodically as required, for example via $COMMBG.
+
+<P><U>OS File handles during merge</U> 
+<BR>Since host machines and OS platforms vary, performing larger loads on smaller platforms may require so many chunks than the merge phase cannot open all the temporary files concurrently.  In such cases the merge happens in more than once pass.  Generally this is transparent but the user does have some control if required using the <A HREF = "m204xref.html#LOADXXXX">LOADMMFH parameter</A>.
+
+<P><U>Diagnostics</U> 
+<BR>At diagnostic level 4 (LOADDIAG parameter) some of the stats gven are estimates, since it is not known at the end of a chunk whether an inverted list will eventually become e.g. a table D list or bitmap.
+<LI>Single-step deferred update mode is referred to in some messages as "fast index build mode".  This reflects the fact that it is used by DPT internal processing as well as user code.  For example REDEFINE of a field from non-ordered to ordered means an index must be built, and the single-step process is used to do that.
+
+
+
+
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Groups> <H2> Groups </H2> </A>
+
+DPT supports group processing, and in the vast majority of cases things should work the same as they do on Model 204.
+
+
+<H3>Defining groups</H3>
+<P>As with subsystems there is no option to store groups permanently - they must be defined in each run, for example by user 0 as illustrated in the demo installation.  However, for compatibility reasons, and also to maintain the distinction between system-wide groups and user-specific groups, the TEMP and PERM options on CREATE GROUP are still used - PERM meaning simply a system-wide group, and TEMP a user-specific group.  Apart from this there is no difference in processing between the two types of group (for example, on Model 204 when closing a temp group the individual files are left open, whereas on DPT they are closed, if appropriate, with either type of group). Ad-hoc groups are allowed in UL, and are effectively closed, and deleted, at the end of the request.
+
+<P>On DPT, the files making up a group do not have to have the same set of fields, but if they share any fields, the field definitions must be the same (in every respect except SPLITPCT and UP/UE, which control internal processing and do not affect anything which directly impacts on the user).  This is slightly more strict than Model 204, where the system attempts to make the best of things.  In most cases however, if field definitions differ, it is either a failure of DBA procedures or the fields are not actually the same thing, so to flag it up is in everyone's interest.  Also it greatly simplifies the processing of operations like searches in group context.  
+
+<P>To summarise: Field references only fail compilation if none of the group members contains the field.  At run time in a FOR EACH RECORD loop, if the current record is in a file that does not possess a field, printing or otherwise reading the value will behave as if the field was simply missing from the current record, and attempting to update it will cause an error.  In FIND processing, only group members with the field defined are considered as potentially having any records for the final set.  In a STORE of course the UPDTFILE must have all the specified fields.
+
+<H3>Procedure file groups</H3>
+There are some specific considerations for procedure processing in group context, because of the <A HREF = #Procedures>differences from M204 in the handling of procedures</A>.  In short, whenever you define a group it is potentially available as both a procedure file/directory group and a database file group.  However, it can't be a mixture of the two.
+
+<P><A HREF= #Top>Top</A>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Procedures> <H2> Procedures and Procedure Files</H2> </A>
+
+Procedures are text files.  "Procedure files" as we know them from Model 204 are directories.  This scheme is more appropriate and natural in the PC environment, although it does introduce one or two complexities - read on.
+
+<UL>
+	<LI><A HREF= #Proc_Targetfile > The target file for commands and User Language</A>
+	<LI><A HREF = #Proc_Cmds> Procedure-handling command behaviour</A>
+	<LI><A HREF = #Proc_OSNames> Directory location and OS file names of procedures</A> 
+	<LI><A HREF = #Proc_Groups> Procedure file groups</A> 
+	<LI><A HREF = #Proc_Temp>Temporary procedures </A>
+	<LI><A HREF = #SEMICOLON> Semicolons in procedures </A>
+	<LI><A HREF = #Proc_Misc> Other issues </A>
+</UL>
+
+
+<A NAME = Proc_Targetfile> </A> <H3>The target file for commands and User Language</H3>
+The Model 204 notion of "opening" a "procedure file" is equivalent to making available an OS file directory, similar to the DOS "cd" command.  When you open a file on Model 204 using the OPEN command, the CURFILE parameter is set, and this file is assumed to be the target of any file-related commands or UL statements that are not otherwise directed using IN FILE/IN GROUP etc.  On DPT, because of the fact that procedures are not "packaged" inside table D of M204 files, a distinction is made between procedure-file-related commands (such as DISPLAY PROC), and data-file-related commands (such as DEFINE FIELD), and there is a separate parameter indicating the current default procedure file, namely CURDIR.
+
+<PRE CLASS=code>
+OPEN MYDATA         //sets CURFILE
+OPEN MYPROCS        //sets CURDIR
+</PRE>
+
+
+<P>If this sounds confusing, in practice it is normally transparent to the user.  Where there is a <A HREF = #Alloc_ProcDir>data file and a procedure directory with the same name</A> OPEN, CLOSE and DEFAULT are special commands, operating on both "sides", (i.e. they may change CURDIR as well as CURFILE).  To clarify what is going on, DPT issues distinct messages for procedure directories and data files, so these commands/statements may each sometimes generate two messages.
+
+<PRE CLASS=code>
+OPEN MYDATA
+BB.4001 Database file opened
+OPEN DEMO
+BB.3001 Procedure directory opened
+BB.4001 Database file opened
+</PRE>
+
+<P>There are other small differences in the processing of the <A HREF = "language.html#DISPLAYFILE">DISPLAY FILE</A> command and the <A HREF = "language.html#ITSOPEN">$ITSOPEN function</A>.  The <A HREF = "ideuser.html#System_Navigator">Navigator</A> pane in the client GUI also shows procedure and data files separately, and provides different command options for each.
+
+<A NAME = Proc_Cmds> </A> <H3>Procedure-handling command behaviour</H3>
+Since we are not maintaining an internal procedure directory like Model 204 does in table D, we can not exactly provide every piece of information that is held for each procedure on M204. Likewise there is no notion of procedure aliases, so RENAME PROC is a straight OS file rename.
+
+<P>PROCEDURE, DELETE PROC and most <A HREF="language.html#DISPLAYPROC">flavours of DISPLAY PROC</A> work as usual.
+
+<P>Creating a "procedure file" is a trivial matter of creating a new OS file directory, which can be done with external utilities or using ALLOCATE ... NEW.  Traditional file parameters such as PDSIZE are irrelevant.
+
+<A NAME = Proc_OSNames> </A> <H3>Directory location and OS file names of procedures</H3>
+
+After allocation procedure directories are referred to using 1-8 character "DD names" as we are used to from the mainframe. 
+
+<P>The file name extension of the underlying text files representing procedures is by default expected to be ".txt", although this is a resettable user parameter, <A HREF = "m204xref.html#PRSUFFIX">PRSUFFIX</A>, and can also be <A HREF = #Alloc_ProcDir>overridden on a per-file basis</A>.  So when accessing procedures you never have to specify the extension (if you don't want to), and procedure names can look pretty much as they would on the mainframe.  
+
+
+<P>As for the rest of the procedure name, a possibly inconvenient consequence of using actual OS files for procedures instead of implementing "table D" arises because of prohibited characters in file names.  On Windows, file names may not contain any of the following:
+
+<PRE>
+\ / : * ? “ < > |
+</PRE>
+
+Model 204 on the other hand disallows these in procedure names:
+
+<PRE>
+= , ; ' space
+</PRE>
+
+Not so much as a slight discrepancy but a complete failure to overlap in any way!  The convention adopted on DPT is that none of these two sets of characters are allowed in procedure names.  DPT will not (currently) allow you to specify procedure names with quotes around them in any situation.
+
+<P>Since the CASE parameter will normally be set to *UPPER, most of the time the procedures you create will be named in uppercase.  However, as mentioned earlier, <A HREF = #Alloc_DirLoc>case of will often not be relevant when referring to them</A> by name.
+
+<A NAME = Proc_Groups> </A> <H3>Procedure file groups</H3>
+On DPT, all groups you define can be used in both procedure directory and database file context.
+
+<P>The way it works when you OPEN a group is similar to the non-group case, in that the system attempts to open two group contexts with that name, one for data operations and one for procedures.  If the group members are all valid directories and valid database files, both group contexts will open successfully, and both types of operations will become available.  If only one or the other flavour opens successfully, that's still OK, with an error message being issued only if neither can be opened.
+
+<P>In procedure file group contexts the PROCFILE parameter is always effectively "*", meaning that the group members are searched sequentially for a procedure during INCLUDE, DISPLAY etc. processing.  Any UPDTFILE specified is ignored by procedure-handling commands.
+
+<P>The decision to handle groups in this way has one or two minor complications.  Firstly it is not possible to have a single group which contains a mixture of pure data files and pure procedure files, since it will not open completely either way.  Secondly, since PROCFILE is always effectively "*", the PROCEDURE command and editor/SAVE do not work in group context.  
+
+<A NAME = Proc_Temp> </A> <H3>Temporary procedures</H3>
+These work pretty much as normal.  If you find yourself running out of temporary procedures, NORQS is a user-resettable parameter, so you can increase it without restarting the system. Decreasing to zero and then re-increasing is one way of deleting all temporary procedures.
+
+<P>For interest, the temporary procedures are stored in the "#USERTMP" directory, which is created at system start up, and deleted at shut down time.  Each user's temporary procedures are stored in sub-directories of that, and are deleted when the user logs off.  You should not store other files in there though, or the system may not be able to clear it down properly.  For this reason the ALLOCATE command will disallow any attempt to allocate this directory or any files/directories inside it.
+  
+<P>One of the front end <A HREF = "ideuser.html#Editor_Options">disconnect options</A> mentioned above makes it so that temporary procedures need not always be lost when a user thread ends (e.g. you accidentally cause a serious error which bumps you off and you lose half an hour's work in proc zero).
+
+<A NAME = SEMICOLON> <H3>Semicolons in procedures</H3> </A>
+On Model 204 a semicolon in a procedure is indistinguishable from end-of-line, since the physical storage format in table D uses semicolons to represent line ends.  (NB. ignoring here the LINEEND parameter, which does not exist on DPT).  Many people make use of the behaviour of semicolons on a day-to-day-basis, for example to enter ad-hoc requests:
+
+<PRE CLASS=code>
+b;fpc;end
+</PRE>
+
+equals
+
+<PRE CLASS=code>
+b
+fpc
+end
+</PRE>
+
+or to force a line split in the editor, which happens in a much more visual way on DPT.
+
+<P>At the DPT command line, semicolons used as in the above example have the same effect, namely to "queue up" multiple logical input lines.  Procedures on DPT (just text files remember) can contain semicolon characters, but when those procedures are included the semicolons have the same effect as they do on Model 204.  However, the <A HREF = "ideuser.html#SEMICOLON">DPT Editor takes steps to avoid this situation if possible</A>.
+
+<A NAME = Proc_Misc> 
+<H3>Other issues with procedures</H3> </A>
+Procedures can contain lines longer than <A HREF = "m204xref.html#STRINGMAX">STRINGMAX</A> (default = 255) characters.  Ths system issues a warning message when such a procedure is saved, and $RDPROC truncates the long lines when it retrieves them.
+
+
+<P><A HREF= #Top>Top</A>
+
+
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = BLOBs> </A>
+<H2>Binary Large Objects (BLOBs)</H2>
+
+<UL>
+<LI><A HREF = #BLOBGENERAL>General notes</A>
+<LI><A HREF = #BLOBUSAGE>Usage</A>
+<LI><A HREF = #BLOBSTRUCTURES>Notes on the file data structures</A>
+<LI><A HREF = #BLOBInfo>Diagnostics</A>
+<LI><A HREF = #BLOBOther>Miscellaneous other points</A>
+</UL>
+
+
+<A NAME=BLOBGENERAL></A>
+<H3>General notes</H3>
+
+<P>DPT provides a slightly simplified implementation of M204's large object facility (CLOBs/BLOBs/Table E).  In some details the behaviour of DPT differs from Model 204, but it's not that different. The following notes clarify the similarities and differences between the two implementations.  Further details can be added if anybody's interested.  
+
+<P>The "BLOB" field attribute also implies STRING, and cannot be an indexed field.  DPT does not support a "CLOB" variation like Model 204's, where the system converts to/from ASCII/EBCDIC at any stage - everything is ASCII.  You can of course explicitly convert using $E2A/$A2E during extracts/loads, or use the equivalent option on DPT fast unload/load if they are involved anywhere.  On a similar subject, using <A HREF = "language.html#FUNC_LZW">$LZW</A> with BLOB data prior to storage might save some disk IO with large text fields on cheap disks, although it might or might not be more efficient overall depending on field access patterns.
+
+<P>BLOBs can be up to 2Gb each in size.
+
+<A NAME=BLOBUSAGE></A>
+<H3>Usage</H3>
+
+<P>BLOB fields on DPT can be used as if they were normal STRING fields in nearly all respects.  The following points give some additional information.
+
+<P><U>User Language:</U>
+
+<BR>The DPT parameter STRINGMAX should be set to a high enough value in order to run User Language programs that access BLOB fields, otherwise the long values will get truncated as they're manipulated by the UL runtime.  Also it will not be possible to define sufficiently large string variables to hold them.
+
+<P>The standard STORE, ADD, INSERT, CHANGE and DELETE statements can deal with BLOB fields on DPT as if they were regular STRING fields.  The M204 statement extensions dealing with table E reserve space and M204's "universal buffer" are not supported, since the implementation is not as complicated as that (see below).  The <A HREF = "language.html#PRINTALLINFORMATION">extensions to the PAI and PAI INTO statements</A> are however supported.
+
+<P>$Functions:  
+$LOBLEN is identical to $LEN.  $LOBRESERVE is not supported. <A HREF = "language.html#FUNC_LOBDESC">$LOBDESC</A> is a custom DPT function.
+
+<P>As previously mentioned, BLOB fields may not be indexed.  It is however possible to perform FIND statements on them, which are considered to be "table B searches" and are controlled by the same parameters (MBSCAN) and other considerations, although of course table E disk reads would also be required.  For a similar reason, changing or deleting occurrences of multiply-occurring BLOB fields is much more efficiently done by specifying the occurrence number rather than the old value.
+
+<P>The User Language pattern matcher will do its brave little best with BLOB data, but such operations won't necessarily be quick.  Only the <A HREF = "language.html#Pattern_Matching">simplest of patterns</A> are likely to be usable in certain situations, such as database finds against lots of very large objects.
+
+<P><U>Commands:</U>
+
+<BR>DEFINE FIELD, REDEFINE FIELD and DELETE FIELD work as normal.  REDEFINE reclaims space from table E if the field becomes NBLOB.  DELETE reclaims space from both table B and table E.
+
+<P>The TABLEB command and its flavours obviously only consider the descriptor value when analyzing table B pages.  The TABLEE command is not supported (but see below for some other sources of information), and there is also no COMPACTE command.
+
+<P>=UNLOAD and =LOAD can handle BLOB fields although they may require a <A HREF = #LOADING_FAST_TAPED_PAI>slight format variation</A> if "PAI" mode is used.
+
+<A NAME=BLOBSTRUCTURES></A>
+<H3>Notes on BLOB data structures</H3>
+
+<P>Large object data is stored on pages in the <A HREF = #Struc_Heap>"heap" file area</A>, that is, the part that isn't table B.  In other words DPT takes the same approach with "table E" as it does with "table A", which is that it isn't a separate file area but part of table D, along with everything else except the data.  The terms "table E" and "table A" are however still useful, to mean the data substructures within table D which manage field descriptions and BLOB data respectively.
+
+<P>For BLOB field occurrences the table B record contains a 10 byte string value composed from binary integer representations of the primary table E page number (4), the slot number on the page (2), and the BLOB's full size (4).
+
+<P>Table E pages have the same layout as table B pages (i.e. a slot pointer area and a main data area).  Like table B records, BLOBs can also have extensions making them span more than one page. Note therefore that this is different from M204 where each non-null BLOB field takes an entire table E page, even if it only uses a small part of it.  DPT can therefore be thought of as more willing to efficiently handle BNSLOBs (binary not-so-large objects).  There is no "ERECPPG" parameter controlling the density of BLOBs on table E pages.  Or rather there is an effective parameter hardcoded at 32, meaning < 1% wastage for the slot area if BLOBS are large (more than one page each), and giving efficient packing down to BLOB sizes of around 256.  In the special case of zero-length BLOBs, neither a slot nor any table E page space is used, although table B still holds the descriptor.  The main drawback with the flexibility of this scheme is that if many BLOBs are in the size range 4K-8K some of them will end up spanning two extents instead of one.  You win some you lose some - ERECPPG can be introduced if anybody wants it.
+
+<P>Since the layout of table E pages is very similar to that of table B pages, the same issues relating to item expansion, reserve space, and page reuse might be thought to apply.  However, since typical BLOBs occupy a significant part of a whole page or many pages, and are always entirely deleted and rewritten during amendment, there would be no benefit in having resettable "ERESERVE" or "EREUSE" parameters, and the corresponding page use and reuse processing is hardcoded.  (The trigger point is half a page).
+
+<P>The currently-active BLOB page is indicated for reference by the value of the EACTIVE file parameter, similar to DACTIVE and ILACTIVE.  This is different from M204 where table E is a contiguous area, and has a currently-active page shown by EHIGHPG, analogous to BHIGHPG.
+
+<P>The "table E" pages within table D are not maintained in a contiguous area but are just mixed in with other things like btree nodes and inverted list bitmaps, as each is allocated.  Also, DPT makes no specific attempt to keep BLOBs for the same record, or extents of the same BLOB, together, although in general usage both will often apply, and will always apply after a reorg.  When all of table D has been used once and starts getting shuffled via the reuse queue, a reorg may improve BLOB access times if they're critical.  Keeping BLOBs in their own file or group member with mininal indexing might also reduce such conflicts of interest in table D.
+
+
+<A NAME=BLOBInfo></A>
+<P><U>Diagnostics</U>
+
+<BR>In addition to the things mentioned previously, DPT also provides the following sources of data structure information:
+
+<UL>
+<LI>The *RECINFO print item (similar to the standard <TT>*RECORD</TT>) now gives some information about BLOB fields on a record.
+
+<LI>You can VIEW the read-only parameter DPGS_8, which is one of the broken-down subtotals of the standard DPGSUSED value, which indicate the numbers of the various types of page in table D.  Or VIEW TABLES to see all that kind of stuff of course.
+
+</UL>
+
+<A NAME=BLOBOther></A>
+<H3>Miscellaneous other points</H3>
+
+<P>Printing large BLOB values to various destinations is handled as follows. 
+
+<UL>
+<LI>To an IODev7 terminal (i.e. DPT client), the DPT socket comms routines truncate the line at 32K.  
+<LI>To a USE PROC will write entire BLOB values, but subsequent attempts to DISPLAY or EDIT such a proc may fail depending on the nature of the BLOB data.  If it's text lines it will read back in OK, but arbitrary binary data like image files will probably be rejected by the DPT procedure-handling routines as "not text", which it regards as anything with insufficiently frequent newline characters, or put another way, "lines" longer than 32K.  
+<LI>To other USE destinations like OUTXXX sequential files or EMAIL there are no problems.
+<LI>Routing BLOB data via other IO routes like the $SOCK... and $FILE... functions should also give no problems.
+</UL>
+
+<P>Manipulating BLOB fields increments the same statistics as normal STRING or FLOAT fields - BADD, BCHG, etc.  No  separate stats are (currently) maintained when table E values are added or removed, although you will see DKPR/DKWR etc. registering the extra page accesses.
+
+<P>Access to table E is protected by the DIRECT CFR: it is considered part of the record data.
+
+<P>During transaction backout of User Language delete operations, reinstated BLOBs will almost certainly not have their previous locations in table E.  In other words, the descriptor reinstated onto the table B record will be different from before.
+
+<P><A HREF= #Top>Top</A>
+
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = File_Sharing> <H2> File Sharing Considerations </H2> </A>
+
+<UL>
+	<LI><A HREF= #Share_Phys > Physical file sharing</A>
+	<LI><A HREF= #CFR > Structure locking</A>
+	<LI><A HREF= #Share_DBA > DBA activities</A>
+	<LI><A HREF= #Share_RecLock > Record locking</A>
+	<LI><A HREF= #Share_Other > Other sharing issues</A>
+</UL>
+
+
+<A name = Share_Phys></A>  <H3>Physical file sharing</H3>
+DPT opens most files, including importantly database files, in OS exclusive mode, which means you can't share files between concurrently-active onlines - as if you would ever want to do this on your PC.  Would you...?  This is one reason the internal logical file lock and the ENQCTL command are not used on DPT.
+
+<P>Within the DPT host, file sharing between users is controlled using a shared/exclusive scheme based on the type of access required, and this works pretty much as you would expect.  For example if one user opens a sequential file for image writing, they need an exclusive lock.  Including a procedure requires just a share lock on its .txt file, and so on.
+
+<A name = CFR></A> <H3>Structure locking</H3>
+This term means the locks that the system places in order to synchronize access to various physical file structures such as b-trees and the record locking table.  
+
+<P>Within a server application such as DPT, structure locks can be implemented in a number of ways of varying sophistication, and a lock which maintains a user id, the time that the lock was placed, and other associated information like who's waiting to get the lock next, is more of an overhead on the system than one which simply grants or denies access with no explanations given.  Therefore the system generally only goes to the extra trouble where it seems worth it, i.e. when information about conflicts might be of benefit for diagnostic purposes.  On the other hand this "interest" factor has to be balanced against the desire to ensure that the work involved in setting up the lock is small compared to the amount of work done whilst under its protection.
+
+<P>The vast majority of internal locks are impemented in the "no frills" manner.  Exceptions are made for things such as procedures, groups, and a small set of file structure locks for each file, analogous to the famous Model 204 "critical file resources" or CFRs.  Because these locks are so well known, DPT uses corresponding names (DIRECT, EXISTS etc.) although it should be noted that this does not mean the locking behaviour is exactly the same as on M204.  All such "higher" locks show up on the output from the custom <A HREF = "language.html#MONITORRESOURCE">MONITOR RESOURCE command</A>.
+
+<A NAME = Share_DBA></A> <H3>DBA activities</H3>
+This term here means anything other than regular reading and writing to the file, and includes defining/redefining fields, resetting file parameters, and the more serious commands like INITIALIZE.  All such activities require the entire file in exclusive mode.  This agrees with M204 for some things, but not others (e.g. you can define a field even while other users have the file open on M204).  The greater strictness on DPT makes things cleaner and simpler internally, and should not cause a usability problem.
+
+<A NAME = Share_RecLock></A> <H3>Record locking</H3>
+
+<P>Record locking by and large works as per M204 record locking.  This includes the necessity for an exclusive lock on records during all update statements (which may or may not then be released at END FOR depending on the TBO/LPU setting), and the necessity for a share lock on all (usually) records in the file at the start of finds containing table B searches.  It also includes the system-generated "hidden" share lock used to guarantee a record's integrity during PAI.
+
+<P>DPT will also on occasion report "sick record" if you work with unlocked records, especially but not exclusively using occurrence processing.
+
+<A NAME = Share_Other></A> <H3>Other sharing issues</H3>
+
+<P>"Procedure files" (i.e. OS directories) are not enqueued at all.  When accessing an individual procedure this is not a problem, because the OS enqueue on the .txt file will prevent the directory from being deleted.  However, after "opening" a procedure directory, there is no guarantee that the directory will not be deleted outside of DPT before it is actually used. 
+<P><A HREF= #Top>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Miscnotes> <H2> Miscellaneous Topics </H2> </A>
+
+<UL>
+	<LI> <A HREF = #SEQOPT> SEQOPT </A>
+	<LI> <A HREF = #SPACE_RECLAIM> Space reclamation </A>
+	<LI> <A HREF = #EXTENSIONS> Extension records </A>
+</UL>
+
+<A NAME = SEQOPT> </A>
+<H3>SEQOPT</H3>
+The meaning of this parameter is not exactly the same as on M204, but it has been retained since it's fairly close, and delivers benefits in similar cases.  In fact the benefits are sometimes much more than you might get with the M204-style SEQOPT.
+
+<P>On M204, if SEQOPT is 1, whenever a user thread requests a page, the disk buffer system retrieves and returns the page to the user, and then immediately initiates another <I>asynchronous</I> retrieval for the next page.  The plan is that when the user thread has finished with page A, page B is ready and waiting, or at least closer to being ready than it would otherwise have been.  On DPT, all disk reads are performed synchronously by user threads (but don't block other threads - this is an implication of <A HREF = "sysconfig.html#Thread_OSSched">using OS threading facilities</A>).  Requesting the next page at the same time as the current page is however still worthwhile in a different way, since retrieving two pages at the same time from disk is usually faster than two separate disk reads, especially if the disk head would have been moved elsewhere on the disk in between the two separate reads.
+
+<P>In fact the benefit of this applies not just to double-size chunks but to larger multiples as well, so on DPT SEQOPT can go up to 255.  In other words if SEQOPT is 7 each physical disk read (DKRD) will actually read in 8 pages, and in ideal conditions DKRD will show 1/8 of what it would have done.  During testing of DPT, increasing SEQOPT continued to deliver (admittedly decreasing) benefits for values right up to 255.  In practice you would need to experiment to determine an appropriate value for any given situation.
+
+<P><U>When to use SEQOPT</U>
+<BR>Interestingly, in a single pass across, say table B, with no other I/O between reading each page, SEQOPT seems to give no benefit.  This is probably because the disk head is always positioned at the right place as each new page is required, and the small physical overheads of transferring the page data seem to balance out the small DPT internal administrative overhead of managing SEQOPT.  However, in a typical program there will usually be some non-trivial processing that happens inside the loop that's driving the I/O, and causes the disk head to be moved.  On personal workstation pretty much everything will be on the same disk, so accessing any other file (assuming DKRD is required) or even just writing a line to the audit trail can cause disk head movement, and SEQOPT should help.
+
+<P>SEQOPT can also help with index processing such as b-tree walks and searches, but only under conditions where there is good localization of logically adjacent b-tree leaves, and/or inverted list pages for each value.  For example if a large file has been loaded using deferred index updates, these conditions would be met and SEQOPT would be worth a look.
+
+<P>SEQOPT is a file parameter, which means in multi-file processing it might be worth tweaking for some files and not others, or to different degrees for different files.  It can be reset during a run, the new value taking effect for all <I>physical</I> reads on the file from that point on.
+
+
+<A NAME = SPACE_RECLAIM> </A>
+<H3>Space reclamation</H3>
+The data area space reclamation feature, known on Model 204 as "reuse record numbers" or "RRN", does exist on DPT.  It is however unlikely that the reuse algorithm used matches that used by Model 204, so the behaviour of high-volatility RRN files will probably differ somewhat.  The same control parameters (BREUSE, BREUSED, BQLEN, FILEORG=X'24') are used, with similar meanings, to to enable existing DML programs to work with a minimum of changes.
+
+<P>Various space-reclamation processes occur in the heap area, containing as it does many different data structures.  These processes are mostly under automatic control.
+
+
+
+<A NAME = EXTENSIONS> </A>
+<H3>Extension records</H3>
+It's likely that DPT does not behave exactly the same as M204 when it comes to extending and de-extending records, although it is hoped that the exact extent structure of records is not something people are usually aware of, or care about.  Things should however be pretty similar, including the "non-intuitive" treatment of the MSTRADD/MSTRDEL/EXTNADD/EXTNDEL stats during TBO.
+
+<P>You can see the current extent structure of a record for interest using PRINT *RECINFO in a record loop.  This is a custom variation of M204's PRINT *RECORD.
+
+<!****************************************************************************>
+<P><A HREF= #Top>Top</A>
+<P><HR><HR>
+
+
+<!****************************************************************************>
+<A NAME = Appendixes> <H1> Appendixes </H1> </A>
+
+<UL>
+	<LI> <A HREF = #App1> 1. Multi-step deferred update record formats </A>
+	<LI> <A HREF = #App2> 2. Fast load I/O file formats </A>
+</UL>
+
+<!****************************************************************************>
+<P><HR>
+
+<A NAME = App1> </A>
+<H2>Appendix 1. Multi-step deferred update record formats</H2>
+
+<H3>Deferred update records for ORD CHAR fields.</H3>
+
+<H4>Format A1 (default)</H4>
+
+<UL>
+	<LI>1 byte: control info
+	<LI>4 bytes: record number
+	<LI>2 bytes: field ID
+	<LI>0-255 bytes: field value
+	<LI>2 bytes: CRLF (hence CR and LF are not allowed in the field value)
+</UL>
+
+<P>The sort utility must therefore be able to handle variable length records that are CRLF-delimited.  Because of the position of the field ID and value you can define them as a single key starting at position 6 and reaching to the end of the record.
+
+<H4>Format A2</H4>
+
+<UL>
+	<LI>4 bytes: record number
+	<LI>2 bytes: field ID
+	<LI>1 byte: field value length
+	<LI>0-255 bytes: field value
+</UL>
+
+<P>Generated in response to the <A HREF = "language.html#OPEN">NOCRLF option</A> on the OPEN command.  This format, introduced in V2.10, allows field values which might contain CR or LF characters within them - for example purely binary data.  These values would otherwise cause the load to fail.  
+
+<P>Using this format demands that the sort package would understand records with the unconventional "length byte", or that you wrote your own sort code.
+
+
+<A NAME = DEFNUMFORMATS></A>
+<H3>Deferred update records for ORD NUM fields.</H3>
+
+<H4>Format N1</H4>
+
+<UL>
+	<LI>1 byte: control info
+	<LI>4 bytes: record number
+	<LI>2 bytes: field ID
+	<LI>N bytes: field value
+	<LI>2 bytes: CRLF
+</UL>
+
+<P>This is the same as format A1 above, with the numeric value expressed as an ASCII string.  Records are written in this format instead of the default N3 (see below) if an appropriate option is given on the <A HREF = "language.html#OPEN">OPEN command</A>.  The value of N can be specified on the command or left to vary.
+
+<H4>Format N2</H4>
+
+<UL>
+	<LI>4 bytes: record number
+	<LI>2 bytes: field ID
+	<LI>1 byte: field value length
+	<LI>0-255 bytes: field value
+</UL>
+
+<P>Generated as an alternative to N1 if the NOCRLF option was given on the OPEN command - same idea as with A1 vs A2.  Probably less useful than A2 but included for consistency.
+
+<H4>Format N3 (default)</H4>
+
+<UL>
+	<LI>4 bytes: record number
+	<LI>2 bytes: field ID
+	<LI>8 bytes: field value (64-bit IEEE value)
+</UL>
+
+This is often the most compact format.  Large sorts will involve a lot of sequential file I/O so the shorter the records the better.  In any case this format also avoids conversions from string to floating-point representation during the sort, which is also an overhead.
+
+<P>All 3 values in this record format are binary, not strings.  However, since the field IDs are only being sorted to divide up the file, and their actual value is unimportant, it does not matter how that two-byte portion is interpreted.  Getting the sort to treat it as a two-character string will most likely be just as efficient as a 2 byte integer.  Following on from that, bear in mind that IEEE floating point values can not be sorted as character strings, except under certain special conditions.  You should consult technical documentation if in doubt, but this is mentioned because a common case, where values are all positive integers or zero, would satisfy those conditions and allow an efficient sort using a single "string" key of {5,10}).  Otherwise, the sort utility must be able to interpret floating point values properly, and must be given two keys: ({5,2} and FP{7,8}). 
+
+
+<!****************************************************************************>
+<P><HR>
+
+<A NAME = LOADING_FAST_FORMATS></A>
+<A NAME = App2> </A>
+<H2>Appendix 2. Fast load I/O file formats</H2>
+
+The purpose of this section is to give enough detail that you could make use of the fast unload/load features to exchange data with any other system, by either preparing data ready for a fast-load, or taking and further custom-formatting the output of a fast-unload.  In many cases the simple human-readable "PAI" format might be good enough, but the lower-level formats are covered here too.
+
+<P>A common usage of the fast load feature might be to extract data from Model 204 and load it into DPT.  DEMOPROC in the DPT demo download contains a simple User Language program which creates acceptable extract files (in the simple "PAI" format).  With more effort you could develop extracts in the lower-level formats, which would create smaller extract files (in the TAPEI case much smaller) and would be faster to load into DPT.
+
+<UL>
+	<LI> <A HREF = #LOADING_FAST_ALLTAPES> Notes applying to all input files </A>
+	<LI> <A HREF = #LOADING_FAST_TAPEF> TAPEF (field definitions)</A>
+	<LI> <A HREF = #LOADING_FAST_TAPED> TAPED (record data)</A>
+	<LI> <A HREF = #LOADING_FAST_TAPEI> TAPEI (index data)</A>
+</UL>
+
+<HR WIDTH = 50%>
+
+<A NAME = LOADING_FAST_ALLTAPES></A>
+<H3>Notes applying to all input files</H3>
+
+<A NAME = LOADING_FAST_COMMENTS></A>
+<H4>Header/metadata/comments section</H4>
+
+<P>Each of the sequential files can contain any amount of header/comment text, typically CRLF-terminated lines, which must be at the very start of the file.  The comment block must start with a CRLF-terminated line of 20 or more asterisks, and is considered to end at the next line of 20 or more asterisks.  This section is where to specify any non-default format/endcoding options that were used to create the data in the file, for example as covered in the <A HREF = "language.html#UNLOADCMD"> =UNLOAD command</A> notes.  In other words these files are self-describing.  The comments section is optional - all files can just start straight away with the main data if desired.
+
+<P>To specify options, use the appropriate keyword prefixed with a "+" (activate) or "-" (deactivate), anywhere in the header area.  Since all options are off by default, only "+" will actually have any effect.  For example the =UNLOAD command writes a header block something like the following in all the files it creates:
+
+<PRE CLASS=code>
+******************************************************************
+* DPT fast unload file generated on 1st January 2010 at 12:00:00 *
+* File SALES, index for field ACCOUNT ID                         *
+* Format options: -FNAMES -NOFLOAT +ENDIAN +EBCDIC +CRLF -PAI    *
+******************************************************************
+</PRE>
+
+<P>A fast load starts off assuming input files contain ASCII, but the lines-of-asterisks and the option keywords are recognized in EBCDIC too (according to the <A HREF = "m204xref.html#EBCDIC"> translation table</A> currently in effect).  So a file generated on the mainframe containing all EBCDIC can still have its EBCDIC data processed correctly, since the presence of "+EBCDIC" in the header block will activate translation for the actual data.
+
+
+<A NAME = LOADING_FAST_ENCODING_OPTIONS></A>
+<H4>Miscellaneous notes abour data formatting and encoding</H4>
+
+<P>During a reorg DPT doesn't bother converting the field codes on table B pages into literal field names and back, and this makes for faster processing and smaller intermediate files.  When feeding custom data into a fast load, you can make use of this feature too and it will give the same speed/file size benefits, at the cost of slightly more complex set-up.  Generally however it's clearer to use field names when transferring data between systems.  This is controlled by the FNAMES option.
+
+<P>All numeric values when expressed in binary form, such as record numbers, value lengths, field codes etc. are assumed to be *unsigned* binary values, since in many cases the full positive range is required for correct operation.
+
+<P>Transferring data to/from Model 204 raises several issues about the encoding of data:
+<UL>
+	<LI>DPT can optionally convert all the 2 and 4 byte values in the input files, such as segment and record numbers, between big-endian (mainframe style) and little-endian (PC style).  
+	<LI>Since EBCDIC-ASCII translation might be turned off when physically moving the files from the mainframe (it would corrupt all the binary numbers and bitmaps), DPT can optionally convert text values between EBCDIC and ASCII.
+	<LI>CRLF byte pairs may be used in various places.  Despite the fact that EBCDIC does define its own codes for these special characters, and even has its own "NEL" character (X'0F'), DPT *always* expects the ASCII codes, namely CR=X'0D', LF=X'0A'.
+  This is because line separator characters are largely a convention of non-mainframe platforms, and are used in situations where you would create fixed or variable length records on the mainframe.  The simplest thing is to let the file-transfer mechanism convert mainframe FB or VB records to/from PC style text lines by automatically adding/removing CRLFs, in which case you can forget about what the actual codes are.
+	<LI>The =LOAD command has an option to preview the files after the above translations have occurred.
+</UL>
+
+
+
+
+<HR WIDTH = 50%>
+<A NAME = LOADING_FAST_TAPEF></A>
+<H3>TAPEF (field definitions)</H3>
+
+This file serves two purposes.  Firstly it contains the input for loading field definitions, if any are to be loaded, at the start of a load operation.  Secondly it serves as metadata to describe the other input files, TAPED and TAPEI, in cases where the data format in them differs from what would be expected based on existing field definitions in the file.  (See the <A HREF = #REORGS_REDEFINE>redefine during reorg example</A>).
+
+<P>In its simplest form this file should contain standard DEFINE commands, which may be continued across lines with hyphens.  E,g.:
+
+<PRE class=code>
+DEFINE FIELD SURNAME (STRING ORD CHAR)
+DEFINE FIELD CUSTOMER_ID (WITH ORD CHAR SPLT 99)
+</PRE>
+
+<P>This format was chosen as easy to generate on Model 204 by simply issuing the "D FIELD (DDL)" command, and easy for DPT to handle by just treating it like incoming DEFINE commands.  Unsupported M204 field attributes like KEY and FRV are ignored and will not break the load.
+
+<P>A slight variation is when using field codes in the TAPED file (see next section), in which case give them here in TAPEF immediately before the names, as decimal strings or X'FF' style hex strings.
+
+<PRE class=code>
+DEFINE FIELD 1 SURNAME (STRING ORD CHAR)
+DEFINE FIELD X'0002' CUSTOMER_ID WITH ORD CHAR SPLT 99
+</PRE>
+
+
+
+
+<HR WIDTH = 50%>
+<A NAME = LOADING_FAST_TAPED></A>
+<H3>TAPED (record data) </H3>
+
+<P>The information in this file describes either the database records that were unloaded or the ones to be loaded.  The default layout is shown first, followed by a plain text "PAI" style variation which is sometimes more convenient to work with.
+
+<H4>Default "compressed" mode for TAPED</H4>
+
+<UL>
+	<LI>4 bytes: Internal record number
+	<LI>Repeated for each field=value pair:
+	<UL>
+		<LI>Field:
+		<UL>
+			<LI>2 bytes: Field code
+			<LI>-or-
+			<LI>1 byte : Field name length
+			<LI>n bytes: Field name
+
+		</UL>
+		<LI>Value:
+		<UL>
+			<LI>8 bytes: Floating point value (FLOAT fields)
+			<LI>-or-
+			<LI>1 byte : Value length (STRING fields)
+			<LI>n bytes: Value string
+
+			<LI>-or-
+			<LI>4 bytes: Value length (BLOB fields)
+			<LI>n bytes: Value data bytes
+
+		</UL>
+	</UL>
+	<LI>2 bytes: x'ffff' record terminator
+	<LI>(Optional) 2 bytes: x'0d0a' record separator
+</UL>
+
+
+<P>The indentation above is just for readability - the actual file contains no tab or space indentation. 
+
+<P>Record numbers:
+<BR>During a load the record numbers in the input are not preserved.  The newly-stored records will have numbers as per the current BRECPPG for the file and whether any records were present when the load started.  The input record numbers only have relevance if a TAPEI file is to follow, in which case they are essential and correspond to the record numbers contained in the inverted lists/bitmaps.  In the file produced by a fast unload, the record numbers are those of the primary extents, and may or may not be of interest depending on what you're doing with the extract.
+
+<P>Note that fast load is purely a record-storing process.  Supplying record numbers in TAPED will not make it find and amend an existing record.  User Language must be used to do that kind of thing if required.
+
+<P>Field codes:
+<BR>If you use field codes (instead of names) any codes are OK so long as they're unique, in the range 0-4000, and match the ones in TAPEF mentioned earlier.  DPT will be allocating fresh field codes as part of the load anyway.  When in doubt, go with the field names option which makes things clearer if slightly slower.
+
+<P>The order of the field/value pairs on each record is preserved when loading.  
+
+<P>The end of the record is denoted by x'ffff', since that sequence is invalid to start the next FV pair in either format.  You can also use the <A HREF = "language.html#UNLOADCMD">"CRLF" =UNLOAD option</A> to specify an extra CRLF byte pair at the end of each record.  This can be handy if fast unload is being used to create a general extract with the intention of passing it on to other utilities like sorts and so on.  It can also make it easier to create custom files to pass into DPT fast load.
+
+<P>In general the above "compressed" TAPED format is exactly as data is stored in table B, making for highly efficient operation in e.g. file reorgs..</I>
+
+
+<A NAME = LOADING_FAST_TAPED_PAI></A>
+<H4>"PAI" mode for TAPED</H4>
+
+Using the PAI option allows the output of this simple User Language program to be loaded by the DPT =LOAD command:
+
+<PRE class=code>
+BEGIN
+    FOR EACH RECORD
+        PRINT $CURREC
+        PAI
+        PRINT
+    END FOR
+END
+</PRE> 
+
+This kind of output is quick and easy to generate on Model 204, and is readable, with no binary data items.  The lack of binary data can also make it easier to FTP the files around with less fiddling of settings like for EBCDIC translation.  On the downside this format is less efficient going into and out of DPT, requiring more reformatting and rearranging to fit the internal data structures.
+
+<P>PAI format consists of CRLF-delimited text lines (usually, see below).  Field/value pairs are on the same line, separated by the 3 characters " = ".  Records are separated by a blank line.  
+
+<P>The only other format option relevant to this mode is EBCDIC.  Then the text, spaces, equals sign and decimal digits are converted by DPT to EBCDIC (unload) or from EBCDIC (load).  CRLFs are not data as such, and are always X'0D0A', as per the earlier comment.
+
+<P><U>PAI mode for fields containing newline characters</U>
+<BR>This variation is required since newline characters in field data will mess up the CRLF-delimited format.  It is primarily intended for BLOB fields but can be used with any field.  As with Model 204 the variant format is produced by the <A HREF = "language.html#PRINTALLINFORMATION">PAI statement LOB_FLOD option</A>.  For example a BLOB field called MYFIELD, containing a BLOB 10 bytes long, which is all "X" characters, looks like this in regular PAI and alternate PAI format:
+
+<PRE CLASS=code>
+MYFIELD = XXXXXXXXXX
+MYFIELD =10=XXXXXXXXXX
+</PRE>
+
+<P>In other words the length is enclosed in two equals signs, with no spaces except the one after the field name. This causes DPT to read the field value as a specific number of bytes (10 in this case) instead of searching for newline delimiter characters.  There should however also be a CRLF sequence after the data bytes.
+
+
+
+
+
+<P><HR WIDTH = 50%>
+
+<A NAME = LOADING_FAST_TAPEI></A>
+<H3>TAPEI (index data)</H3>
+
+<P>Each TAPEI file contains index entries for a single field.  The default layout is shown first, followed by a plain text "PAI" style variation which can be more convenient to work with.
+
+<P>TAPEI files are optional in both fast unload and fast load.  If they are not present for some or all fields during a load, DPT will generate index entries from the <I>field=value</I> pairs in TAPED.  If loading data from external system it may be more efficient to do that anyway, avoiding the time taken to prepare and transfer the index information to the DPT machine.
+
+<H4>Default "compressed" mode for TAPEI</H4>
+
+<P>The following information is repeated for each value of the field:
+
+<UL>
+	<LI>Value:
+	<UL>
+		<LI>8 bytes: Floating point value
+		<LI>-or-
+		<LI>1 byte : Value length
+		<LI>n bytes: Value string
+
+	</UL>		
+	<LI>2 bytes: Number of segments containing value
+	<LI>Repeated for each segment:
+	<UL>
+		<LI>2 bytes: Segment number
+		<LI>Inverted list:
+		<UL>
+			<LI>2 bytes : Number of records (r) in inverted list
+			<LI>2r bytes: List of segment-relative record numbers 
+			<LI>-or-
+			<LI>2 bytes : x'ffff', indicating bitmap format
+			<LI>8160 bytes: bitmap
+		</UL>
+		<LI>(Optional) 2 bytes: x'0d0a' segment entry separator
+	</UL>
+	<LI>(Optional) 4 bytes x'ffffffff' value terminator
+</UL>
+
+
+<P>Values:
+<BR>Numeric values may be in string format if the NOFLOAT option is used. Values should ideally appear in the TAPEI file in the order they will end up in the final b-tree.  A load will work if some or even all values are out of order, but more slowly and with less satisfactory final results in terms of b-tree structure.
+
+<P>Record numbers:
+<BR>The numbers in this file correspond to those in the TAPED file if both are being processed in the same load.  Therefore depending on the circumstances, DPT may or may not need to adjust them, for example to take account of TAPED input records receiving new numbers because of reclaimed record slots, BRECPPG changes, etc.
+
+<P><A HREF = #Struc_Details>File pages are 8K</A> on DPT, unlike M204's 6K.  So in the above layout, the term "segment" means each group of 65280 consecutive record numbers, and bitmap-style inverted lists are 8160 bytes in size.  A record's file-relative record number (Rf), as you would print with $CURREC, is known from its segment number (S) and its segment-relative record number (Rs), by taking <TT class=code>Rf = (S x 65280) + Rs</TT>.  The first segment is segment zero; the first record is record zero.
+
+<P>Terminators:
+<BR>The optional CRLF sequence after each segment entry is controlled by the <A HREF = "language.html#UNLOADCMD">"CRLF" option</A>.  This option is not for readability purposes but to make it easier to manage extract files which might otherwise contain records of many Mbytes each.  For example it becomes more straightforward to extract index data from Model 204 in a User Language image, which can only map 32K of data.
+
+<P>The optional 4 byte value terminator should be used in cases where the eventual number of distinct segments that will contain a value is not known when starting to create the TAPEI data for that value.  In that case use a large number (x'ffff') for the segment count, and the load will move on to the next value when it hits the terminator, rather than after processing a set number of segments.
+
+<P>Like TAPED, the above "compressed" TAPEI layout is similar to how information is held within a DPT file, meaning that in many situations minimal conversion is required during unload and reload, and things can be done with efficient page-level disk operations.
+
+
+<A NAME = LOADING_FAST_TAPEI_PAI></A>
+<H4>"PAI" mode for TAPEI</H4>
+Like the <A HREF = #LOADING_FAST_TAPED_PAI>same option for TAPED</A>, TAPEI data can have a more readable and easily-manageable format, and the same issues broadly apply.  The following simple User Language program generates suitable data.  (There's no actual "PAI" statement but the same name is used for consistency with TAPED.)  Everything is string format in CRLF-delimited lines, and a blank line terminates each inverted list.
+
+<P>A program like this is quite resource-hungry, so depending on the relative power of the machine running it and the target DPT machine, it may or may not be more efficient to let DPT build the indexes again from the base data in TAPED, forgetting about TAPEIs altogether.  With certain invisible fields that may be necessary anyway.
+
+<PRE class=code>
+BEGIN
+    V:
+    FOR EACH VALUE OF MYFIELD
+        PRINT VALUE IN V
+        FOR EACH RECORD WHERE MYFIELD = VALUE IN V
+            PRINT $CURREC
+        END FOR
+        PRINT
+    END FOR
+END
+</PRE> 
+
+<H4>A note about TAPEI file size vs formats</H4>
+Internally DPT stores inverted lists in "array" form for 1000 records or less per segment, and in bitmap form above that.  During fast unload the same crossover point applies to the output data generated.
+
+<P>During a load, the above TAPEI layouts are valid either way regardless of the number of records, and the load processing will promote/demote as required before storing in the database.  However, the format chosen will have a big effect on the TAPEI file size.  Imagine a segment where every record possessed a particular value.  That would require an inverted list of 65280 2-byte entries, or over 130K in "array" form, compared to 8K in bitmap form (a factor of x16 increase).  Furthermore, in "PAI" style each inverted list entry (plus CRLF) requires say 6-10 bytes in a typical file, so that's another factor of x4 or x5.  So if you're actually using TAPEI and the size of the file is a problem, it may be worth going to the trouble of generating loadable data in the more compressed formats.
+
+
+<A NAME = LOADING_FAST_TAPEI_SINGLE></A>
+<H4>TAPEIs as a single input file</H4>
+During fast load, the index information for some or all fields can be together in the same file, which must have the following overall structure.  The pros and cons of this style are minor - it may be a little easier to work with the single file (the DEMOPROC extract does it this way for example), but it costs DPT a little time to split out the separate sections prior to loading them.  Also, it's only allowed in PAI mode.  
+
+<UL>
+	<LI>Metadata header with encoding options, which will apply to all fields in the file
+	<UL>
+		<LI>Must include +PAI
+	</UL>
+	<LI>Repeated for each field
+	<UL>
+		<LI>CRLF-delimited line containing the field name
+		<LI>Values and inverted lists, as per the User Language example above
+		<LI>Another blank line, making 2 (after the one on the last inverted list)
+	</UL>
+</UL>
+
+
+<P><HR>
+</HTML>

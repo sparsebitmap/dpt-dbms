@@ -1,0 +1,124 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>DPT FAQ Page</TITLE>
+
+<H1 Align = "Center">Database Programmer's Toolkit</H1>
+<H1 Align = "Center">General FAQ</H1>
+
+
+<!**********************************************************>
+<P><HR><BR>
+
+<UL>
+
+<LI><A HREF = "sysconfig.html#FAQ">Operational issues</A> (FAQ appendix in the system config guide ...)
+
+<BR>
+<BR>
+<LI><A HREF = #WHYFAQ>About DPT</A>
+	<UL>
+	<LI><A HREF = #WHYDOIT>Why does Database Programmer's Toolkit exist?</A>
+	<LI><A HREF = #FEATURES>Is it an emulator or not?</A>
+	<LI><A HREF = #TOTALEMUL>What's the chance of DPT ever being an actual emulator then?</A>
+	</UL>
+
+<BR>
+<LI><A HREF = #TECHFAQ>Technical Background</A>
+	<UL>
+	<LI><A HREF = #HOWBUILT>What's it written in?</A>
+	<LI><A HREF = #STARNIX>Any chance of *nix (or other OS) versions?</A>
+	<LI><A HREF = #ACTIVEDEV>Is DPT actively being developed now?</A>
+	</UL>
+
+<BR>
+<LI><A HREF = #GENERALFAQ>Commercial </A>
+<UL>
+	<LI><A HREF = #CCA>What about Rocket/CCA?</A>
+	<LI><A HREF = #Emulator>On the legality of emulators</A>
+	<LI><A HREF = #LICENCE>Licensing, open-source, etc.</A>
+</UL>
+
+</UL>
+
+<!********************************************************>
+<HR>
+
+<H3><A NAME = WHYFAQ>About DPT </A></H3>
+
+<A NAME = WHYDOIT></A><H4>Why does Database Programmer's Toolkit exist?</H4>
+Firstly to give Model 204 programmers a convenient PC-based coding environment for writing, debugging and testing User Language applications.  It's important for the future of M204 as a platform that new programmers without a mainframe background can build applications in such an IDE.  Since DPT was first released, the established vendors have started to come up with their own IDE offerings, but all require a mainframe connection, and none but DPT are free!
+
+<P>A second and increasingly important goal of DPT was to provide an alternative platform for running production User Language applications.  After all if you can run code on DPT during testing and debugging, you can run it live as well.  Some Model 204 customers have a large body of User Language code but no longer need the power of a mainframe, and DPT gives them a small-platform option other than rewriting all their applications in a different language.
+
+
+
+<A NAME = FEATURES></A><H4>Is it an emulator or not?</H4>
+The word "emulator" usually means a program which exactly recreates every little weird feature of the target platform so that the two are effectively indistinguishable. In this sense DPT, like <A HREF = "http://www.winehq.org">Wine</A>, is not an emulator (Dine?).  The DPT mission is to provide an effective and useful level of Model 204 feature support, rather than going for total completeness.  There is a <A HREF = "m204strategy.html">whole separate document</A> covering the decision processes involved in approaching the project.
+
+
+<A NAME = TOTALEMUL></A><H4>What's the chance of DPT ever being an actual 100% emulator then?</H4>
+Model 204 itself will continue to be developed (mostly by Sirius!) however fast DPT tried to keep up, so this is unlikely.  Having said that DPT is open source software so there is potential there to harness a large distributed team and gets lots done.  The benefit of providing complete emulation, rather than emulation of all the useful features, would be debatable anyway.
+
+
+<!********************************************************>
+<P><HR>
+
+<H3><A NAME = TECHFAQ>Technical Background</A></H3>
+
+<A NAME = HOWBUILT></A><H4>What's it written in?</H4>
+DPT was written from scratch in C++, using a combination of the Model 204 manuals and the memories of years of UL programming and teaching experience as the basis for emulating Model 204 features.  (That is to say, the real 204 source code was <I>not</I> ripped off !)  Microsoft Developer Studio was used as the programming platform, and the open-source editor component "Scintilla" (<A HREF = "http://www.scintilla.org">www.scintilla.org</A>) was incorporated into the front end to do text colouring.
+
+<P>To answer another common follow-up question, DPT does not sit atop any off-the-shelf DBMS such as Microsoft Access, Berkeley DB etc., but has its own custom-built file system, emulating the Model 204 file system.  Obviously this was "reinventing the wheel" to a certain extent, but the need to support various specialised bits of User Language functionality steered things that way.  For example FILE RECORDS and DELETE RECORDS rely on invisible keys and existence masks respectively, neither of which are universally standard DBMS features.  Plus believe it or not it was a lot of fun to code!
+
+<A NAME = STARNIX></A><H4>Any chance of *nix (or other OS) versions?</H4>
+
+In theory a small chance, but note that the existing DPT executables can be run on Linux/Wine already.  It's not thoroughly tested and there are some known cosmetic issues with the frond end, but it does run.
+
+
+<P>The DPT host component has just one or two direct Windows hooks for performance reasons so a port, if one were attempted, might be relatively straightforward.  The client on the other hand involves a lot of GUI stuff which talks directly to Windows, so it would probably take longer to port.  Starting from scratch with the client and using a cross-platform IDE framework such as Eclipse would probably be the better way to go.  A partial solution of just porting the (easier) host would make a lot of sense since *nix servers are more prevalent than workstations, and the existing Windows client could connect to a *nix host.  
+
+<P>On a similar subject, a host port to something like native Z/OS would also be a possibility.  Since mainframes now run Linux programs though there would be less incentive to do that (see Wine comment).
+
+
+
+<A NAME = ACTIVEDEV></A><H4>Is DPT actively being developed now?</H4>
+
+Off and on.  Nothing much happened except fixes during 2008-2009, but in 2010-2011 a fairly large package of new stuff was built (<A HREF = "relnotes_V3R0.html">Version 3.0</A>).
+
+<P>If you're interested in making some kind of non-trivial change/enhancement and need help getting to grips with the source code, please get in touch.  Likewise if you just want to see if you can sweet-talk somebody else into doing something :-)
+
+
+<P><HR>
+<!****************************************************>
+<H3><A NAME = GENERALFAQ>Commercial Issues</A></H3>
+
+<A NAME = CCA></A><H4>What about Rocket/CCA?</H4>
+
+If you mean "what do they think", you should ask them directly.  However neither CCA nor Rocket have yet had nothing to do with DPT, technically or otherwise.  DPT is made available entirely independently of commercial vendors and all that entails - for example you don't need a Model 204 licence to use DPT at work, at home or anywhere else.
+
+<A NAME = Emulator></A><H4>On the legality of emulators</H4>
+
+<P>Firstly note that DPT is entirely legal.  It consists of brand new code written without looking at the underlying M204 code.  Actually the term "emulator" does not strictly apply to DPT (see <A HREF = "m204strategy.html">comment in the strategy introduction</A>).
+
+<P>The other main thing for Model 204 users to remember is that their User Language code is their own intellectual property, not that of a vendor.  No (civilized) law will ever make it compulsory to buy a particular vendor's product in order to exercise your own IP rights - i.e. run your own code.
+
+<P>There is a lifetime's reading on this subject out on the internet, and you can easily do your own searches.  Much of the debate is not really relevant in this case though, as it concerns games, and things are complicated there by the habit of emulator providers of distributing copyrighted games along with their "warez".  The emulators themselves are usually law-abiding software.
+
+<A NAME = LICENCE></A><H4>Licensing, open source, etc.</H4>
+
+DPT has always been free in the sense of priced at $0.  However until 2007 it was only available in executable form, so not truly free in the sense of total freedom of how to use it.  At that point (Version 2.03) the early users had helped get the product to a good level of reliability, so it no longer seemed necessary to maintain tight central control over development activity.  DPT now has a stable, well-organised code base that other programmers should be able to add to relatively easily, so it is now open source software (<A HREF = "../downloads.html#DownloadSource">download here...</A>).
+
+<P>Another extremely common question: how will it make money like this?  The only answer to this is that DPT was never a money-making exercise, more of a gift to the M204 community.  Maybe it will make money somehow, some day, maybe not.  It doesn't matter so long as users like it and use it, and it works reliably for them.
+
+<P>More seriously, without DPT or something like it Rocket/Sirius hold a monopoly in the market for Model 204 compilers/runtimes, and a near monopoly on development tools.  Monopolies are not good for anybody with a large demand for the monopolized goods - in this case that means users with a lot of M204 code they can't easily port to other platforms.  Competition is good.
+
+<BR><BR><HR>
+
+
+</HTML>

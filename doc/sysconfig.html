@@ -1,0 +1,923 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>DPT Sys Config Guide</TITLE>
+
+<H1 ALIGN = "Center">Database Programmer's Toolkit</H1>
+<H1 ALIGN = "Center">System Configuration Guide</H1>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.
+
+<H2>Contents</H2>
+
+	<UL>
+	<LI><A HREF= #The_Host_Application             > The Host Application             </A>
+	<LI><A HREF= #Specifying_Configuration_Options > Specifying Configuration Options </A>
+	<LI><A HREF= #Starting_and_Stopping_the_System > Starting and Stopping the System </A>
+	<LI><A HREF= #Message_Control                  > Message Control                  </A>
+	<LI><A HREF= #Setting_up_Thread_Types          > Thread Configuration and Operation </A>
+	<LI><A HREF= #Memory_Management                > Memory Management etc.</A>
+	<LI><A HREF= #System_Integrity                 > Data Integrity                 </A>
+	<LI><A HREF= #APSY                             > APSY                             </A>
+	<LI><A HREF= #ACCESSCONTROL                             > Acess Control and Security </A>
+	<LI><A HREF= #Monitoring_the_System            > Monitoring the System            </A>
+	<BR>
+	<BR>
+	<LI><A HREF= #Installation_Issues              > Installation - Requirements and Other Issues              </A>
+	<LI><A HREF= #FAQ       >System Config FAQ appendix</A>
+</UL>
+
+<HR>
+<!****************************************************************************>
+<A NAME = The_Host_Application> <H2> The Host Application </H2> </A>
+
+<UL>
+	<LI> <A HREF = #HOST_INTRO> Introduction </A>
+	<LI> <A HREF = #HOST_AUXIL> Auxiliary file location </A>
+</UL>
+
+<A NAME = HOST_INTRO> </A>
+<H3>Introduction</H3>
+<P>Invoking dpthost.exe corresponds to what happens when you EXEC PGM=ONLINE/BATCH204 when running M204 on the mainframe.  The program can perform work itself, or just sit and act as a server for humans or "robot" threads, or both.  The following sections cover the various ways you can configure the host, and give some background in various areas.  For most programming tasks the default options should be OK.
+
+<P>There is only one program to use, regardless of whether the equivalent Model 204 task would be suited to PGM=ONLINE or PGM=BATCH204.
+
+<P>The host GUI itself should be self-explanatory, except perhaps for the "UnHalt" menu option.  This corresponds to replying to the HALT message on the operator's console on MVS, and wakes up user 0 if it is in a HALTed state (see below).  In other words this is usually how to bring the system down.  When running DPT as a Windows service, without its GUI, issuing "stop service" from Windows Control Panel (or other service management front end) does the same thing.
+
+<P>When the console is shown (see NOGUI mode later), the window title is populated from the system parameter value for SYSNAME.  The output windows can be scrolled using the PC's  PgUp/PgDn/Home etc. keys, and also with a more mainframe-style F7/8/10/11.  By default the display will try to keep up with the latest system activity (i.e. remain at the bottom of the audit trail or sysprint file), but this is annoying if you are trying to copy down an error message, so you can turn it off in the options menu. The GUI appears wherever on the screen you last left it.  Often you might run it minimized it and not look at the audit trail at all during a run.
+
+<A NAME = HOST_AUXIL> </A>
+<A NAME = Host_Auxiliary_Files> <H3> Host auxiliary file location</H3> </A>
+
+When you start the host application for the first time, a number of auxiliary files and sub-directories will be created if they're not already there.  Some of these are output files such as the audit trail, and some are input files which are created empty to serve as a hint to help you configure the system in various ways, when or if you need to.
+
+<P>Two important output files are audit.txt and sysprint.txt (default names), corresponding to CCAAUDIT and CCAPRINT on Model 204.  The text written to these mirrors exactly the text you see in the GUI panes (although only the last few thousand lines is shown in the GUI, for the obvious memoryish reasons).  
+
+<P>By default, checkpointing will be turned on, which triggers the creation of a file usually called checkpoint.ckp.
+
+<P>All the auxiliary files are created in the directory where dpthost.exe was <I>invoked</I> from.  In other words not necessarily the directory where the .exe file resides, but the "current working directory", or what you put in the "start in" box of a Windows shortcut.  To run several concurrent copies of the host from the same .exe file on the same machine, it's necessary to use a different working directory for each.  As with the client, different "skin colours" can be associated with each copy of the host, to help visually distinguish them.
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Specifying_Configuration_Options> <H2> Specifying Configuration Options </H2> </A>
+
+<UL>
+	<LI> <A HREF = #Config_Files> Server configuration </A>
+	<LI> <A HREF = #Config_OSCmd> Console appearance and operation </A>
+	<LI> <A HREF = #Config_Params> OS command line parameters </A>
+	<LI> <A HREF = #Config_Service> Running DPT as a Windows service </A>
+</UL>
+
+<A NAME = Config_Files> </A>
+<H3>Server configuration</H3>
+Much configuration is currently done in the traditional mainframe way by editing configuration files directly - DPT is an emulator for a mainframe application after all.   The information and instructions you would put in CCAIN on M204 are split across 3 different files, as follows.  You can open all 3 files directly from the host console, but changes you make there will only take effect the next time the system is started.
+
+<P>In all cases lines starting with '*' or '//' are treated as comments.
+
+<OL>
+	<LI>Parameter overrides
+	<BR>parms.ini is the place for the equivalent of user 0's parameter line, specifying the parameter defaults for all users for this run, one parameter per line.  On DPT it is not possible to specify different parameter settings for different device types or user numbers.  
+
+<P>Parameter values are normally assumed to be the first word after the equals sign, and are also usually uppercased before applying them.  To get round these limitations specify them in the same way as you would on the RESET command, as C'ascii-string' or X'hex-value' (numeric parameter) or X'hex-string' (string parameter).  Simple quoted strings are also allowed, and mean the same as C'ascii-string'.
+
+<P>For example:
+
+<PRE CLASS=code>
+SYSNAME = C'Test System'     This text
+RCVOPT=X'03'                 is treated
+NUSERS = 100                 as comments
+PRSUFFIX = '.txt'            and ignored
+*etc.
+</PRE>
+
+	<LI><A NAME = Message_Control>Message control overrides
+
+<BR>System-wide non-default MSGCTL settings can be provided at start-up time in msgctl.ini.  This should contain normal <A HREF = "language.html#MSGCTL">MSGCTL</A> commands.  These then apply for the duration of the run as if they were the system defaults.  Users may override them for their own session with further MSGCTL commands if required.
+
+	<BR><BR>
+	<LI>User zero's input stream
+
+<BR>Last but not least - this can contain any other work that you'd like the system thread (commonly known as "user zero") to perform.  Stripped of the above functions, this file is really just the same as an IODev 3 input file.  The main exception is that HALT and one or two other commands are allowed.  A single HALT command is what the file is initially populated with, which assumes you want to run ONLINE-style rather than BATCH204-style.
+
+</OL>  
+
+
+<A NAME = Config_OSCmd> </A>
+<H3>Console appearance and operation </H3>
+
+<P>These notes assume DPT is started in non-service mode (see next section).
+
+<P>The tools/options menu gives you the chance to change the names/locations of the config files described above, plus one or two other items of information that dpthost.exe requires before it can start its internal database server and read parms.ini for the hundreds of remaining parameter values.  If the output streams are to go to directories other than the working directory, those directories must exist.
+
+<P><U>Option notes</U>
+
+<UL>
+<LI>Skin colour
+<BR>As with the equivalent on the client application, this is to make things easier to manage when you have several hosts running at once, or at least several different configurations that you keep permanently defined - e.g. "large buffer pool", "development", "firewall port" etc.
+
+<LI>Font
+<BR>Lets you choose something other than the default font, for whatever reason.  For example if your machine has an unusual or unsuitable default font.  Or more commonly perhaps just to choose smaller text to read longer lines without F11-ing so much.  Unlike in the editor, you <I>can</I> choose a proportional font here if you like.
+
+<LI>Remember lines
+<BR>This setting conserves memory and keeps the console display from lagging if the audit trail gets up to millions of lines.  Any lines discarded from the top of the display because of this setting are of course not lost from the file copies of the audit trail and user 0 output.
+
+<LI>Follow output
+<BR>Tells the console to keep the last line of the active view visible at all times.  This is usually most useful, but is awkward if you want to study a portion of the audit trail from earlier in the run without it disappearing every time new stuff is added to the bottom.
+
+<LI>No closedown confirm
+<BR>Alt-F4 or windows closedown will by default cause DPT (GUI mode) to display a prompt asking for confirmation that it should close.  Setting this option means no prompt is issued.  If user 0 was halted, it is unhalted as if you'd used the regular "unhalt" menu command.  If user 0 is doing something else, it is bumped as if you'd used the regular "bump" menu command.  This option has no effect in NOGUI or service mode, as covered below, since closedown is not done through the GUI then.
+
+<LI>Help documentation options
+<BR>These two (location and redirect check box) have the same meaning as <A HREF = "ideuser.html#Options_Installation">the same options in the client app</A>.
+
+</UL>
+
+<A NAME = Config_Params> </A>
+<H3>OS command line parameters</H3>
+
+Some of the options above can additionally be overridden on the OS command line.  This is obviously desirable when running dpthost.exe in a batch job, for example to load a file.  The command line should have the following form:
+
+<PRE CLASS=code>
+dpthost [option=value]...
+</PRE>
+
+e.g.
+
+<PRE CLASS=code>
+dpthost sysin=myjob.txt parms=batchparms.txt
+</PRE>
+
+The accepted parameters are:
+
+<UL>
+	<LI>?: Displays a help list similar to this and then closes down when you click 'OK'
+	<LI>SYSIN: user 0's input file name
+	<LI>SYSPRINT: user 0's output file name
+	<LI>PARMS: parameter values
+	<LI>MSGCTL: MSGCTL commands
+	<LI>AUDIT: audit trail file
+	<LI>IOD3CFG: IODev3 config file
+	<LI>PRTKEEP: 'GDG' generations
+	<LI>WORKINGDIR: Overrides the value specified in the Windows shortcut.  Mainly intended for service mode.
+	<LI>NOGUI: Run with no console.  In this mode all interaction with the host must be via user sessions.
+	<LI><I>Ignored if used with NOGUI:</I>
+	<UL>
+	<LI>SHOW: see below
+	</UL>
+</UL>
+
+The SHOW parameter can take the values MIN (run initially minimized); PRINT (initially show the sysprint pane instead of the audit trail); or AUDIT (the default).
+
+<P>It is not possible to specify "regular" parameter values (e.g. MAXBUF, NUSERS etc.) on the command line like M204 allows you to do on the JCL EXEC statement.  Note also that there is no SYSOPT parameter on DPT, since all the bit switches it contains are redundant or implemented differently.  
+
+
+<A NAME = Config_Service> </A>
+<H3>Running DPT as a Windows service</H3>
+
+Windows services are programs running in the background, and accessible to all Windows users on that machine.  As such they are not associated with any user's desktop, and do not have an interactive front end.  All interaction with such applications is either via Windows Control Panel (start and stop functions) and client applications.  From version 2.29 DPT can be run in this mode so long as the NOGUI command line option (see earlier) is specified.
+
+<P>In addition to not showing the usual DPT "console" with its view of the audit trail, there are some other implications of NOGUI mode:
+<UL>
+<LI>The recovery process if required will always run non-interactively, regardless of whether the RCVOPT = X'10' option was set requesting interactive recovery.
+<LI>There are certain times during the early stages of startup and the final stages of closedown when DPT wants to display error messages but the audit file has either not been opened yet or has been closed.  In such cases a Windows message box would normally be displayed, but in NOGUI mode, messages are written to a text file, <TT>dpthost.log</TT>.  Naturally this is less "in your face" than a GUI message, so it is probably good practice to periodically review this file to check for otherwise-unnoticed problems.
+<LI>In general if startup problems occur with a service or just NOGUI mode, try starting DPT host directly from Windows explorer, i.e. with its GUI, to see if the diagnostics are clearer that way.
+</UL>
+
+<P><U>Installing and uninstalling services</U>
+<BR>Setting up DPT as a service requires several options that it's easy to forget or mistype, so the tools menu in the regular DPT console contains a handy dialog for installing and uninstalling services.  If you use some other means of installing the service(s), remember to specify the command line parameter NOGUI, and probably WORKINGDIR too (services otherwise start in C:\Windows\System32").  If the DPT built-in install function is used, these will be added automatically in the correct format.  
+
+<P>To use the built-in function, DPT host must be "run as administrator". To view the definition for one of the listed services , select it in the list.  Then you can uninstall or modify it if desired.  Uninstallation of a service may occasionally succeed "partially", and the service remains visible. In such cases the service has been "marked for deletion" at some point soon when Windows gets round to it.  This can happen if the service is currently running, or if the Windows services dialog is open.
+
+<P>Service IDs and display names must both be unique.  The description can be as long as you like.  Each copy of the executable can be associated with several different services, but each must have a different working directory if they will be run at the same time.
+
+
+<P><U>Starting and stopping services</U>
+<BR>When a DPT host service is started it performs everything it would if you ran it "normally", say by double clicking on dpthost.exe in Explorer (see also the following main doc section <A HREF = #Starting_and_Stopping_the_System>starting and stopping DPT</A>).
+
+<P>The command line parameters that you might normally put in a Windows shortcut definition, or batch file, are given when installing the service, so in that sense installing the service is much like defining a shortcut.  However, it is made a little more confusing because the Windows Control Panel "start service" screen also allows these parameters to be given again if the service is started manually.  DPT chooses to ignore any such manual parameters, and always sticks to the installed ones.
+
+ 
+<P>Using the "stop" function in Windows Control Panel, (or closing down Windows itself), invokes the same DPT processing that would be performed normally when using the DPT GUI "UnHalt" function, or issuing the =UNHALT command at a user chevron.  In other words user zero wakes up and starts to perform any commands after the HALT in its input stream.  If this processing might take a while, you should set the DPT system parameter SRVSTPWT to the expected number of seconds with some wiggle room.  This is so that if Windows is shutting down, DPT can tell it to wait rather than possibly terminating the DPT process and leaving files corrupted.  The default is 20, which is how long Windows waits by default (see Windows tech notes for registry key <I>WaitToKillServiceTimeout</I>).
+
+<P>DPT does not currently support being "paused" as a service.  Logically this might be considered to be similar to issuing an "EOD" command, and is something that could be added later if required.
+
+<P><U>Viewing the audit trail</U>
+<BR>In NOGUI and/or service mode DPT still generates its audit file as normal, but the console is not there for you to see messages scrolling past.  To look at the audit trail the options are (1) open it in its current state with notepad, or (2) use the new <A HREF = "language.html#DISPLAYAUDIT">DISPLAY AUDIT command</A> on a user session, which offers more functionality.
+
+
+
+
+
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Starting_and_Stopping_the_System> <H2> Starting and Stopping the System </H2> </A>
+
+Starting the system is just matter of invoking dpthost.exe, although there are various ways that can be done, such as double clicking in Windows explorer, invoking the program from a batch file, or installing DPT as a system service (see above).
+
+<P>For a batch run, place the required commands in sysin.txt, with no HALT at the end.  When the system thread finishes working its way through the commands, it will close the application.  For an online run (including service mode) leave the HALT command in place, and the system thread waits there to be un-halted, which can be done from the DPT console window, or from a normal user thread with the <A HREF = "language.html#BBUNHALT">=UNHALT command</A>, or (in service mode) stopping the service.
+
+<P>When closing down, the system thread automatically issues a BUMP ALL and then waits for all other user threads to terminate.  Therefore you don't need to code these explicitly in the sysin file.
+
+<P>As on M204 the the EOD command can be used to prevent any more users from logging on, and users can also be bumped so that their processing breaks at a "convenient moment", and they log off.
+
+<P>The host application sets a return code which can be accessed for example in a DOS batch (xxx.bat) file.  The return code is the highest <A HREF = "language.html#MSGCTL">RETCODE</A> set by any message by any user during the run, or the highest parameter value passed to <A HREF = "language.html#JOBCODE">$JOBCODE</A> if that is higher.  In the current version there is no distinction between "online" and "batch" type return codes.
+
+<P>The default codes associated with messages do not follow a very structured scheme, but a rule of thumb is:
+<UL>
+	<LI>4 = Non-serious error such closing a file which is not open, or invalid commands
+	<LI>&gt4 = Potentially serious errors, the higher the code the more serious
+	<LI>1000 = An error occurred even before system messaging could be initialized
+</UL>
+
+<A NAME = ClosedownPrompt></A>
+<H3>Prompt at closedown in GUI mode</H3>
+<P>Using Alt+F4, or clicking the main window [X] button, or initiating Windows overall closedown/restart, do not by default automatically close down DPT, but instead present a prompt dialog asking for confirmation.  This is a reminder that there may be an impact on active online users or database transactions.  The <A HREF = #Config_OSCmd>console options</A> screen lets you set a flag to disable this prompt.   Note that none of this is relevant in NOGUI and/or service mode (qv).
+
+<P>The same option 
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Setting_up_Thread_Types> <H2> Thread Configuration and Operation </H2> </A>
+
+<UL>
+	<LI><A HREF = #Supported_Thread_Types>Supported types</A>
+	<LI><A HREF = #Thread_Type_Notes>Setup notes by thread type</A>
+	<LI><A HREF = #Thread_OSSched>Thread management and scheduling</A>
+	<LI><A HREF = #Thread_Other>Other thread set-up issues</A>
+</UL>
+
+<A NAME = Supported_Thread_Types></A>
+<H3>Supported types</H3>
+Closest M204 equivalents - see more detailed notes below.
+<UL>
+<LI>1 = User 0
+<LI>3 = File-in, file-out robot thread
+<LI>7 = dptclient.exe <A HREF = "ideuser.html">custom front end</A>, via a socket
+<LI>15 = Line-at-a-time socket connection, e.g. telnet 
+<LI>(29 = BATCH2)
+<LI>99 = Daemon thread (DPT custom type)
+</UL>
+
+<A NAME = Thread_Type_Notes></A>
+<H3>Setup notes by thread type</H3>
+
+<P><U>IODev 3</U>
+<BR>IODev3 threads are initiated by defining them in file iodev3.ini.  This file is automatically processed at system start-up, assuming NUSERS > 1, and should contain a single line defining each IODev3 thread to be started, for example:
+
+<PRE CLASS=code>
+infile_A.txt outfile_A.txt 5</TT>
+'IODev3 Inputs\B.txt' 'Iodev3 Outputs\B.txt' 5</TT>
+</PRE>
+
+<P>Where each line contains three parameters - the first two are the input and output file to be used, and the third is the number of generations of output file to save (default 0).  The first line in an IODev3's input file is always taken as the user name. IODev3s do not require a password even if DPT is set up to require logon.
+
+<P>The IODev3 threads may not in the current release share an input file, even if the input stream, including user name, is to be exactly the same.  If the output is going to a different directory, that directory must exist.
+
+<P>The file names can be quoted if desired (e.g. if they contain spaces).  Lines beginning with asterisk are ignored.  Any text after the third parameter on a line is also ignored.
+
+<P><U>IODev 15</U>
+<BR>This type supports telnet or any other custom socket program, which would then work similarly to a M204 IFDIAL or RCL thread.  Most interesting operations like EDIT and full-screen READ/WRITE are disallowed, although UL debugging is OK.
+
+<P>The windows telnet client (telnet.exe) works OK, if not perfectly.  The only "special" control sequences understood are GA (go-ahead), which is sent to the client just in case it's turned on, but is not required, and is ignored, in the other direction; and BRK (break), which if sent from the client should have the usual M204 effect of "attention" - i.e. the same as typing *CANCEL in most cases.  The $READINV function operates just the same as $READ on IODev15 - i.e. no attempt is made to turn off/on LOCAL_ECHO on the client. There is no negotiation of telnet operational parameters at any time.  Often the defaults you get are OK though, e.g. when you just say:
+
+<PRE CLASS=code>telnet localhost 13204
+</PRE>
+
+<P><U>Socket threads in general</U>
+<BR>IODevs 7 and 15 are both socket connections.  The host application listens for connections on the port number specified by parameter SYSPORT.  This parameter can be reset during system operation if desired, but the new setting will not take effect until the listening thread is restarted, using the <A HREF = "language.html#BBSOCKET">=SOCKET  command</A>.
+
+<P>The custom DPT client establishes itself as an IODev7 thread by (automatically) responding correctly to an initial challenge by the host.  Any other "incorrect" response here makes the host treat the thread as an IODev15.  When connecting with e.g. telnet, just press ENTER at this challenge.
+
+<A NAME = BATCH2> </A> 
+
+<P><U>BATCH2 threads</U>
+<BR>You can create a BATCH2-style configuration in various ways.  One is to use the <A HREF = "ideuser.html#BATCH2">DPT client with appropriate config options</A>.  Another, possibly more flexible, method might be to use a commercial terminal emulator or telnet client which has a client-side scripting facility, and use it on IODev 15.  Cheaper than that would be to write your own simple line-mode socket client.
+
+<P>On Model 204, IODev 29 is an IFDIAL thread, commonly using BATCH2.  It is not supported as a separate IODev type on DPT, although the <A HREF = "m204xref.html#Parm_Iodev">IODEV parameter is resettable</A>, allowing some ability for threads to masquerade as other types.
+
+
+<A NAME = Daemon_Threads></A>
+<P><U>Daemon threads on DPT - IODev 99</U>
+<BR>In most respects a daemon thread behaves the same as an IODev 3.  It writes its output to a file, and all the default parameter settings are the same.  
+
+<P>The main difference is in where it gets its input from. A daemon's input consists of one or more command lines supplied when <A HREF = "language.html#BBSPAWN">spawning the daemon</A>, rather than a file as with IODev 3. Also note that a userid and password are not required as part of the input to a daemon, but instead are supplied when spawning the daemon.
+
+<P>Daemon threads can be spawned by any user to perform arbitrary work, and are also used by the DPT host to perform various important housekeeping and background tasks.  For example:
+
+<UL>
+	<LI><A HREF = "language.html#PSTxxxxx">Checkpointing and buffer housekeeping</A>
+	<BR>These are system-controlled tasks, and correspond roughly to what are called "pseudo-subtasks" on Model 204.
+	<LI><A HREF = "language.html#FUNC_SIRDAEM">$Function-support daemons</A>
+	<BR>Analogous to the Sirius "sdaemons", and used to service functions like $COMMBG.
+	<LI><A HREF = "webguide.html">Web server daemons</A>
+	<BR>Very similar to the above - used to service web page requests.
+</UL>
+
+<P>System daemons are started by DPT with full privileges. User-initiated daemons ($SPAWN) and the $function support daemons when handling e.g. $COMMBG will usually be set up to take on the privileges
+ of the user who initiated them.
+
+<A NAME = Thread_OSSched></A><H3>Thread management and scheduling</H3>
+DPT delegates all thread scheduling to the operating system.  One implication of this is that <A HREF = #Memory_Servers>servers and server swapping</A> are things that the programmer on DPT does not have to worry about.  Apart from that there are few noticeable differences, for example the default display of the <A HREF = "language.html#MONITOR">MONITOR command</A> displays the OS thread ID.
+
+<P>Internally a trade-off was made when deciding not to build a DPT internal scheduler.  On the plus side all operating systems DPT is ever likely to run on are likely to supply thread-management services, and reinventing the wheel should be avoided unless the available wheels really are unsuitable.  On the down side, all processing within DPT must be prepared to be time-sliced at any moment - in other words all threads are permanently "swappable".  This does impose some internal overheads compared to the Model 204 situation where Model 204 can time-slice at the moment of its choosing.  Of course, DPT takes care of all this, and the end user need not worry about it unless they want to.
+
+<P>Another big advantage of using OS threading services, which is becoming more important these days, is that multi-user workloads on DPT automatically take advantage of multi-processor machines.
+
+<A NAME = Thread_Priority></A>
+<P><U>Thread priorities</U>
+<BR>DPT does have a PRIORITY command like on Model 204, although the meaning of HIGH, NORMAL and LOW is not exactly the same.  Since thread scheduling is performed by the operating system, the type of control we can exert is determined by what the OS provides.  The following comments are particular to Windows 2000, which is the OS DPT was written on, and probably apply in all the important ways to later Windows as well.
+
+<P>The DPT host as a whole runs with whatever system priority on your PC you assign it - by default the Windows "Normal" priority.  Threads within the host run at a priority level relative to that of the host system as a whole.  When you use the PRIORITY command to set a thread to to HIGH, DPT gives it a one point advantage, and LOW a one point disadvantage.  The windows scheduler works on a 32-point system when dispatching threads, but since most applications run at "Normal", even a small advantage is usually decisive.
+
+<P>Those interested should consult their Windows documentation for full details on this.  For example with CPU-bound threads, the Windows 2000 scheduler is quite brutal - those with even slightly lower priorities simply do not get a look in.  At all.  On the other hand the scheduler is quite generous with even low priority threads that resume after waiting for disk or user IO.
+
+<P><B>* Warning * </B>As a general rule it's probably best not to mess with thread priorities.  In fact the chances are that anything other than the default setting, where all DPT user threads have the same priority, is liable to slow down threads which were supposed to speed up, and several others too, because of the implications of resource sharing.  If you were unlucky with the exact moment you issued the command you might even disable DPT entirely.  One possible reasonable use of PRIORITY would be to downgrade a thread which is known to be grinding CPU and not using any shared resources.
+
+
+<A NAME = Thread_Other></A>
+<H3>Other thread set-up issues</H3>
+<P>NUSERS has the same meaning as on M204.  If any IODev tries to start a session and there are already NUSERS active threads (including user 0 and any PSTs - see elsewhere), the session is rejected.  In the case of the IODev3s, if there are more defined than NUSERS, the system does not wait for earlier ones to finish before trying to start the later ones.  This means the later ones will most likely fail.
+
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Memory_Management> <H2> Memory Management</H2> </A>
+
+<UL>
+	<LI> <A HREF = #Memory_Parms> Control parameter summary</A>
+	<LI> <A HREF = #Memory_Servers> Servers</A>
+	<LI> <A HREF = #Memory_Buffers> Disk buffers</A>
+	<LI> <A HREF = #Memory_MAXBUF> Setting MAXBUF</A>
+	<LI> <A HREF = #Memory_SOS> Out of memory conditions</A>
+</UL>
+
+Memory management methods are always going to vary between platforms, and what with this not being the mainframe, things are a little different to Model 204. Whilst in principle DPT is designed in a platform-independent way, some of the memory management routines are tied, in this case, to Win32, and currently assume maximum 2Gb (31-bit) usable address spaces.  
+
+<P>On the plus side, it's all somewhat simpler from a user point of view than Model 204.
+
+<A NAME = Memory_Parms></A> <H3>Control parameter summary</H3>
+Memory-related control parameters are used by Model 204 to allow you to specify maximum "expected" sizes for various control structures.  Surely it would be nice not to have to worry about this?  Well yes and no ... using fixed-size structures does have its advantages.  It saves the Model 204 from having to dynamically control data structure sizes (with the potential overheads that would bring, especially in terms of interaction with the operating system).  It also means that once a request has compiled and loaded it will more often than not run without further memory problems, because it will only run in a large enough server.  Another sometimes-overlooked side-benefit of being forced to decide on "appropriate" values for some parameters is that these limits then kick in when a program unexpectedly uses "inappropriate" quantities of some resource, like global variable space say.
+
+<P>However, all this aside, let's say that ideally all structures would be allocated from a general pool representing "all available memory", and we would not have the hassle of deciding in advance the relative importance of, say buffers compared to user servers, or percent variables versus request line count.  On your PC, where there is usually going to be just one user, this is a more realistic aim than in the multi-user melee that is the mainframe.  DPT attempts to walk the line between idealistic and pragmatic, and adopts a simpler approach than Model 204 with most of this stuff.
+
+<P>At the system level this means parameters like SPCORE, LENQTBL and NSERVS are not used, and at the user level it means all the UTABLE parameters like LQTBL and LSTBL are also not used.  The only memory-related parameters used are MAXBUF, BUFAGE (DPT-specific), LGTBL and LVARTBL (DPT-specific).  Anything not controlled by these is requested as required from the operating system.  To cater for the (generally infrequent) situations when such requests fail, DPT has a specific error condition that can be caught as the error global value in a User Language subsystem (see later).
+
+<A NAME = Memory_Servers></A> <H3>Servers</H3>
+DPT doesn't have its own internal scheduler like Model 204, but allows each user to run as a separate OS thread.  Therefore since we never need to do M204-style "server swaps" the attraction of squeezing each user into pre-sized sub-address-spaces (i.e. servers) is much reduced.  The related M204 parameters (NSERVS, SERVSIZE etc.) are not used on DPT, and there is no equivalent of the CCASERVR file.
+
+<P>In addition, since users are not limited to a fixed-size server, there is little reason to force you to juggle all the  UTABLE parameters.  However in this case we keep one or two of them.  One is LGTBL, which is retained to help rein in requests that might go global crazy.  A new parameter added is LVARTBL, which is a simple check on the number of variables of all types in a request (arrays count once per element), and is also there as a sanity check, for example when there are auto-built requests.  There is no check on the size of a request in terms of number of executable statements (i.e. emulating LQTBL).
+
+<P>Following on from the above, DPT can not be used to gauge expected UTABLE usage in code ultimately bound for M204.
+
+<A NAME = Memory_Buffers></A> <H3>Disk buffers</H3>
+The MAXBUF parameter, which has a slightly different meaning to M204's MAXBUF, is used to control the size of the "disk buffer pool".  This is required because there has to be some limit placed on the allocation of memory for buffer pages, since they would otherwise eventually swamp the virtual address space of the application with information that was no longer of interest, thus making it harder and harder to locate information that was still actively in use, and ultimately causing physical memory problems.
+
+<P>On DPT, the MAXBUF parameter has a slightly different meaning in that it refers purely to memory used for buffered database file pages.  Model 204 uses its "disk buffer pool" for significantly more than that - there it's really a general purpose pool of memory, and at any given time contains a mixture of database page copies, found sets, sorted sets, TBO logs, and lots of other stuff, in varying amounts.  In fact the proportion of the buffer pool filled with actual file pages might often be quite small on M204.
+
+<P>Another difference is that on DPT the amount of real, <I>physical</I>, memory actually used is not fixed, but starts off low and increases as required.  MAXBUF represents the maximum, and is not resettable.  The real memory used will also, by default, shrink again if the system has been quiet for a while.  This is controlled by the <A HREF = "m204xref.html#BUFAGE">BUFAGE parameter</A>.
+
+<P>As with M204, a busy DPT host system uses a LRU (least recently used) scheme to decide which pages to discard and overwrite first when when the buffer pool is "full".   
+
+<A NAME = Memory_MAXBUF></A> <H3>Setting MAXBUF</H3>
+Anything left over after buffers are allocated is used for all the other requirements of the host system (see above).  A good rule of thumb for a typical workload might be to put say half your PC's real memory into MAXBUF, but there are common situations where more or less might be a good idea (see below).
+
+<P>The default is 10,000 pages, or 80 Mb, which at the time of writing is quite small by PC standards, so one of the first pieces of parameter customization you might do would be to increase the buffer pool to something more capacious.  For example if you have 512Mb of real memory, tripling the default is something that would almost certainly improve the operation of the DPT file system.
+
+<P>The theoretical highest value you would be able to set and still let DPT start up cleanly would be a little less than 2Gb. This is because "Win32" means 31-bit application-usable *virtual* address spaces (ignoring extended addressing for now). However, using a value higher than the quantity of *real* memory available (e.g. 256Mb, 512Mb etc.) would usually not be beneficial.  You might think a page read from the Windows swap file would be just as quick as from a file's "home" location, but it doesn't work out that way in practice.
+
+<P><U>Atypical workloads</U>
+<BR>Probably the most important kind of jobs in this category are data loads.  This subject is <A HREF = "dbaguide.html#LOADING">discussed more in the DBA guide</A>.  
+ 
+<P>Another time you might deliberately want to deviate from a "general workload" configuration and set MAXBUF higher is if you wanted to monitor the DKRD/DKPR effects of tuning efforts on UL programs destined for a production situation where there will be lots of memory (or more than you've got on your PC anyway).  Database accesses that are satisfied from the "buffer pool" will not clock up DKRDs regardless of whether the buffer page in question was in real memory or the Windows swap file.  Allowing for this kind of testing is the reason DPT doesn't simply insist on all real memory for buffers.
+
+<P>One time you might want to use a very low MAXBUF setting is in a batch run that performs largely sequential database processing, but otherwise could make good use of memory in other ways, perhaps by doing lots of sorting.  In such cases few database pages are reused, so buffering them is not worthwhile, and hogging memory with pointless buffer pages leaves less available for the other work.  Model 204 DBAs will be familiar with similar considerations in reorgs and similar types of run.
+
+<P>Another small-buffer-pool scenario would be if many programmers were working on a single host which only had small test data files attached.  Then the system would be better off using memory for compiler and debugger data structures.
+
+<P>Finally of course the best idea is always to keep an eye on the statistics at the end of the audit trail, and make adjustments or experiment accordingly.
+
+<A NAME = Memory_SOS></A> <H3>Out of memory conditions</H3>
+DPT is continually requesting chunks of memory of all sizes from the operating system, and absolutely any of these requests, from a single temporary control flag to the creation of a large cross-reference table during a file reorg, might fail.  Failure can be the result of a number of prevailing situations.  Firstly, if DPT is using its full 31 bit address space there is little the operating system can do apart from refuse a request for more memory.  Secondly, and similarly, the OS may not have a large enough swap file to back the virtual memory we request, even if less than 2Gb.  Both these situations might most often occur during the same kinds of activities that cause "CCATEMP full" on Model 204. Namely during large uncommitted update units, and when large numbers of temporary structures such as found sets are in use.  A further case might be during request compilation when M204 would normally issue some kind of "long request" message, for example when allocating a huge string array.
+
+<P>Memory exhaustion in most situations should be handled fairly well by DPT.  TBO will be invoked, if it's turned on, and valid for the current activity (some operations are non-backoutable).  A small amount of virtual memory is permanently reserved for TBO use.  An active user language request is terminated, <I>without</I> routing to the ON ERROR unit first. After this the error is handled much like a UL run time error, which means the user is either returned immediately to command level, or if a subsystem is in use the user either leaves the subsystem or is routed to the error procedure with a new error global value "MEMORY" - see later.  See also the section on user restarts later for more about how database errors are handled.
+
+<BR><A HREF= #Top><BR>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = System_Integrity> <H2> Data Integrity </H2> </A>
+
+<UL>
+	<LI> <A HREF = #RCVOPT> RCVOPT parameter settings </A>
+	<LI> <A HREF = #Integrity_Physical> Physical integrity </A>
+	<UL>
+		<LI> <A HREF = #Integrity_CPTaking> Taking checkpoints </A>
+		<LI> <A HREF = #Integrity_Rollback> Rollback </A>
+		<LI> <A HREF = #Integrity_CPLowLevel> Low level details</A>
+	</UL>
+	<LI> <A HREF = #Integrity_Logical> Logical integrity </A>
+	<UL>
+		<LI> <A HREF = #Integrity_TBoundaries> Transaction boundaries </A>
+		<LI> <A HREF = #RESTARTS> Restarts </A>
+		<LI> <A HREF = #Integrity_TBO> TBO </A>
+		<LI> <A HREF = #FRCVOPT> No FRCVOPT parameter</A>
+	</UL>
+	<LI> <A HREF = #Force_Commit> Force-commit in "batch update mode"</A>
+</UL>
+
+<A NAME = RCVOPT></A> 
+<H3>RCVOPT parameter settings</H3>
+These are bit switches, and are described in the paragraphs below.
+
+<LI>X'01' = Enable checkpointing and rollback
+<LI>X'02' = Enable TBO and LPU (for all files)
+<LI>X'04' = Enable batch force-commit
+<LI>X'10' = Enable interactive rollback
+<LI>X'20' = Enable auto backups in auto rollback
+
+
+<A NAME = Integrity_Physical></A> <H3>Physical integrity - checkpointing and rollback</H3>
+The DPT host takes checkpoints (by default) in pretty much the same way as M204 does.  In other words the system creates a checkpoint file at start-up time if the RCVOPT X'01' bit is set, and checkpointing is automatically attempted by a system pseudo-user (daemon) every CPTIME seconds, timing out after CPTO seconds.  However, there is no journaling, and therefore no roll forward recovery.  This was thought to be an unnecessary luxury for a platform not intended for heavy OLTP use.
+
+<P>The following notes assume some familiarity with Model 204 recovery topics.
+
+<A NAME = Integrity_CPTaking></A> <P><U>Taking checkpoints</U>
+<BR>The actual activity of taking a checkpoint usually does not involve writing updated pages to disk, since this is done by the last updating thread at the end of update units.  This can be thought of as similar to the situation when M204's DKUPDTWT parameter is zero (this parameter is not emulated at all).  
+
+<P>Taking a checkpoint is therefore usually a simple case of clearing down the checkpoint file and unflagging the updated buffer pages.  The approach taken on DPT is that the CHECKPOINT command works synchronously on the issuing user's thread rather than rather than "submitting a request" to the checkpointing pseudo-subtask (daemon).  This has the side-benefit of allowing a real-time implied checkpoint to happen during some commands (see later).
+
+<P>If CPTIME is non-zero, there should be a daemon thread running which periodically wakes up and issues a <A HREF = "language.html#CHECKPOINT">CHECKPOINT command</A>.  This is usually much nicer than having to remember to do it yourself.  If CPTIME is zero at the start of a run, RESETting it to a non-zero value will spawn a new checkpointing daemon.  Setting CPTIME to zero will tell any current checkpointing daemon to log off before taking its next checkpoint.  Changes to CPTIME take effect the next time the daemon wakes up.  If you want it to take effect earlier than that, just bump the daemon before issuing RESET.  If the daemon abends for some reason you can check the reason using the <A HREF = "language.html#BBSPAWNINFO">=SPAWNINFO command</A> using special daemon ID of PST_C.
+
+<P>During a checkpoint, if there are any in-flight updates the daemon will wait for CPTO seconds for them to finish updates before giving up.  In this event things are similar to Model 204 but not quite the same.  What happens is that every end-of-transaction from then on (until a successful checkpoint is taken) causes the updating user to effectively attempt an immediate CHECKPOINT (i.e. no CPTO waiting).  The checkpoint daemon itself simply gives up and goes back to sleep for CPTIME seconds.
+
+<P>Going by the descriptions in the M204 manuals, the DPT checkpointing algorithm is certainly much simpler in other respects too.  For example during the quiesce period other threads are simply blocked from starting any updates.  Also there is no "extended quiesce" period, whatever that is.  Simple but effective is our motto.
+
+<P>The CHKABORT command does pretty much what it does on Model 204.
+
+<P>CPTO can be zero (wait for ever) or a custom value of -1 (don't wait at all if the initial attempt fails).
+
+<A NAME = Integrity_Rollback></A> <P><U>Rollback</U>
+<BR>DPThost invokes rollback automatically based on the presence of a non-empty checkpoint file <I>and</I> the appropriate RCVOPT bit being set.  That is, if you crash the system, then change the parms file to specify RCVOPT=0, recovery will not be invoked next time you start the system.
+
+<P>The RESTART command is therefore redundant.  The automatic recovery is the equivalent of "RESTART ROLL BACK".  Since all file allocation is dynamic, the NODYNAM option would always be off.  You can if you want simulate a run with no RESTART command, either by simply deleting or renaming the old checkpoint file before starting the system, or clicking on the "bypass" button in the rollback phase of recovery, if interactive mode is on.
+
+<P>When dpthost.exe is started, if roll-back looks as if it's required, the system by default takes all the necessary action automatically.  Setting the (DPT custom) RCVOPT X'10' bit means the process is interrupted at a handful of key points for the user to make decisions:
+
+Note that DPT does not allow CPMAX to be anything but 1 in the current release, so there is no point where you have to choose which checkpoint to roll back to.
+
+<A NAME = Integrity_CPLowLevel></A> <P><U>Low level details</U>
+<BR>Full information about the checkpoint logging and rollback processes is perhaps beyond the scope of this document.  However, anybody who's interested should email DPT HQ.
+
+<P>One particular point concerns the taking of backups before recovery is attempted, and restore to them if recovery fails.  If your files are large, this will take a non-trivial amount of time, and the default in automatic mode is not to do it.  However, if you set the custom RCVOPT X'20' bit, automatic recovery will do it, so that everything will be left exactly as it was before starting the failed run.
+
+<P>Because of the way DPT checkpointing works, there is in theory no reason that a second rollback attempt should care whether the files in question had been partially rolled back in a previous attempt, and this is why the default is to skip backup/restore.  In addition, if recovery fails you may often find yourself reverting to a complete older set of file backups, in which case reinstating the (broken) pre-rollback files will just be a waste of time anyway.
+
+<!***************************************************>
+<A NAME = Integrity_Logical></A> 
+<H3>Logical integrity - transaction processing and TBO</H3>
+
+<A NAME = Integrity_TBoundaries></A> <P><U>Transaction boundaries</U>
+<BR>No distincton is made on DPT between a "transaction" and an "update unit".  In this documentation the two terms are used interchangeably, as the mood suits.
+
+<P>The rules governing transaction boundaries are very similar to Model 204's, both in the obvious cases (COMMIT, BACKOUT statements), and the less obvious (return to command level or end-of-procedure when APSY auto-commit is on).  
+
+<P>All file-updating commands include an implied commit when they finish.  In addition the following commands commit any existing update still open at the moment they are invoked.  This list is an amalgamation of the lists in the M204 File Manager's Guide pp 19-17 onwards.  Note that because of the differences in procedure handling on DPT the procedure-related commands are irrelevant.
+
+<P>ALLOCATE
+<BR>BROADCAST FILE
+<BR>CHECKPOINT
+<BR>CLOSE
+<BR>CREATE
+<BR>DEFINE FIELD
+<BR>DELETE FIELD
+<BR>FREE
+<BR>INCREASE
+<BR>INITIALIZE
+<BR>REDEFINE FIELD
+<BR>RENAME FIELD
+<BR>RESET (file parameter)
+
+<P>Plus these DPT custom commands:
+
+<BR>=BUFFTIDY
+
+<A NAME = RESTARTS></A><P><U>Restarts</U>
+<BR>Like Model 204, DPT will terminate a user's session if there are serious file updating problems.  DPT's processing may be a little simpler  but the following rules of thumb apply:
+<UL>
+	<LI>When an updating problem of any kind occurs that can be successfully backed out, the current request (if any) is cancelled.  This of course implies that TBO is turned on.  APSY error global value = BUG.  
+	<LI>When a User Language update operation fails leaving the file physically inconsistent, the user thread is terminated in a "hard" way.  An example is during ADD f=v when the data has been stored in table B, but table D filled, and TBO is not on or could not be used for some reason.  APSY error global value = HRD.  Processed just like a bump.
+	<LI>When one of the big non-backoutable updating commands like REDEFINE FIELD or REORGANIZE fails leaving the file physically inconsistent, the user is simply dumped back at command level rather than right out of the system.  It's doing it's best to be friendly here.
+	<LI>When an update operation fails in such a way that the file is physically OK but an update unit was in progress, the file is marked logically inconsistent, and the user thread terminated in a "soft" way.  This is no different from a "hard" restart really, apart from: APSY error global value = SFT.  Processed just like a bump.
+</UL>
+
+Note that here an "updating problem" can mean anything that goes wrong during an update operation on a file, and includes out-of-memory and other serious but recoverable system problems.
+
+<A NAME = Integrity_TBO></A> <P><U>TBO</U>
+<BR>The transaction backout mechanism works similarly to M204, although it is turned on and off at system level, via the a new X'02' bit in the system RCVOPT parameter, thus making FRCVOPT/X'08' redundant.  M204 users often work TBO at system level anyway, so this is hopefully no great loss.  It not only makes things simpler to use, but has made it much easier to implement internally to DPT.  
+
+<P>There may be some other slight differences in the exact behaviour of TBO in some cases, for example in the exact order of fields on records after backout of DELETE EACH OCCURRENCE.  Whatever happens should however be "reasonable", so that for example occurrences will always reappear in the correct relative order.
+
+<P>The behaviour of MSTRADD and MSTRDEL during TBO is the same as on M204 (when backing out a record deletion the same slot has to be used for the primary extent, to ensure invisible fields are not "lost").  Record numbers of deleted records are in fact the only items tracked in the constraints log - in other cases we just accept the possibility of TBO failure.
+
+<P>To cater for cases where TBO is invoked because of memory problems somewhere, the system keeps a small amount of memory permanently reserved for use purely by TBO.  This can be thought of as similar to the DPGSRES mechanism, which is also used.  In other words at the start of a backout the reserved memory is released for use and all files are told that they can use the DPGSRES pages, typically for re-inserting deleted b-tree values.  After backout has finished both restrictions are reinstated (if possible).
+
+<P>The same set of activities can be backed out on DPT as on M204, except for procedure updates, which are completely outside the recovery mechanisms.
+
+<A NAME = FRCVOPT><P><U>No FRCVOPT parameter</U>
+<BR>Just an extra little note about this parameter.
+
+<P>All recovery-related activity is enabled and disabled at system level, not file level, so the relevant FRCVOPT parameter bits are not emulated (X'80', X'40', X'20', X'04', X'02').  In addition, the X'01' bit (completely apply all updates) is irrelevant since there is no roll forward.
+
+<P>The one remaining bit (X'10') is also not emulated.  It is always effectively set, disallowing discontinuities.  Aside from removing the need for FRCVOPT, it also means we can do away with the internal ENQCTL mechanism too!  However, given this situation, the only way to enforce it is to control the <A HREF= "language.html#FREE">FREE command</A>.  If a file has been updated but not checkpointed, FREE is not necessarily allowed - the user is prompted to take a checkpoint as part of the FREE processing.  Losing the possibility of discontinuities seemed a small price to pay for a nice simplification to the system.  In fact this trade-off seemed so convenient internally that one or two other commands (e.g. ALLOCATE, CREATE) also involve a "hidden" checkpoint.
+
+
+<A NAME = Force_Commit></A> <H3>Force-commit in "batch update mode"</H3>
+
+In the normal "online" course of events, the User Language COMMIT statement, or any other transaction-ending event for that matter, causes these things to happen:
+
+<OL>
+	<LI>Updated pages for the transaction are written to disk
+	<LI>Backout information is discarded
+	<LI>Any pending checkpoint is taken if possible
+</OL>
+
+When running with TBO and checkpointing turned off (which is what is meant by "<A HREF = "dbaguide.html#Loading">batch update</A> mode"), the disk writes would usually have little purpose, since the LRU algorithm writes pages out if it has to.  Forcing it explicitly usually just means phsical disk writes happen many times for some pages when once would have sufficed.  By default therefore, the COMMIT statement is inactive, but the RCVOPT X'04' bit allows you to reenable it if for some reason you really want to incur the (often huge) overhead.
+
+<P>Note that this issue only relates to the User Language COMMIT statement - all other transaction-ending events write pages as normal.  For example closing the file.  Note also that this bit switch only has any effect if the X'01' and X'02' bits are off.  Otherwise COMMIT always has its full functionality.  Finally note that on DPT "batch" need not mean that NUSERS is 1.  You might often want to log on and use MONITOR commands to check on the progress of a large update.
+
+<P>The COMMIT RELEASE statement by default functions as RELEASE ALL RECORDS under batch update conditions.
+
+ 
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = APSY> <H2> APSY </H2> </A>
+
+<P>DPT has no pre-compiled procedures, at least in the initial release, so APSY consists of not much more than its driver functionality.  Becuase compilations are not saved, subsystems have no need to place enqueues on files or groups, and following on from that there is no need to actually start or stop subsystems!  Once they are defined, they are available for use. Initialization procedures can simply be included at the time the subsystem would normally have been started.
+
+<P>During program development the fact that procedures are not precompiled can be useful because you don't have to leave the subsystem to make changes to them.  This is similar to the situation on Model 204 when using TEST DEBUG.
+
+<P>A sometimes-annoying feature of Model 204 is that files are closed when leaving a subsystem.  This is optional on DPT, and is controlled by the <A HREF = "m204xref.html#CSTFLAGS">CSTFLAGS parameter X'0100' bit</A>.
+
+<H3>Defining subsystems</H3>
+
+<P>There is no SUBSYSMGMT, and subsystems are created using a new <A HREF = "language.html#CREATESUBSYS">CREATE SUBSYS command</A>, and deleted with DELETE SUBSYS. Subsystems must be recreated in each run, as there is no CCASYS-equivalent permanent storage file.  This mirrors the treatment of groups, where there is no equivalent of CCAGRP, and also like groups it would be usual for user 0 to define subsystems as the system starts up.
+
+<H3>Error processing</H3>
+
+<P>The different values of the error global are somewhat fewer in number than on M204, as follows.  If the subsystem has no error global defined, no global is set, but an error procedure may still be invoked.
+
+<UL>
+<LI>ATN (Attention invoked at an input prompt, and no ON ATTN unit)
+<LI>BUG (Run time errors - i.e. your bugs, not DPT's!  An ON ERROR unit may also have been run first)
+<LI>CAN (User was bumped - no timeouts on DPT)
+<LI>SFT (<A HREF = #RESTARTS>Soft restart</A>)
+<LI>HRD (<A HREF = #RESTARTS>Hard restart</A>)
+<LI>CNT (Error count was non-zero at EOP - see notes elsewhere on MSGCTL)
+<LI>INCLUDE MAX (maximum iterations of the same procedure was reached)
+<LI>MEMORY (DPT-specific value - see elsewhere in this doc)
+</UL>
+
+Several of M204’s other values are irrelevant on DPT, or are of minor interest.  HNG is not emulated simply because of the complications involved in continuing to execute UL when there is no longer an IO device.  Some problems which have separate values on M204 are incorporated into the above values.  For example specific compilation-related values like "TBL - STBL" are not separated out from CNT.  The values relating to files and groups not open are also incorporated into CNT.  BUG includes both UL evaluation errors and any serious file problems encountered during the execution of commands.  Normal command errors are CNT.  
+
+<P>After the error procedure, subsystem processing continues with NEXT-style routing as normal, except with bumps and restarts (CAN/SFT/HRD).  In those cases the error procedure is followed by leaving the subsystem and thread termination. If there is no error procedure defined when one is required, the user simply leaves the subsystem.  Any kind of error encountered whilst the error procedure is being processed also results in the user leaving the subsystem.
+
+<A NAME = AUTOSYS></A>
+<H3>AUTOSYS</H3>
+
+<P>From DPT version 2.0 AUTOSYS is supported for interactive thread types (IODev 15 and IODev 7).  If the AUTOSYS parameter is defined, all users connecting on these IODevs go directly into the named subsystem after the logon exchange, without getting a command prompt.  If the auto-logout option is defined for this subsystem, they will also not get a command prompt when they leave the subsystem, except if <A HREF = "language.html#FUNC_SUBSYS">$SUBSYS</A> is called with the correct option to disable auto-logout.
+
+<P>If the DPT client (IODev7) has some updated procedures which require synchronization at logon time, this is skipped if there is an AUTOSYS.  They will get synchronized the next time the client connects and there is no AUTOSYS.  This is because synchronizing procedures requires the command line.
+
+<P>In some cases, for example when setting up DPT to run in a BATCH2 "robot" configuration, a <A HREF = "ideuser.html#BATCH2">client mini-script</A> would be more appropriate. Create a mini-script with a single line containing the name of the desired sybsystem.
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = ACCESSCONTROL> <H2> Access Control and Security</H2> </A>
+
+<P>DPT's initial releases had no support for any of the access-control hooks that are present in many Model 204 features.  Wherever an access level was required DPT simply ignored the supplied ID/password and allowed full access, or when reporting available access levels, DPT reported "full access is allowed".
+
+<P>Starting with Version 2.16 DPT will make occasional piecemeal progress towards a better level of support.  This section contains a summary of the access-control features currently supported, with links to the appropriate command manual entries etc. Version 3.03 added several new features in this area.
+
+<H3>Summary of current supported features</H3>
+<UL>
+<LI>User ID/password/privilege combinations can be maintained in a system-controlled password file, like CCASTAT on M204.
+<LI>DPT accesses the password file information in conjunction with the following emulated M204 features:
+	<UL>
+	<LI><A HREF = "language.html#LOGCTL">LOGCTL</A>, <A HREF = "language.html#LOGKEY">LOGKEY<A> and <A HREF = "language.html#LOGLST">LOGLST</A> commands. The LOGCTL command notes contain most of the detail describing how access control is applied.
+	<LI>Users can optionally be required to give a valid password when logging on to DPT host, controlled by the <A HREF = "m204xref.html#CSTFLAGS">CSTFLAGS=X'0200'</A> setting, and initiating user privileges as per the X'0400' setting.
+	<LI>The <A HREF = "language.html#LOGON">LOGON/LOGIN command</A> is additionally now supported for dynamically switching to a different account if required.
+	<LI>Assorted commands and User Language statements whose use can be restricted by setting the user privileges appropriately. For example it is possible to prevent the use of file-updating UL statements but allow statements which just read data.
+	</UL>
+<LI>And the following DPT custom features:
+	<UL>
+	<LI>Various <A HREF = "language.html#FUNC_LOGxxx">$functions</A> related to access control, including some for dynamically checking privileges and passwords, and some which are simply alternative, more convenient, ways of issuing commands such as LOGCTL and LOGON.
+	</UL>
+</UL>
+
+<H3>Password file ("CCASTAT" equivalent)</H3>
+DPT maintains a system file called "dptstat.dat" which you will see allocated on e.g. the =LISTALC command output under DD name "+DPTSTAT". 
+
+<P>User IDs and access level values are stored in the file unencrypted. However, passwords are represented by an SHA1 hash value, and there is also an SHA1 checksum to prevent tampering with the file while the DPT host is not running.
+
+<P>On starting the system, if it's not there, DPT creates an empty password file. There is no initial "seed" entry like on M204. To set up initial entries, simply run the system with access control turned off so you can issue LOGCTL commands freely, and after that run the system with access control turned on. System administrators can enable/disable access control on the fly by resetting CSTFLAGS.
+
+<H3>Accss control failure actions</H3>
+<LI>Restricted commands: error message and no action.
+<LI>File manager commands: error message as above, depending on active privileges and the target file.
+<LI>Restricted $functions: UL compilation error.
+<LI>File manager $functions: UL compilation error as above, depending on active privileges and file context in effect when compiling the statement.
+<LI>Data access statements: UL runtime error depending on active privileges and the target file at the time.
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Monitoring_the_System> <H2> Monitoring the System </H2> </A>
+
+<UL>
+	<LI><A HREF = #AUDIT_TRAIL>Audit trail</A>
+	<LI><A HREF = #STATISTICS>Statistics</A>
+	<LI><A HREF = #MONITOR_COMMAND>The MONITOR command</A>
+	<LI><A HREF = #MONITOR_MISC>Miscellaneous</A>
+</UL>
+
+<A NAME = AUDIT_TRAIL></A><H3>Audit trail</H3>
+The audit trail on DPT is configurable in terms of layout using the <A HREF="M204xref.html#AUDCTL">AUDCTL parameter</A>.  Since there are no servers as such, there is never a server number shown.  The line type on each line (by default hidden) is a 3-letter code, taking values similar to M204's 2-letter codes.  The nearest equivanent M204 codes are given in each case below.
+
+<UL>
+<LI>DSI = Dummy string resolutions supplied at user input devices (??)
+<LI>DSP = Dummy string resolutions supplied from procedures (??)
+<LI>ERR = Messages issued to users that were AUDIT CLASS=E at the time of issue (ER)
+<LI>INF = When various processes like loads are invoked with their diagnostics parameters turned on (??)
+<LI>LIS = Logical fullscreen item (post case/deblank etc) (LS)
+<LI>LLD = Logical lines read from user input devices (LI)
+<LI>LLP = Logical lines read from procedures (LP)
+<LI>LLL = Logical lines from any source after dummy string substitution (LL?)
+<LI>MSG = Messages issued to users that were AUDIT CLASS=I at the time of issue (MS)
+<LI>PIS = Physical fullscreen item (pre case/deblank etc) (CS)
+<LI>PLD = Physical lines read from user input devices (CI)
+<LI>PLP = Physical lines read from procedures (CP)
+<LI>RTT = Debugger run-time-trace (??)
+<LI>STT = Statistics (ST)
+<LI>SYS = System start-up and other miscellaneous internal messages (RK+OO+OI...)
+<LI>USR = Lines resulting from User Language AUDIT statements (US)
+<LI>WEB = Web server diagnostics, enabled by WEBFLAGS settings (??)
+<LI>XXX = Supplementary information to the previous line (XX)
+</UL>
+ 
+<A NAME = STATISTICS></A><H3>Statistics</H3>
+DPT collects a <A HREF="M204xref.html#Statistics">smaller range of statistics than Model 204</A>, but all the most frequently consulted ones.
+
+<P>The categories of stats are also fewer, and this makes things less confusing in practice.  Essentially there are "normal" stats and "file" stats.  Normal stats, such as AUDIT and CPU, are collected at system, user and since-last level.  File stats, such as BADD and DKPR, are collected at those 3 levels, plus for each file. No parameter settings are required to turn on and off the collection of any statistics.  There are no partial system statistics.
+
+<P>The set of activities which create since-last groups is smaller than on M204.  EVAL and CMPL mean the same thing, and there INIT, CREA and BLDX statistics for file processing.  The $SLSTATS function does the same thing.
+
+<P>Stats appear on the audit trail with line type STT.  The REQUEST option on the T[IME] command simply prints a saved copy of the most recent "LAST=EVAL" or "LAST=CMPL" statistics line that was sent to the audit trail.
+
+<P>The DPT specific <A HREF = "language.html#VIEWSTAT">=VSTAT command</A> works like normal VIEW but can be used to show individual stat values, although normally the MONITOR STATS command is more useful.  In addition, there is a custom option on the <A HREF = "language.html#STATVIEW">$VIEW function</A> which allows you to use it to see file statistics if you want.
+
+<P>All statistics are unsigned 64 bit integers, which means they would theoretically "clock" at approximately 16,000,000,000,000,000,000 decimal.
+
+<A NAME = MONITOR_COMMAND></A><H3>The MONITOR command</H3>
+Various flavours of <A HREF = "language.html#MONITOR">MONITOR command </A> are provided.  In many cases the syntax is slightly different to M204's equivalent, and also the output is often a little different too, but the general principle is just the same.
+
+<P>Since DPT has no internal scheduler, nothing to do with scheduler queues is shown.  On the other hand the operating system thread ID for each user IS shown, and can help tie together the information from different displays.
+
+<A NAME = MONITOR_MISC></A><H3>Miscellaneous</H3>
+Occasionally in a crash situation the host will do something like a snap dump, although nowhere near as detailed as a M204 snap dump.  In all such cases the information is put in the DUMPS directory.
+
+
+<P><A HREF= #Top>Top</A>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Installation_Issues> <H2> Installation - Requirements and Other Issues </H2> </A>
+
+<UL>
+	<LI> <A HREF = #Install_Reqts> Hardware and OS requirements</A>
+	<LI> <A HREF = #Install_Config> Installation </A>
+	<LI> <A HREF = #Install_CodeXfer> Transferring code from the mainframe</A>
+	<LI> <A HREF = #Install_DataXfer> Transferring data from the mainframe</A>
+</UL>
+
+
+<A NAME = Install_Reqts> </A>
+<H3>Hardware and OS requirements</H3>
+
+<P><U>Hardware</U>
+
+<UL>
+<LI>If your hardware is capable of running Windows, DPT should be OK.
+
+<LI>Many users at the time of writing in 2010 are running on multi-core machines, and reports suggest DPT works well and gives good performance gains for multi-threaded workloads.  (Notwithstanding the bug that got fixed in V2.26).
+
+</UL>
+
+<P><U>Operating system</U>
+<BR>DPT is basically a 32 bit Windows application which means in theory it will run on all Windows back to '95.  
+
+<UL>
+<LI>Win95: 
+<BR>No testing was ever done on Windows 95.
+<LI>Vista: 
+<BR>See the installer comments below about working round UAC and folder virtualization (if you don't like it).
+<LI>Windows CE
+<BR>DPT will not work on Windows CE (mobile phones, embedded devices etc).
+<LI>Linux/Wine: 
+<BR>DPT does run successfully on Wine, although extensive testing has not been performed.  Make sure you have the newest-possible copies of Wine to get fullest support for hot-keys and GUI stuff in the front end.  Single-step deferred update loads may fail with an out-of memory condition, in which case try enabling the <A HREF = "m204xref.html#LOADXXXX">LOADCTL</A> parameter X'01' bit which is there specifically to deal with this situation.  "Pure virtual function call" errors may also occur in the client application - this may be down to Wine not being able to find an appropriate fixed-width font, I'm not sure though.
+</UL>
+
+<A NAME = Install_Config> </A>
+<H3>Installation</H3>
+
+<P>Strictly speaking DPT does not need to be "installed".  If you have the two executables (dpthost.exe and dptclient.exe) you can put them in a directory and execute them and they'll work.  Add in the documentation ".html" files so F1 help works in the applications and you're good to go.  Different DPT version files 
+can be placed in different directories, and you can run them in parallel, or at the same time, even make them talk to each other.
+
+<P><U>It's the same download for casual and business users</U>
+<BR>Much of the discussion below concerns the downloadable installer package which automates the copying of the executables onto your machine, and adds configuration files to set DPT up in a suitable way for new users to get started immediately, e.g. via desktop shortcuts.  The installer runs a wizard which creates a windows application called "DPT", in the usual sense you would understand that with e.g. Photoshop, Skype, etc., where "DPT" appears on your start menu and you can uninstall it via Windows control panel.  
+
+<P>It is understood however that with software like DPT, serious users might often want several versions active at the same time on the same machine.  Such custom installations must be created by hand, using whatever system management and version control methods pertain at your company.  The installer wizard should then be thought of really as just a way to unzip the DPT files onto your machine, and the windows application "DPT" that gets installed could really be called "DPT Demo Configuration".  Calling it "DPT" is a compromise to keep the download simple (same one for everybody) and satisfy both casual users who'll never touch any of the configuration settings at all, and business users/system managers who definitely will, and might uninstall the installed demo system as soon as they've taken a copy of the exe files and docs.
+
+
+<P><U>More about the installer wizard</U>
+<BR>In addition to the executables, the wizard offers a variety of other choices.  The default "full" install gives a selection of example code like web server scripts and User Language applications, as well as system configuration files to set up the demo system.  A "compact" install only copies the executables and documentation, which is useful with most DPT releases where there are no changes to files like SYSPROC and parms.ini, meaning any customizations you've made can be retained.
+
+<P>If DPT is already installed, the wizard by default assumes you're going to put the new version in the same directory as before, which is the recommended thing to do.  You can also choose to have it make automatic backup copies of any existing files that get replaced, with any such backups being placed in the "Backup" subdirectory.
+
+
+<P><U>Uninstallation</U>
+<BR>When the installer wizard runs it creates an uninstaller program and stores it in the DPT 
+directory.  This uninstaller program can be invoked directly, or via Windows Control Panel ("remove DPT") which just does the same thing indirectly.  The uninstaller removes DPT as completely as it can, as follows:
+
+<UL>
+<LI>Reverses file copies performed by the installer and any previous-version installs into the same directory
+<LI>Removes any icons and shortcuts that were created
+<LI>Deletes copies of certain transient DPT system logs like audit trails, and any other files that can get created during simple usage, like default .ini files, *if* they're in the main install directory.  This step means that up to a point the uninstaller can leave a completely clean system with no trace of DPT left over.
+</UL>
+
+Things the uninstaller does not remove:
+
+<UL>
+<LI>Any new files like databases or procedures created locally in the install directory during normal DPT operation
+<LI>Copies of any DPT-related files created elsewhere on the system by hand or by DPT applications
+
+<LI>Old version backups created automatically by the install wizard
+</UL>
+
+<P><U>Falling back to a previous version</U>
+
+<BR>This section assumes casual use where you only have the one version of DPT on your machine.  It is assumed "serious" users would have a variety of old version configurations set up that they could switch to using whatever local methods they have for managing them, as mentioned above.
+
+<P>So, a previous version of the installed "DPT" demo application can be installed over the top of newer one with no problems, just by running the older installer package if you still have it.  Or you could uninstall the current 
+one completely first and then do a fresh install of the older one.  If you don't have the old installer but you took backups when installing the newer version, it's also OK to just promote some or all of the files from the Backup directory, and it won't mess up any later runs of the installer or the uninstaller.
+
+
+<P><U>Creating custom DPT configurations</U> 
+
+<BR>For casual users who only need a single DPT configuration it makes sense to just customize the config files in the install directory, cribbing from the config files for the demo system as required. The same single installed copy of the .exe files and documentation can also be used to run as many different configurations as desired, by creating (manually) a different working directory for each which contains shortcuts to the master .exes plus any specific <A HREF = #Host_Auxiliary_Files>configuration files</A>.  This can be thought of as a halfway-house between "casual" and "business" usage, since you still retain the single installed Windows application called "DPT" as created by the wizard, but can have several configurations for different tasks.
+
+<P>It is not recommended to run 
+the install script again giving a different directory each time.  It works up to a point, but Control Panel gets confused about which was the official installation of "DPT", and you have extra version control work to do when installing new DPT versions later.
+
+<P>System managers in a business setting will probably want to create different levels of indirection so that DPT versions and configuration files are managed and version-controlled separately.  It's all up to you how you do that.
+
+<P>(See also <A HREF = #Config_Service>"running DPT as a Windows service"</A>)
+
+<P><U>When are administrator privileges required to install or run DPT?</U>
+<BR>On pre-Vista operating systems, never.  On Vista it depends on whether you install into "C:\Program Files" or not, and to a lesser extent on how you're going to use DPT.
+
+<P>For DPT versions 2.26 and before, the install wizard defaulted to "C:\Program Files\DPT", but now the default is just "C:\DPT", because that makes things simpler for casual users while not making anything harder for business users who'll be configuring things by hand anyway.  The change is to work around the feature of Windows Vista where the "C:\Program Files" directory is treated as a special case, with administrator privileges required to modify any of its contents.  This Vista feature complicates things because it means regular (non-administrator) Windows accounts can't use an application effectively unless it's configured to only access data in other directories, rather than the common and simple previous convention that a program's default "working directory" is the one containing the .exe file.
+
+<P>You can get the DPT install wizard to set things up in "C:\Program Files" on Vista, but it requires extra attention when running both the installer and DPT itself, unless you have turned <A HREF = "http://en.wikipedia.org/wiki/Vista_UAC">UAC</A> off entirely on your PC (and who would blame you?)  Firstly the installer needs to be "run as administrator" to complete successfully (it can normally be run under any account).  Then DPT itself either has to be "run as administrator" to avoid triggering the dreaded "file virtualization", or configured to not touch any data locally.  This means using appropriate fully-qualified ALLOCATE commands within applications, and modifying the DPT shortcut properties for <A HREF = #Host_Auxiliary_Files>"working directory"</A> and/or <A HREF = #Config_OSCmd>command line options</A>.  
+
+<P>So in summary, if you want an easy life take the default install location of "C:\DPT" and don't give it another thought.  In a more strictly controlled business environment still take the default, then import the files into your local version control systems etc. or whatever you have to do, probably involving "C:\Program Files" somewhere along the line.  Then run the DPT uninstall program if you don't want to keep the demo system hanging around.
+
+
+
+<A NAME = Install_CodeXfer> </A>
+<H3>Transferring code from the mainframe</H3>
+The raw mechanics of transferring code and data between platforms is never completely straightforward, especially when one platform is EBCDIC.  One important point that often trips us up in the UK is to do with the currency symbol.  Rather than getting involved with tricksy Windows international settings, DPT takes the approach that the ASCII dollar sign (X'24') <I>must</I> be used in all cases where in the UK most sites use the sterling sign (X'various').  If the normal conversion table invoked by whatever means you use to transfer code back and forth doesn't result in X'24' at the PC end, you'll have to modify the code table.  
+
+<P>The code table issue of course also applies to all other characters that sometimes take different codes.  The "not" sign (¬) in User Language is X'AC' on the machine where DPT is being coded but that may not be standard.  (See <A HREF = "relnotes_V1RX.html#V1R2">V1.2 fix on this subject</A>).
+
+<P>Another issue that might cause obscure problems concerns PC "control characters".  If the conversion table used during transfer to the PC maps any characters to ASCII codes X'00' - X'20' the DPT host may ignore them or treat them as spaces.  <A HREF = "ideuser.html#Special_Characters">Some more details on this</A> are given in the IDE user guide.  If your procedures have <A HREF = "dbaguide.html#Proc_OSNames">names containing strange characters</A>, this is a show-stopper and DPT will not be able to access them.
+
+<P>Apart from the ASCII/EBCDIC conversion issues, the basic reorg method of unloading procedure files with "D (LABEL) ALL" and feeding the resulting output into DPT should transfer procedures successfully.
+
+<H3>Code containing unsupported features</H3>
+
+<P><U>User Language</U>
+<BR>The User Language compiler by default builds <A HREF = "language.html#UL_UNSUPPORTED">stub "quads" to represent unsupported Model 204 statements</A> resulting in run-time messages which at least allow the surrounding logic to be coded and tested.  Hopefuly this will prove usable.  
+
+<P><U>Commands</U>
+<BR>Commands are in many cases emulated less accurately than User Language.  This is for the good reason that DPT is operating in a different environment, and standard Model 204 command options relating to mainframe issues would be meaningless or confusing.  Despite the good reason, this may still be a major problem for existing code.  By default, <A HREF = "language.html#CMDS_M204">unsupported M204 commands are ignored with an informational message</A>, which means that they do not break code.  However, in many cases what is really required is to issue a DPT command or a DPT variation of a 204 command, and here the only solution is to change the code to make it run.
+
+<P>It has been suggested that all non-standard should commands have names prefixed with asterisks so that they can be left in when code is moved to the mainframe.  Another idea would be to translate unsupported M204 commands and options into their nearest PC equivalents, allowing fully M204-compatible code to at least try to run correctly.  These are ideas that will be investigated in future DPT releases.
+
+<P><U>Message codes</U>
+<BR>The message numbers and text on DPT bear no relation to the equivalent messages on Model 204.  This not only means that applications issuing MSGCTL commands will not work as expected, but that UL code which parses message codes out of $ERRMSG or $FSTERR will be more than a little confused.  Who would do such a thing anyway?  
+
+<P><U>Site specific features</U>
+<BR><A HREF = #FAQ_CUSTOMIZE>See FAQ item...</A>
+
+<P><U>The bottom line</U>
+<BR>Any Model 204 feature could theoretically be added to DPT, but some would obviously be more work to build in than others.  Therefore some applications will be likely candidates to be runnable on DPT in the near future, and others will perhaps never be runnable.  This is something we will just have to accept.
+
+<A NAME = Install_DataXfer> </A>
+<H3>Transferring data from the mainframe</H3>
+
+See now the <A HREF = "dbaguide.html#LOADM204">DBA guide section</A> on data loading.
+
+<!****************************************************************************>
+<P><A HREF= #Top>Top</A>
+<P>
+
+<HR>
+<!****************************************************************************>
+<A NAME = FAQ> <H2> Appendix: System Config FAQ</H2> </A>
+
+<UL>
+	<LI><A HREF = #Quick_Dev>Basic installation and the simplest developer setup</A>
+	<LI><A HREF = #FAQ_CONNECTING>Problems connecting client (or browser) to host</A>
+	<LI><A HREF = #FAQ_CUSTOMIZE>Adding custom $functions, messages 	etc.</A>
+
+	<LI><A HREF = #FAQ_BigAudit>To stop the audit trail getting swamped by "string truncated" messages</A>
+	<LI><A HREF = #FAQ_Looping>Cancelling a looping program</A>
+	<LI><A HREF = #FAQ_MFConnect>Connecting to the mainframe</A>
+	<LI><A HREF = #FAQ_MultiHost>To run more than one host at the same time</A>
+	<LI><A HREF = #FAQ_WebConfig>Web server configuration</A>
+	<LI><A HREF = #FAQ_Email>Setting up to use email features</A>
+</UL>
+
+<!****************************************************************************>
+
+<H3><A NAME = Quick_Dev>Basic installation and the simplest developer setup</A></H3>
+
+For casual users it should be enough to run the downloaded installer wizard and use the client and host applications with little or no further configuration.  All the default settings are designed to be reasonable for use as a programming and development host, since that is presumed to be the most common usage scenario for DPT.
+
+<P>More complex host configurations are covered in the <A HREF = #Install_Config>DPT installation</A> chapter, and configuration of the developer front end is covered in a <A HREF = "ideuser.html">separate document</A>.
+
+<BR><BR>
+<!****************************************************************************>
+
+<A NAME = FAQ_CONNECTING></A><H3>Problems connecting client (or browser) to host</H3>
+
+The message "the host address is valid but no host is active on the requested port" can be deceptive.  The sockets infrastructure returns this message both in the obvious situation (as per the message) but also when there is actually a host active on the port but a firewall has turned the connection away.  If it seems you have the port number right (e.g. when you use DPT for the first time and haven't changed the defaults) the chances are you'll need to either disable your firewall, or perhaps more realistically, configure it to allow the local connection through (the local PC connecting address will probably be 127.0.0.1).
+
+<P>In some situations the host may have failed to open the specified port (SYSPORT parameter for terminal/DPT client connections and WEBPORT parameter for browser connections), and this will then mean the client can't connect.  Socket open failure can be seen as an audit trail message early in the run, and might be caused by security settings on the host machine.  An example is when running on Linux/Wine as a non-root user and a port of 0-1023 is specified.  
+
+<A NAME = FAQ_CUSTOMIZE></A><H3>How to add custom $functions, messages etc.</H3>
+Some cookbooks for adding $functions, parameters and messages are currently under construction and will be incorporated into the documentation eventually.  The level of urgency given to this will depend on demand.
+
+
+<H3><A NAME = FAQ_BigAudit>How to stop the audit trail getting swamped by "string truncated" messages</A></H3>
+This message indicates a possibly serious User Language coding error, and is sent to the audit trail deliberately to annoy you into thinking about it.  The "non-numeric result" message is treated the same way, for the same reason.  If you are really convinced that you know what you are doing by using too-short string variables or doing arithmetic on non-numeric values, tell DPT to turn off the message(s) by <A HREF = #Specifying_Configuration_Options>inserting MSGCTL override(s) into the msgctl.ini file</A>.  Insert the following line:
+<PRE CLASS=code>MSGCTL DPT.xxxx NOAUDIT</PRE>
+where xxxx is the message number that you don't like.  Insert further similar lines for any other troublesome messages.
+
+<H3><A NAME = FAQ_Looping>How to cancel a looping request on DPT</A></H3>
+Your PC has gone "all slow" and you haven't had a response for a while.  Then you remember you forgot to code a LOOP END statement.  The ideal way to resolve this this is to start another client session and issue a BUMP command, similar to how you would do things on the mainframe.  Give the BUMP command the user number or name of the original (looping) session.  Use the MONITOR command on the second connection to determine which thread is looping, or just use BUMP ALL, which does not affect the issuing thread, or user zero.  If user zero is looping, even though the BUMP command does not affect it, you can bump it from the host "console"  menu.  
+
+<P>In extreme cases (perhaps the host will not allow any more incoming connections for some reason) you can always use Windows Task Manager to end the host process.  If checkpointing was turned on in the run that got cancelled, any in-flight updates will be backed out next time you start the host.  If checkpointing was not on the files being updated will be left "physically inconsistent" and will need to be mended by hand.  Apart from that there are no other bad things that can happen by killing dpthost.exe in this way.
+
+<H3><A NAME = FAQ_MFConnect>How to connect to the mainframe</A></H3>
+Let's just clarify that question.  If you want to write and run User Language programs, the answer is that you don't need a mainframe connection at all!  That's the whole point.  However, one valid reason you might want to access a mainframe is to transfer code, either to get copies of all your mainframe code to run on DPT, or to upload finished code to the mainframe to run there.  This is not always easy to do, and you may need to talk to a network guy of some kind.  Some of the issues involved when copying code up and down are discussed <A HREF = #Installation_Issues>here</A>.  Future DPT releases may provide a more streamlined way of moving code back and forth.
+
+<H3><A NAME = FAQ_MultiHost>How to run more than one host at the same time</A></H3>
+Each host must have its own working directory.  By default the host uses the same directory as where the .exe file lives as its working directory.  This is covered in the <A HREF = #Host_Auxiliary_Files> earlier section on auxiliary files</A>, and the section on <A HREF = #Install_Config>DPT installation</A>.  System managers should have no trouble figuring it all out.  For a casual user, create a new directory to be the working directory, then copy/paste the existing DPT host shortcut, and modify the properties (right click) of the new shortcut to point to the directory you just created.  Double click the new shortcut and hey presto, a second host will start using the same .exe file as the original one.  Now you need to configure the new host - time to go to the top of this document and read it all.
+
+<H3><A NAME = FAQ_WebConfig>How to configure the web server</A></H3>
+Everything about the web server is kept in a separate document - the <A HREF = "webguide.html">Web Server Admin and Programming Guide</A>.
+
+<H3><A NAME = FAQ_Email>Setting up to use email features</A></H3>
+DPT's email related features are really just interfaces to external tools, in the initial case the "Blat" mail sender utility.  The section in the Language Guide on the <A HREF = "language.html#FUNC_EMAIL">$EMAIL function</A> contains some notes on configuring Blat.
+
+
+
+<!****************************************************************************>
+<P><A HREF= #Top>Top</A>
+<P>
+
+<HR>
+
+</HTML>

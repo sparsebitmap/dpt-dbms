@@ -1,0 +1,192 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+LI.web { list-style-type: square; list-style-image: url(images/bullet_ring_red.bmp)}
+LI.nonweb { list-style-type: circle; list-style-image: url(images/bullet_ring_black.bmp)}
+LI.subitem { list-style-type: disk;}
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V2R0</TITLE>
+
+<H1>Release Notes for DPT Version 2.0</H1>
+<H3>Released: 1st February 2007</H3>
+
+<HR>
+<H2>Contents</H2>
+
+<UL>
+	<LI><A HREF = #Summary>Release Summary</A></LI>
+	<LI><A HREF = #UL>User Language</A></LI>
+	<LI><A HREF = #Cmd>Commands</A></LI>
+	<LI><A HREF = #FrontEnd>Front End </A></LI>
+	<LI><A HREF = #Other>Other miscellaneous changes and bug fixes</A></LI>
+	<LI><A HREF = #Documentation>Documentation  </A></LI>
+	<LI><A HREF = #Demo>Demo Code and Utilities </A></LI>
+</UL>
+
+
+<P><HR>
+<!********************************>
+<A NAME = Summary></A><H2>Release Summary</H2>
+
+<UL>
+<LI class=nonweb><B>Better emulation and support for M204 applications</B>
+<BR>Addressing DPT's core mission to be a useful tool to Model 204 users.  These are colour-coded black in the sections below.
+
+<BR><BR><LI class=web><B>New interfaces and I/O facilities</B>
+<BR>Aiming to strengthen DPT's credentials as a usable and powerful PC application platform, rather than a somewhat awkward exile from the mainframe.  These are colour-coded red in the sections below.
+</UL>
+
+<H3>Highlights</H3>
+
+At-a-glance these are the most important new features.  Full details and links to the relevant manual pages are given further down.
+
+<UL>
+<LI class=nonweb>Emulated Sirius functions
+<LI class=web>Web server
+<LI class=nonweb>New productivity tools in the editor and front end
+<LI class=web>Windows native socket and file system I/O
+<LI class=nonweb>More emulated M204 features and parameters
+</UL>
+
+
+<H3>Special note: Web Server</H3>
+You can now use DPT to build fully-functional web sites, with dynamic content created in User Language, in a very similar way to Janus Web on Model 204.  It opens up whole new user interface possibilities compared to 3270, and makes much more exciting applications possible for both M204 hobbyists (e.g. take your local sports club online - see <A HREF = "http://www.stirlingcc.gotdns.com">Stirling Cricket Club</A>) and for professionals (set up a departmental intranet site, say).  It's also a great way to acquire some new relevant developer skills in today's web-oriented world.
+
+<P>The web server is easy to configure and use, but it's somewhat more than just a handful of new statements and $functions, so it has its own manual - the new <A HREF = "webguide.html">DPT Web Server Admin and Programming Guide</A>.
+
+<P><HR>
+<!********************************>
+<A NAME = UL></A><H2>User Language</H2>
+
+<UL>
+	<LI CLASS=web>New $functions for platform I/O etc.
+	<BR>A <A HREF = "language.html#FUNC_CUSTB">set of new functions</A> has been added for performing operations such as direct file and socket I/O.
+	<LI CLASS=nonweb>Callable $functions
+	<BR>With this <A HREF = "language.html#COMP_CALLFUNC">new feature</A> all $functions can now be regarded more like standard subroutines, and called in the same way.
+	<LI CLASS=nonweb>Emulated Sirius $functions
+	<BR>An initial offering of <A HREF = "language.html#FUNC_SIRIUS">around 60 of these</A> has been implemented.  The selection was based on Paul Keshvari's suggested basic package of $list functions.
+	<LI CLASS=nonweb>$HSH
+	<BR>Support for <A HREF = "language.html#FUNC_HSH">this function</A> has been added.  It was pointed out that inexact emulation is probably irrelevant, and almost certainly better than no emulation.
+	<LI CLASS=nonweb>MODEL parameter support for screens
+	<BR>Including both the <A HREF = "m204xref.html#PARM_MODEL">standard sizes and something like</A> Sirius' "Model 6" custom sizes.
+
+	<LI CLASS=web>New statement
+	<BR><A HREF = "webguide.html#Coding_BufferWrites">The WEBPRINT statement</A> can be used when creating dynamic web page content.
+	<LI CLASS=web>HTTP control $functions
+	<BR><A HREF = "language.html#FUNC_WEB">The $WEBxxx suite of functions</A> provide the rest of the User Language functionality required to build web applications.
+	
+</UL>
+
+
+<P><HR>
+<!********************************>
+<A NAME = Cmd></A><H2>Commands</H2>
+
+<UL>
+	<LI CLASS=nonweb>New command
+	<BR>The <A HREF = "language.html#BBFUNCLIST">=FUNCLIST custom command</A> lists the $functions currently installed and all their parameter descriptions.  It is called by the client at connection time, so it can provide various programmer assistance when dealing with $functions (see below)
+	<LI CLASS=nonweb>Command syntax extension
+	<BR>The handling of <A HREF = "language.html#CommandQuotes">quotation marks</A> in commands has been changed in one or two ways, mainly reflecting common platform conventions.
+
+	<LI CLASS=web>New command
+	<BR>The <A HREF = "language.html#BBMIME">=MIME command</A> is used for maintaining web server related reference data.
+	<LI CLASS=web>Enhanced commands</LI>
+	<UL>
+	<LI CLASS=subitem>The <A HREF = "language.html#BBSOCKET">=SOCKET command</A> now takes an optional third parameter saying whether to affect the "terminal" socket interface or the "web" socket interface.
+	<LI CLASS=subitem>The <A HREF = "language.html#ALLOCATE">ALLOCATE command</A> now allows per-file overrides to PRSUFFIX, for example to access directories exclusively containing HTML files.
+	</UL>
+
+
+</UL>
+
+
+<P><HR>
+<!********************************>
+<A NAME = FrontEnd></A><H2>Front End</H2>
+
+<UL>
+	<LI CLASS=nonweb>$function assistance
+	<BR>The editor now gives <A HREF = "ideuser.html#Editor_Functions">special treatment to $functions</A> in a number of ways.
+	<UL>
+	<LI CLASS=subitem>Names are recognized as keywords
+	<LI CLASS=subitem>Auto-completion of function names saves typing
+	<LI CLASS=subitem>Parameter prompting saves reaching for the manual
+	</UL>
+
+	<LI CLASS=nonweb>New debugger function
+	<BR>The <A HREF = "ideuser.html#DebugLongVals">display function</A> makes it much more convenient to see long object values.
+
+	<LI CLASS=nonweb>Keyboard control
+	<BR>Full usability via the keyboard is essential if you have no mouse or can't use one for some reason, and there were some inaccessible features in version 1.  Where the new key mappings are not obvious they are covered in the IDE iser guide.
+	<UL>
+	<LI CLASS=subitem>Navigator pane
+	<LI CLASS=subitem>Debugger watch pane  
+	<LI CLASS=subitem>All the options dialogs
+	</UL>
+
+	<LI CLASS=nonweb>Smart edit improvement
+	<BR>The output from the D LIST command is now <A HREF = "ideuser.html#Smart_Edit">"smart"</A>.
+
+
+	<LI CLASS=web>Non-UL code support
+	<BR>The editor now provides support for <A HREF = "ideuser.html#Editor_NonUL">working with both User Language and non-UL code</A> at the same time, by selectively suppressing much of the User Language related functionality when editing other files, such as HTML.
+
+	<LI CLASS=web>Case translation
+	<BR>The Ctrl+U and Ctrl+L functions (toggle case of text) in the editor no longer count as line modifications <A HREF = "ideuser.html#Case_Handling">triggering the *UPPER behaviour</A>.  This makes it much easier to edit code to contain occasional lower case elements.
+
+</UL>
+
+
+<P><HR>
+<!********************************>
+<A NAME = Other></A><H2>Other miscellaneous enhancements, and bug fixes</H2>
+
+<H3>System management</H3>
+<UL>
+<LI CLASS=nonweb>Parameter values can now be <A HREF = "sysconfig.html#Config_Files">given more flexibly</A> in the .ini file, for example allowing mixed case.
+<LI CLASS=nonweb>You can also open the .ini file directly from the host console.
+<LI CLASS=nonweb>The NUSERS parameter default has been increased from 10 to 99, since in a typical basic setup there might now be 6 or 7 background tasks running for various purposes, before any "normal" users even log on.  10 was a silly default anyway.
+<LI CLASS=web>The <A HREF = "sysconfig.html#AUTOSYS">AUTOSYS</A> parameter is now suported.
+<LI CLASS=web>The subsystem auto-logout option is now suported, plus some extra related <A HREF = "language.html#FUNC_SUBSYS">options on the $SUBSYS function</A>.
+</UL>
+
+<H3>Version 1.x stuff</H3>
+<UL>
+<LI CLASS=nonweb>All the many feature additions from <A HREF = "relnotes_V1Rx.html">versions 1.x</A> are now considered stable.  
+<LI CLASS=nonweb>This of course includes bug fixes from that period.
+</UL>
+
+<H3>New bug fixes</H3>
+
+<UL>
+<LI CLASS=nonweb>WRITE IMAGE ON TERMINAL is no longer affected by an active USE destination.
+<LI CLASS=nonweb>The OPEN DATASET statement now clears $STATUS for success in all cases.
+<LI CLASS=nonweb>Fixed the occasional problem when a TEMP and a PERM group had the same name.
+<LI CLASS=web>The PRSUFFIX comparison performed during e.g. D LIST is now case-insensitive.
+<LI CLASS=nonweb>STOP inside a record loop no longer issues an error message before ending the request.
+<LI CLASS=nonweb>No more spurious error messages after using $LSTFLD.
+</UL>
+
+<P><HR>
+<!***************************************************>
+<A NAME = Documentation></A><H2>Documentation</H2>
+
+<IMG src = images/bullet_ring_red.bmp> The set now includes <A HREF = "webguide.html"">a whole new document</A> describing the configuration and programming of the web server, with appropriate hyperlinks to and from the rest of the documentation.  
+
+<P>Apart from that it's the same scheme as before, where the complete documentation is browsable on the website and also included in the download.
+
+
+<P><HR>
+<!***************************************************>
+<A NAME = Demo></A><H2>Demo Code and Utilities</H2>
+
+<IMG src = images/bullet_ring_red.bmp> The demo application that you download now contains a simple web site, illustrating many of the ideas described in the web programming guide.  
+
+<P><HR>
+<P>
+
+</HTML>

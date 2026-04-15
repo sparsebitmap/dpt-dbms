@@ -1,0 +1,1446 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<body background = "water.gif"></body>
+
+<A NAME = "Top"></A>
+
+<TITLE>M204 Features Reference</TITLE>
+
+<H1 Align = "Center">Database Programmer's Toolkit</H1>
+<H1 ALIGN = "Center">Model 204 Features Master Reference</H1>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.  Likewise the term "Sirius functions" which is a trademark of Sirius Software.
+
+
+<H2> Summary </H2>
+
+The main reason for this document is to answer questions such as "does DPT have a XXXXX statement like M204 does?", and the inevitable follow-up, "why not?".  The following sections contain lists of Model 204 features, with accompanying comments along the lines of "DPT does this just like M204", or "DPT doesn't do this because ....", or "DPT does something similar to this, but not the same, and this is why".  You get the idea.
+
+<P>The lists are based on Model 204 version 4.2.0, since when this project was scoped out those were the manuals available on the CCA web site.  However, a few features of Version 5, as per the published release notes, were included in some form or another, and over time a few more features from Version 5 and 6 have crept in as they've been requested.
+
+<P>In many cases there are one or more "ref" numbers.  These correspond to the general issues discussed in the <A HREF = "m204strategy.html">emulation strategy</A> document.  For example the DEFINE PROCESSGROUP command is not emulated because Horizon is not emulated.  Issue ref# 1.2 = connectivity.
+
+<P>M204 Feature Lists:
+
+<UL>
+<LI><A HREF= #Commands   > Commands                    </A>
+<LI><A HREF= #UL         > User Language Features      </A>
+<LI><A HREF= #Database   > Database Features           </A>
+<LI><A HREF= #Parameters > Parameters                  </A>
+<LI><A HREF= #Statistics > Statistics                  </A>
+<LI><A HREF= #Misc       > Miscellaneous System Features </A>
+</UL>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Commands> <H2> Emulation of Commands </H2> </A>
+
+Commands in the list that say "OK" can be assumed to work more or less the same as on M204.  The numeric references correspond to the compatibility issues in the strategy document.  In cases where there is a syntax or processing difference, hotlinks are given to the Language Reference document, which also contains details of a few <A HREF = "language.html#CMDS_CUSTOM">DPT custom commands</A>.
+
+<P><TABLE BORDER>
+
+<TR><TH>Command             </TH><TH>(Ref) </TH><TH>Comments                            </TH></TR>
+
+<TR><TD>ALLOCATE            </TD><TD>2.3     </TD><TD>Partial (<A HREF = "language.html#ALLOCATE">notes...</A>)</TD></TR> 
+<TR><TD>ANALYZE             </TD><TD>-       </TD><TD>Some different options and output (<A HREF = "language.html#ANALYZE">notes...</A>)</TD></TR>
+<TR><TD>ASSIGN              </TD><TD>1.1     </TD><TD>Unsupported</TD></TR>
+<TR><TD>AUTHCTL             </TD><TD>1.1     </TD><TD>Unsupported</TD></TR>
+<TR><TD>BEGIN               </TD><TD>-       </TD><TD>OK</TD></TR>	
+<TR><TD>BROADCAST           </TD><TD>2.4</TD><TD>OK (<A HREF = "language.html#BROADCAST">notes...</A>)</TD></TR>	
+<TR><TD>BROADCAST FILE</TD><TD>2.4</TD><TD>OK (<A HREF = "language.html#BROADCAST">notes...</A>)</TD></TR>	
+<TR><TD>BUMP	            </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>*CANCEL	            </TD><TD>-       </TD><TD>OK</TD></TR>	
+<TR><TD>CHECKPOINT          </TD><TD>-       </TD><TD>OK - one extra option (<A HREF = "language.html#CHECKPOINT">notes...</A>)</TD></TR>
+<TR><TD>CHKABORT            </TD><TD>-       </TD><TD>OK</TD></TR>	
+<TR><TD>CHKMSG	            </TD><TD>-       </TD><TD>Unnecessary - use MONITOR CHECKPOINT</TD></TR>
+<TR><TD>CLEARG	            </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>CLEARGO	            </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>CLOSE               </TD><TD>3.1     </TD><TD>OK</TD></TR>
+<TR><TD>CLOSE LINK          </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>COPY                </TD><TD>1.8     </TD><TD>OK (<A HREF = "language.html#COPYDATASET">notes...</A>)</TD></TR>
+<TR><TD>COPY PROC           </TD><TD>3.1     </TD><TD>Mostly (<A HREF = "language.html#COPYPROC">notes...</A>) </TD></TR>
+<TR><TD>CREATE              </TD><TD>2.3     </TD><TD>Mostly (<A HREF = "language.html#CREATEFILE">notes...</A>)</TD></TR>
+<TR><TD>CREATE GROUP        </TD><TD>1.24    </TD><TD>Mostly (<A HREF = "language.html#CREATEGROUP">notes...</A>)</TD></TR>
+<TR><TD>CREATEG             </TD><TD>1.24    </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEASSIGN            </TD><TD>1.1     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEBUG               </TD><TD>3.6     </TD><TD>Replaced: <A HREF = "language.html#BBSPY">SPY</A></TD></TR>
+<TR><TD>DECREASE            </TD><TD>2.3, 3.2</TD><TD>Unsupported</A></TD></TR>
+<TR><TD>DEFAULT             </TD><TD>3.1     </TD><TD>OK</TD></TR>
+<TR><TD>DEFINE FIELD        </TD><TD>-       </TD><TD>Partial (<A HREF = "language.html#DEFINEFIELD">notes...</A>)</TD></TR>
+<TR><TD>DEFINE FILE         </TD><TD>2.3     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE LINK         </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE PRINTER      </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE PROCESS      </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE PROCESSGROUP </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE PUNCH        </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE REMOTE       </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE SESSIONGROUP </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DEFINE STREAM       </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DELETE (PROC)       </TD><TD>3.1     </TD><TD>OK</TD></TR>
+<TR><TD>DELETE FIELD        </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>DELETE GROUP        </TD><TD>1.24    </TD><TD>OK</TD></TR>
+<TR><TD>DESECURE            </TD><TD>1.1     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DISCONNECT          </TD><TD>2.5?    </TD><TD>OK - treated as a synonym for LOGOFF</TD></TR>
+<TR><TD>DISPLAY (PROC)      </TD><TD>3.1     </TD><TD>OK (<A HREF = "language.html#DISPLAYPROC">notes...</A>)</TD></TR>
+<TR><TD>DISPLAY EW          </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>DISPLAY FIELD       </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#DISPLAYFIELD">notes...</A>)</TD></TR>
+<TR><TD>DISPLAY FILE        </TD><TD>3.1     </TD><TD>Some different options and output (<A HREF = "language.html#DISPLAYFILE">notes...</A>) </TD></TR>
+<TR><TD>DISPLAY GROUP       </TD><TD>1.24    </TD><TD>OK (<A HREF = "language.html#DISPLAYGROUP">notes...</A>)</TD></TR>
+<TR><TD>DISPLAY GTBL        </TD><TD>3.7     </TD><TD>Some different options and output (<A HREF = "language.html#DISPLAYGTBL">notes...</A>) </TD></TR>
+<TR><TD>DISPLAY RECORD      </TD><TD>1.42    </TD><TD>Unsupported (but see <A HREF = "language.html#PRINT">*RECINFO</A>)</TD></TR>
+<TR><TD>DUMP                </TD><TD>1.12? 2.3</TD><TD>Unsupported</A></TD></TR>
+<TR><TD>DUMPG               </TD><TD>1.24    </TD><TD>Unsupported</TD></TR>
+<TR><TD>EDIT                </TD><TD>3.6     </TD><TD>Differences (<A HREF = "language.html#EDIT">notes...</A>)</TD></TR>
+<TR><TD>ENABLE              </TD><TD>1.7     </TD><TD>Unsupported</TD></TR>
+<TR><TD>ENQCTL              </TD><TD>2.3     </TD><TD>Unnecessary (<A HREF = "sysconfig.html#FRCVOPT">no discontinuities</A>)</TD></TR>
+<TR><TD>EOD                 </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>EOJ                 </TD><TD>2.5     </TD><TD>Replaced: <A HREF = "language.html#BBUNHALT">=UNHALT</A>              </TD></TR>
+<TR><TD>FILELOAD            </TD><TD>1.7, 1.28</TD><TD>Unsupported</TD></TR>
+<TR><TD>FLOD                </TD><TD>1.7, 1.28</TD><TD>Unsupported</TD></TR>
+<TR><TD>FREE                </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#FREE">notes...</A>)</TD></TR>
+<TR><TD>HALT                </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#HALT">notes...</A>)</TD></TR>
+<TR><TD>IF                  </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>IFAMXXXX            </TD><TD>1.2, 1.3</TD><TD>Unsupported</TD></TR>
+<TR><TD>INCLUDE             </TD><TD>3.1     </TD><TD>OK</TD></TR>
+<TR><TD>INCREASE            </TD><TD>2.3, 3.2</TD><TD>OK</TD></TR>
+<TR><TD>INITIALIZE          </TD><TD>2.3, 3.2, 3.7 </TD><TD>OK (<A HREF = "language.html#INITIALIZE">notes...</A>)</TD></TR>
+<TR><TD>LOGOFF/OUT          </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>LOGWHO              </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#LOGWHO">notes...</A>)</TD></TR>
+<TR><TD>LOGxxx (others)     </TD><TD>1.2     </TD><TD>Limited support (<A HREF = "sysconfig.html#ACCESSCONTROL">notes...</A>)</TD></TR>
+<TR><TD>*LOOK               </TD><TD>2.5, 3.2</TD><TD>Unsupported (but see <A HREF = "language.html#UL_CUSTOM">LOOK PAGE</A>)</TD></TR>
+<TR><TD>*LOWER              </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>MODIFY              </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>MONITOR             </TD><TD>various </TD><TD>Various new and different options (<A HREF = "language.html#MONITOR">notes...</A>)               </TD></TR>
+<TR><TD>MORE                </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>MSG                 </TD><TD>2.5     </TD><TD>Unsupported, (but see <A HREF = "language.html#FUNC_EMAIL">$EMAIL function</A>)</TD></TR>
+<TR><TD>MSGCTL              </TD><TD>3.3     </TD><TD>OK - less options (<A HREF = "language.html#MSGCTL">notes...</A>)</TD></TR>
+<TR><TD>NEW PAGE	    </TD><TD>-       </TD><TD>OK</TD></TR>
+<TR><TD>OFFLOAD             </TD><TD>1.8     </TD><TD>Unsupported</TD></TR>
+<TR><TD>OPEN/OPENC          </TD><TD>3.1, 1.24</TD><TD>OK (<A HREF = "language.html#OPEN">notes...</A>)</TD></TR>
+<TR><TD>OPEN LINK           </TD><TD>1.2     </TD><TD>Unsupported</TD></TR>
+<TR><TD>PRIORITY            </TD><TD>2.1     </TD><TD>OK (<A HREF = "sysconfig.html#Thread_OSSched">notes...</A>)</TD></TR>
+<TR><TD>PROCEDURE           </TD><TD>3.1, 3.5</TD><TD>OK (<A HREF = "language.html#PROCEDURE">notes...</A>)</TD></TR>
+<TR><TD>REACTIVATE          </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>REDEFINE FIELD      </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#REDEFINEFIELD">notes...</A>)</TD></TR>
+<TR><TD>REGENERATE          </TD><TD>1.8     </TD><TD>Unsupported</TD></TR>
+<TR><TD>RENAME FIELD        </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#RENAMEFIELD">notes...</A>)</TD></TR>
+<TR><TD>RENAME PROC         </TD><TD>3.1     </TD><TD>OK - no aliases (<A HREF = "language.html#RENAMEPROC">notes...</A>)</TD></TR>
+<TR><TD>REORGANIZE OI       </TD><TD>3.2, 2.3, 1.28 </TD><TD>From V3.0, <A HREF = "language.html#REORG">not strict emulation</A> however</TD></TR>
+<TR><TD>RESET               </TD><TD>-       </TD><TD>OK (<A HREF = "language.html#RESET">notes...</A>)</TD></TR>
+<TR><TD>RESET COMMAND       </TD><TD>-   </TD><TD>Mostly (<A HREF = "language.html#RESETCOMMAND">notes...</A>)</A></TD></TR>
+<TR><TD>RESTART             </TD><TD>2.5     </TD><TD>Unsupported</TD></TR>
+<TR><TD>RESTORE             </TD><TD>1.12? 2.3</TD><TD>Unsupported</A></TD></TR>
+<TR><TD>RESTOREG            </TD><TD>1.24     </TD><TD>Unsupported</TD></TR>
+<TR><TD>SECURE              </TD><TD>1.1      </TD><TD>Unsupported</TD></TR>
+<TR><TD>SETGRC              </TD><TD>-     </TD><TD>OK </TD></TR>
+<TR><TD>*SLEEP              </TD><TD>-        </TD><TD>OK </TD></TR>
+<TR><TD>*SNAP               </TD><TD>2.5      </TD><TD>Unsupported</TD></TR>
+<TR><TD>START FILE          </TD><TD>1.12     </TD><TD>Unsupported</TD></TR>
+<TR><TD>START SUBSYS        </TD><TD>1.24     </TD><TD>Unnecessary (subsystems do not require starting)</TD></TR>
+<TR><TD>START (LINK etc)    </TD><TD>1.2      </TD><TD>Unsupported</TD></TR>
+<TR><TD>STATUS (files)      </TD><TD>1.8      </TD><TD>OK (<A HREF = "language.html#STATUS">notes...</A>)</A></TD></TR>
+<TR><TD>STATUS (console)    </TD><TD>2.5      </TD><TD>Unsupported</TD></TR>
+<TR><TD>STOP FILE           </TD><TD>1.12     </TD><TD>Unsupported</TD></TR>
+<TR><TD>STOP SUBSYS         </TD><TD>1.24     </TD><TD>Unnecessary (see START)</TD></TR>
+<TR><TD>START (LINK etc)    </TD><TD>1.2      </TD><TD>Unsupported</TD></TR>
+<TR><TD>STOPUSER            </TD><TD>1.12     </TD><TD>Unsupported</TD></TR>
+<TR><TD>TABLEB              </TD><TD>3.7      </TD><TD>Some different options and output (<A HREF = "language.html#TABLEB">notes...</A>) </TD></TR>
+<TR><TD>TABLEC              </TD><TD>1.41     </TD><TD>Unsupported</TD></TR>
+<TR><TD>TEST                </TD><TD>3.6      </TD><TD>Replaced: <A HREF = "language.html#BBSPY">SPY</A></TD></TR>
+<TR><TD>TIME                </TD><TD>-        </TD><TD>OK </TD></TR>
+<TR><TD>TMASKUPDATE         </TD><TD>1.1      </TD><TD>Unsupported</TD></TR>
+<TR><TD>TSS                 </TD><TD>1.1      </TD><TD>Unsupported</TD></TR>
+<TR><TD>*UPPER	            </TD><TD>-        </TD><TD>OK </TD></TR>
+<TR><TD>USE                 </TD><TD>2.8      </TD><TD>OK </TD></TR>
+<TR><TD>USE PROC            </TD><TD>3.1      </TD><TD>OK </TD></TR>
+<TR><TD>USE $xxx            </TD><TD>2.5      </TD><TD>$PRINT only </TD></TR>
+<TR><TD>UTABLE              </TD><TD>2.2      </TD><TD>Allowed as a synonym for RESET</TD></TR>
+<TR><TD>VIEW                </TD><TD>-        </TD><TD>OK (<A HREF = "language.html#VIEW">notes...</A>)</TD></TR>
+<TR><TD>VIEW COMMAND        </TD><TD>1.1    </TD><TD>Partial (<A HREF = "language.html#VIEWCOMMAND">notes...</A>)</TD></TR>
+<TR><TD>VTAMXX              </TD><TD>2.4      </TD><TD>Unsupported (but see <A HREF = "language.html#BBSOCKET">=SOCKET</A>)</TD></TR>
+<TR><TD>WARN                </TD><TD>2.5      </TD><TD>Unsupported</TD></TR>
+<TR><TD>XREF                </TD><TD>1.4      </TD><TD>Unsupported</TD></TR>
+<TR><TD>Z                   </TD><TD>3.2, 2.3, 1.28 </TD><TD>OK</TD></TR>
+<TR><TD>*ZAP                </TD><TD>2.5      </TD><TD>Unsupported</TD></TR>
+</TABLE>
+
+
+<A HREF= #Top><BR>Top</A>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = UL> <H2> Emulation of User Language Features </H2> </A>
+
+<UL>
+	<LI><A HREF= #Statements  > Statements  </A>
+	<LI><A HREF= #FullScreen  > Full screen features   </A>
+	<LI><A HREF= #Images      > Image features   </A>
+	<LI><A HREF= #Functions   > $Functions             </A>
+</UL>
+
+<A NAME = Statements> <H3>Emulation of statements</H3></A>
+
+A key design principle of DPT was to handle UL as accurately as possible, so rather than list the individual statements with reasons for not emulating them, here are the few statements that are not emulated reasonably accurately.  For the most part these statements are not emulated because they relate to inter-process communications.
+
+<P>See the <A HREF= "language.html#UL_M204">User Language Reference</A> for more details on small differences in the handling of statements, and also for some notes on the handful of DPT <A HREF= "language.html#UL_CUSTOM">custom statements</A> and some pre-installed <A HREF= "language.html#FUNC_CUSTOM">custom $functions</A>
+
+<P><TABLE BORDER>
+<TR><TH>Statement</TH><TH>(Ref) </TH><TH>Comments                              </TH></TR>
+
+<TR><TD>CLOSE PROCESS   </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>CONFIRM         </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>CONFIRMED       </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>CONTINUE        </TD><TD>1.7   </TD><TD>-     </TD></TR> 
+<TR><TD>DECLARE MENU</TD><TD>1.25  </TD><TD>No menus - see later</TD></TR> 
+<TR><TD>END MENU</TD><TD>1.25   </TD><TD>No menus - see later</TD></TR> 
+<TR><TD>END UPDATE      </TD><TD>1.7   </TD><TD>-     </TD></TR> 
+<TR><TD>FLUSH PROCESS   </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>INVITE          </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>ON FCC/MISSING...</TD><TD>1.14  </TD><TD>Compiles with warning - irrelevant at run time</TD></TR> 
+<TR><TD>OPEN PROCESS    </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>PRINT ALL FIELD NAMES</TD><TD>?</TD><TD>Undocumented on M204 but unsupported anyway!</TD></TR> 
+<TR><TD>PREPARE MENU   </TD><TD>1.25   </TD><TD>-     </TD></TR> 
+<TR><TD>POSITION file   </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>QUERY PROCESS   </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>READ MENU       </TD><TD>1.25  </TD><TD>-     </TD></TR> 
+<TR><TD>RECEIVE IMAGE   </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>RELEASE POSITION</TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>SEND ERROR      </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>SEND IMAGE      </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>SIGNAL PROCESS  </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>TEST FOR ...    </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>TRANSFER CONTROL</TD><TD>1.2   </TD><TD>-     </TD></TR> 
+<TR><TD>UPDATE RECORD   </TD><TD>1.7   </TD><TD>-     </TD></TR> 
+<TR><TD>WAIT            </TD><TD>1.2   </TD><TD>-     </TD></TR> 
+</TABLE>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = FullScreen> <H3>Full screen features</H3></A>
+
+Pretty much all screen features are supported apart from MENUs.  However, in such a presentation-oriented area various more or less cosmetic issues arise from the fact that DPT is not a 3270 emulator, and has its own front-end quirks.
+
+<P>In the IDE user's guide there is a special section on <A HREF = "ideuser.html#Fullscreen_Mode">how User Language screen I/O is handled</A> on the display.  This also covers the conventions for the various 3270-style keyboard functions, plus other handy PC-style input controls.
+
+<P>Other non-presentational compatibility issues with screens are covered in the <A HREF = "language.html#Screens">Language Reference</A>.
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Images> <H3>Image features</H3></A>
+<P>On DPT, images can be read from, and written to, sequential files and the screen, but no other destinations (DB2, etc.).  When <A HREF = "sysconfig.html#Install_DataXfer">transferring data between platforms</A> there will often be problems with anything but string or packed data.  
+
+<P>All "structural" image functionality, that is the complete range of item types, is supported.  See also the <A HREF = "language.html#Images">notes in the language reference</A> about compatibility etc.
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Functions> <H3>$Functions</H3></A>
+
+<UL>
+	<LI><A HREF = #Functions_General>General comments</A>
+	<LI><A HREF = #Functions_Standard>Standard</A>
+	<LI><A HREF = #Functions_Math>Math</A>
+	<LI><A HREF = #Functions_Sirius>Sirius</A>
+</UL>
+
+<A NAME = Functions_General> </A>
+<H4>General comments</H4>
+These are divided into 4 categories to describe the degree of emulation, as follows.  At the time of writing at least 90% of the standard and math $functions are in category 1 or 2.
+
+<OL>
+	<LI>Full support (or as close as makes no difference)
+	<LI>Good support, with only DPT-irrelevant options missing (e.g. SORTKEY option of $VNUM)
+	<LI>Unsupported, but may compile successfully and return dummy results depending on the value of the <A HREF = #CSTFLAGS>CSTFLAGS parameter 8 bit</A>
+	<LI>Unsupported and compilation fails with the "not linked in" message.
+	<LI>Supported with some significant differences in functionality - e.g. $ENCRYPT.
+</OL>
+
+For $functions in category 2 and 3 some detailed discussion is given in non-obvious cases in the <A HREF = "language.html#FUNC_M204">DPT language reference</A>.  The only $functions in category 4 are those concerning PQO, which the Model 204 manuals say are disallowed except in a PQO installation.
+
+<A NAME = Functions_Standard> </A>
+<H4>Standard functions</H4>
+
+<P><TABLE BORDER>
+<TR><TH>$Function   </TH><TH>(Ref) </TH><TH>Comments </TH></TR>
+
+<TR><TD>ACCT        </TD><TD>1.1   </TD><TD>OK (always returns user name) </TD></TR> 
+<TR><TD>ACCOUNT     </TD><TD>1.1   </TD><TD>OK, more-or-less (see <A HREF = "language.html#FUNC_ACCOUNT">language guide note</A>)</TD></TR> 
+<TR><TD>ALPHNUM     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>ARRSIZE     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>ASCII       </TD><TD>1.6   </TD><TD>OK </TD></TR> 
+<TR><TD>BINARY      </TD><TD>2.7   </TD><TD>OK </TD></TR> 
+<TR><TD>BLDPROC     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>CENQCT      </TD><TD>2.2   </TD><TD>Type 3 </TD></TR> 
+<TR><TD>CHKMOD      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>CHKPAT      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>CHKPINF     </TD><TD>-     </TD><TD>OK 2 </TD></TR> 
+<TR><TD>CHKSFLD     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>CHKTAG      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>CODE        </TD><TD>1.27  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>CURFILE     </TD><TD>-     </TD><TD>OK, but see also <A HREF = "language.html#FUNC_CUSTOM">$CURDIR</A> </TD></TR> 
+<TR><TD>CURREC      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>C2X         </TD><TD>1.6   </TD><TD>OK (converts ASCII codes not EBCDIC)</TD></TR> 
+<TR><TD>DATE        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DATEP       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DATEJ       </TD><TD>-  </TD><TD>OK </TD></TR> 
+<TR><TD>DATECHG     </TD><TD>-  </TD><TD>OK </TD></TR> 
+<TR><TD>DATECHK     </TD><TD>-  </TD><TD>OK </TD></TR> 
+<TR><TD>DATECNV     </TD><TD>-  </TD><TD>OK </TD></TR> 
+<TR><TD>DATEDIF     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DAY         </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DAYI        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DEBLANK     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DECODE      </TD><TD>1.27  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>DELG        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>DSCR        </TD><TD>various</TD><TD>OK 2 (only AINSTU) </TD></TR> 
+<TR><TD>DSN         </TD><TD>3.1,3.2   </TD><TD>OK </TD></TR> 
+<TR><TD>DSNNUM      </TD><TD>3.1,3.2   </TD><TD>OK </TD></TR> 
+<TR><TD>ECBDGET     </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>ECBDSET     </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>ECBTEST     </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>ECFSTAT     </TD><TD>-  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>EDIT        </TD><TD>1.27  </TD><TD>OK 2 </TD></TR> 
+<TR><TD>EFORMAT     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>ENCRYPT     </TD><TD>1.27  </TD><TD>OK 5</TD></TR> 
+<TR><TD>ENTER       </TD><TD>1.26  </TD><TD>OK </TD></TR> 
+<TR><TD>ERRCLR      </TD><TD>-   </TD><TD>OK </TD></TR> 
+<TR><TD>ERRMSG      </TD><TD>3.3   </TD><TD>OK </TD></TR> 
+<TR><TD>FDEF        </TD><TD>various</TD><TD>OK </TD></TR> 
+<TR><TD>FLDLEN      </TD><TD>various</TD><TD>OK (always 0 or 8)</TD></TR> 
+<TR><TD>FLOAT       </TD><TD>2.7   </TD><TD>OK </TD></TR> 
+<TR><TD>FLOATD      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>FLSACC      </TD><TD>1.1   </TD><TD>OK (always SRUA or null) </TD></TR> 
+<TR><TD>FLSCHK      </TD><TD>1.1   </TD><TD>OK (all access is allowed) </TD></TR> 
+<TR><TD>FSTERR      </TD><TD>3.3   </TD><TD>OK </TD></TR> 
+<TR><TD>GETG        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>GETL        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>GETP        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>GRMLOC      </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>GRMNAME     </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>GRNLEFT     </TD><TD>1.7   </TD><TD>Type 4  </TD></TR> 
+<TR><TD>GRNMISS     </TD><TD>1.7   </TD><TD>Type 4  </TD></TR> 
+<TR><TD>GROUPFILES  </TD><TD>1.7,3.1</TD><TD>OK 2 </TD></TR> 
+<TR><TD>HSH         </TD><TD>1.27  </TD><TD>OK (probably a different algorithm though) </TD></TR> 
+<TR><TD>HPAGE       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>INDEX       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>INCRG       </TD><TD>1.26  </TD><TD>OK </TD></TR> 
+<TR><TD>ITSOPEN     </TD><TD>3.1   </TD><TD>OK 2 </TD></TR> 
+<TR><TD>ITSREMOTE   </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>JOBCODE     </TD><TD>2.5   </TD><TD>OK 2 </TD></TR> 
+<TR><TD>LANGSPEC    </TD><TD>1.5   </TD><TD>Type 3 </TD></TR> 
+<TR><TD>LANGSRT     </TD><TD>1.5   </TD><TD>Type 3 </TD></TR> 
+<TR><TD>LANGUST     </TD><TD>1.5   </TD><TD>Type 3 </TD></TR> 
+<TR><TD>LEN         </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>LOWCASE     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>LSTFLD      </TD><TD>various</TD><TD>OK </TD></TR> 
+<TR><TD>LSTPROC     </TD><TD>3.1   </TD><TD>OK 2 </TD></TR> 
+<TR><TD>MISGRP      </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>MISLOC      </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>MISNAME     </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>MISGNUM     </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>MISSTMT     </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>MOD         </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>OCCURS      </TD><TD>1.42  </TD><TD>OK (always 0 or -1) </TD></TR> 
+<TR><TD>ONEOF       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>PACK        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>PAD         </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>PADR        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>POST        </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>RDPROC      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>READ        </TD><TD>1.25</TD><TD>OK </TD></TR> 
+<TR><TD>READINV     </TD><TD>1.25</TD><TD>OK </TD></TR> 
+<TR><TD>READLC      </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>REMOTE      </TD><TD>1.2   </TD><TD>OK (always null) </TD></TR> 
+<TR><TD>REVERSE     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>RLCFILE     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>RLCREC      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>RLCUID      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>RLCUSR     </TD><TD>-     </TD><TD>OK  </TD></TR> 
+<TR><TD>SCAN        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>SCLASS      </TD><TD>1.1   </TD><TD>OK (always null) </TD></TR> 
+<TR><TD>SETG        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>SETL        </TD><TD>-     </TD><TD>OK 2 </TD></TR> 
+<TR><TD>SETP        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>SLSTATS     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>SNDX        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>STAT        </TD><TD>1.22  </TD><TD>OK </TD></TR> 
+<TR><TD>STATUS      </TD><TD>-     </TD><TD>OK 2 </TD></TR> 
+<TR><TD>STATUSD     </TD><TD>2.5   </TD><TD>OK 2 </TD></TR> 
+<TR><TD>SUBSYS      </TD><TD>1.43  </TD><TD>OK 2 </TD></TR> 
+<TR><TD>STRIP       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>SUBSTR      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>TCAMFHP     </TD><TD>1.2   </TD><TD>OK (always null) </TD></TR> 
+<TR><TD>TIME        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>UNBIN       </TD><TD>2.7   </TD><TD>OK </TD></TR> 
+<TR><TD>UNBLANK     </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>UNFLOAT     </TD><TD>2.7   </TD><TD>OK </TD></TR> 
+<TR><TD>UNPACK      </TD><TD>-   </TD><TD>OK </TD></TR> 
+<TR><TD>UNPOST      </TD><TD>-</TD><TD>OK </TD></TR> 
+<TR><TD>UNQREC      </TD><TD>1.12  </TD><TD>OK 2 (always -1) </TD></TR> 
+<TR><TD>UPCASE      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>UPDATE      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>UPDFILE     </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDFLD      </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDLOC      </TD><TD>1.7   </TD><TD>Type 4 </TD></TR> 
+<TR><TD>UPDOVAL     </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDREC      </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDSTAT     </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDSTMT     </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>UPDVAL      </TD><TD>1.12  </TD><TD>Type 3 </TD></TR> 
+<TR><TD>USER        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>USERID      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>USRPRIV     </TD><TD>1.1 </TD><TD>OK </TD></TR> 
+<TR><TD>VERIFY      </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>VIEW        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>VNUM        </TD><TD>1.12  </TD><TD>OK 2 </TD></TR> 
+<TR><TD>WAIT        </TD><TD>-</TD><TD>OK </A></TD></TR> 
+<TR><TD>WORD        </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>WORDS       </TD><TD>-     </TD><TD>OK </TD></TR> 
+<TR><TD>X2C         </TD><TD>1.6   </TD><TD>OK (converts according to ASCII not EBCDIC)</TD></TR> 
+
+</TABLE>
+
+<A NAME = Functions_Math> </A>
+<H4>Math functions</H4>
+<P>Numeric precision is emulation issue number 2.7.  In addition to any un-planned problems arising from differences between Model 204 and DPT, always bear in mind, as the UL manual says, that some of the routines used on the mainframe are not accurate to the full number of significant figures they return (i.e. some digits are meaningless).  The functions used on DPT *are* accurate to the full extent of their return value.  In most cases they have been left delivering the maximum possible precision, which is 16 or 17 significant figures, although $PI is an exception, since on M204 it is hard-coded as 15 sig fig, and DPT respects that.
+
+<P>When validating parameters, the limits specified in the UL manual are applied and the corresponding return value (usually zero) is set if they are breached.  Notwithstanding this, most of the math functions just pass through to the standard ANSI C versions.  
+
+<P>As for the ones not done in the table below, they are .. ahem .. left as an exercise in coding custom $functions for you if you need them.  A tutorial document on this subject will hopefully appear at some point.
+
+<P><TABLE BORDER>
+<TR><TH>$Function   </TH><TH>(Ref) </TH><TH>Comments</TH></TR>
+
+<TR><TD>ABS         </TD><TD>-     </TD><TD>OK</TD></TR> 
+<TR><TD>ARCCOS      </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>ARCSIN      </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>ARCTAN      </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>ARCTAN2     </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>COS         </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>COSH        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>COTAN       </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>ERF         </TD><TD>1.26</TD><TD>Type 3 </TD></TR> 
+<TR><TD>ERFC        </TD><TD>1.26</TD><TD>Type 3 </TD></TR> 
+<TR><TD>EXP         </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>GAMMA       </TD><TD>1.26</TD><TD>Type 3 </TD></TR>
+<TR><TD>IXPI        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>LGAMMA      </TD><TD>1.26</TD><TD>Type 3 </TD></TR> 
+<TR><TD>LOG         </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>LOG10       </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>MAX         </TD><TD>-     </TD><TD>OK</TD></TR> 
+<TR><TD>MIN         </TD><TD>-     </TD><TD>OK</TD></TR> 
+<TR><TD>PI          </TD><TD>-     </TD><TD>OK. (15 sf: ..8979)</TD></TR> 
+<TR><TD>RXPI        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>RXPR        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>SIN         </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>SINH        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>SQRT        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>TAN         </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+<TR><TD>TANH        </TD><TD>2.7   </TD><TD>OK</TD></TR> 
+
+</TABLE>
+
+
+<A NAME = Functions_Sirius> </A>
+<H4>Sirius functions</H4>
+<P>The full set of real Sirius functions is quite long - those guys are prolific!    Emulation was started in DPT Version 2.0, and will be extended as time goes on.  The following list should be up-to-date, but if not you can always issue the =FUNCLIST command at the terminal to see what's actually linked in to the system you're using.
+
+<P><TT>A2E , ARR_FIND , ARR_INIT , ARR_MAX , ARR_MIN , BITAND , BITOR , BITXOR , COMMBG , COMMNDL , D2X , E2A , FAKEENT , HEXA , IHEXA , IMGINF , IMGOVL , LIST_CAPTURE , LIST_COPY_ITEMS , LIST_GLOBAL , LIST_GLOBAL_DEL , LIST_GLOBAL_LIST , LIST_MAXIL , LIST_PRINT , LISTADD , LISTADDI , LISTADJ , LISTCHK ,LISTCNT ,  LISTCPY , LISTDEL , LISTFIND , LISTFINDI , LISTFINDI_SUB , LISTILN , LISTIMG , LISTIMG_COPY , LISTINF , LISTINFI , LISTINS , LISTINSI , LISTLOC , LISTLUP , LISTMOVE , LISTNEW , LISTOVL , LISTOVLI , LISTREM , LISTREP  , LISTREPI  , LISTRST , LISTSAV  , LISTSAVE  , LISTSORT , LISTSRT , PROCCLS , PROCDAT , PROCGET , PROCLOC , PROCOPN , RANDOM , RANDOM_SEED , STRAND , STROR , STRXOR , SUBREP , X2D.</TT>
+
+<P>See also the more detailed <A HREF = "language.html#FUNC_SIRIUS">notes in the language guide</A>, which indicate the few places where the emulation is or may not be 100% accurate.
+
+</TABLE>
+
+<A HREF= #Top><P>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Database> <H2> Emulation of Database Features </H2> </A>
+
+Since very few of the M204 file and field attributes are emulated, this section does not list all the M204 features, as most would simply say "Unsupported".  We can summarise quite simply that the only file-structural features that are present are:
+<UL>
+	<LI>Entry order and RRN file organisations - see FILEORG.
+	<LI>String, float8 and invisible storage attributes (including BLOB for string fields)
+	<LI>Update-in-place or update-at-end for visible fields
+	<LI>Ordered character and ordered numeric indexes (SPLITPCT parameter only)
+</UL>
+
+The <A HREF = "dbaguide.html">DBA Guide</A> has some more detailed information on this stuff, as do the Language Reference sections for <A HREF = "language.html#DEFINEFIELD">DEFINE FIELD</A> and <A HREF = "language.html#CREATEFILE">CREATE FILE</A>.
+
+<BR><A HREF= #Top><BR>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Parameters> <H2> Parameters </H2> </A>
+
+<UL>
+	<LI><A HREF= #Parms_M204   > Emulated M204 Parameters</A>
+	<LI><A HREF= #Parms_Special> "Special" VIEWable I/O Parameters</A>
+	<LI><A HREF= #Parms_Custom > Custom DPT Parameters</A>
+</UL>
+
+Notes on specific parameters follows each table, but here are some general points.
+
+<H3>Validation</H3>
+In the tables below, if a maximum and minimum are given it means the parameter is numeric.  If it's a string value, the validation is specified as a pattern, so that for example "@/0-3(+)" means a string is required which starts with a letter and has a possible 3 unspecified characters after it.  You may have to refresh your memory on pattern syntax!  
+
+<H3>Resettability</H3>
+NR in the tables means the parameter is completely read-only, or in the case of file parameters not resettable after CREATE time.  R means resettable using the RESET command.  R* means the parameter can be changed, but where it's not just a case of issuing a RESET command.  This category includes e.g. where the *LOWER command changes CASE, but also all the file usage "parameters" like BHIGHPG, which are really statistics.  R** means the parameter is resettable using RESET, but can't be set to an initial value in the ini file.  These parameters have iodev-specific defaults.  Conversely there are some parameters, indicated with R***, which are only settable in the ini file, and can't be dynamically reset using the RESET command.
+
+<P>Bearing the above comment in mind, resettable parameters are always resettable by any user if at all.  All commands on DPT are currently allowed by any user since the login password security feature is not supported.
+
+
+<A NAME = Parms_M204> <H3> Emulated M204 Parameters</H3> </A>
+
+<P><TABLE BORDER>
+<TR><TH>Parameter</TH><TH>Min-Max / pattern</TH><TH>Default</TH>
+             <TH>Reset?</TH><TH>(Ref)</TH><TH>Comments  </TH></TR>
+
+<TR><TD>ACCOUNT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ACCTIM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.22</TD><TD>Unsupported          </TD></TR>
+<TR><TD>ADDLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>AGExxxxx</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ALLOCPRIV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported         </TD></TR>
+<TR><TD>ALTIODEV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>AMPSUBS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ARETRIES</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ASIZE</TD><TD>-</TD><TD>-</TD><TD>- </TD><TD>3.2</TD><TD>Unsupported (field defs are in table D)</TD></TR>
+<TR><TD>ASTRPPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ATRPG</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>3.2 </TD><TD>Read-only: indicates current usage</TD></TR>
+<TR><TD>AUTOSYS</TD><TD>@/0-9(+)</TD><TD>-</TD><TD>R***</TD><TD>1.24 </TD><TD>OK (interactive thread types only)</TD></TR>
+<TR><TD>BASECENT</TD><TD>-   </TD><TD>- </TD><TD>R***</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>BEXTOVFL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>BHIGHPG</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK      </TD></TR>
+<TR><TD>BLOWPG</TD><TD>-   </TD><TD>- </TD><TD>-</TD><TD>3.2 </TD><TD>Unsupported (not interesting)</TD></TR>
+<TR><TD>BPGPOVFL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>BQLEN</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>BRECPPG</TD><TD>1-1024</TD><TD>256</TD><TD>NR</TD><TD>-</TD><TD>OK         </TD></TR>
+<TR><TD>BRESERVE</TD><TD>0-4096</TD><TD>17</TD><TD>NR</TD><TD>- </TD><TD>OK        </TD></TR>
+<TR><TD>BREUSE</TD><TD>0-100</TD><TD>20</TD><TD>NR</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>BREUSED</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>BSIZE</TD><TD>1-2G</TD><TD>5</TD><TD>R*</TD><TD>-</TD><TD>OK        </TD></TR>
+<TR><TD>CACHE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CASE</TD><TD>UPPER,LOWER</TD><TD>UPPER</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>CAUDIT</TD><TD>0-7</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>(see note below) (2)    </TD></TR>
+<TR><TD>CECHO</TD><TD>0-7</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK (see note below)</TD></TR>
+<TR><TD>CEECHO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CENTSPLT</TD><TD>0-99</TD><TD>- </TD><TD>R***</TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>CFRJRNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.8 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CFRLOOK</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.22</TD><TD>Unsupported (always effectively active)</TD></TR>
+<TR><TD>CMSVERSN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>COMEND</TD><TD>++  </TD><TD>?/</TD><TD>R</TD><TD>- </TD><TD>OK (can not be reset with hex value)         </TD></TR>
+<TR><TD>COMPOPT</TD><TD>bits</TD><TD>0</TD><TD>R</TD><TD>- </TD><TD>(<A HREF = "language.html#SIRIUS_MIXCASE">Sirius parameter</A>).  Only X'01' and X'02'</TD></TR>
+<TR><TD>COMSTART</TD><TD>++</TD><TD>/?</TD><TD>R</TD><TD>- </TD><TD>OK (can not be reset with hex value)        </TD></TR>
+<TR><TD>CPMAX</TD><TD>1</TD><TD>1</TD><TD>NR</TD><TD>1.8 </TD><TD>Always 1</TD></TR>
+<TR><TD>CPSORT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CPTIME</TD><TD>0-any</TD><TD>1 </TD><TD>R</TD><TD>- </TD><TD>OK, (see note below)</TD></TR>
+<TR><TD>CPTO</TD><TD>-1-any</TD><TD>5 </TD><TD>R</TD><TD>- </TD><TD>OK (plus custom  value of -1)</TD></TR>
+<TR><TD>CPTQ</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CPUSLICE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CRETRIES</TD><TD>-   </TD><TD>- </TD><TD>-</TD><TD>1.41 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CRFSCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CRIOCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CSIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.41 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURCLASS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURFILE</TD><TD>-   </TD><TD>- </TD><TD>R* </TD><TD>3.1 </TD><TD>See also DPT custom CURDIR later</TD></TR>
+<TR><TD>CURLOC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURPRIV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1</TD><TD>OK</TD></TR>
+<TR><TD>CURRALVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURREC</TD><TD>-   </TD><TD>- </TD><TD>R* </TD><TD>-</TD><TD>OK       </TD></TR>
+<TR><TD>CURRLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURSLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CURULVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>CUSTOM</TD><TD>various</TD><TD>0 </TD><TD>R***</TD><TD>1.11</TD><TD>Only settings 1-4</TD></TR>
+<TR><TD>DACTIVE</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>DB2PLAN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DB2POINT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DB2QUITE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DB2THRD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DEBUGUL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DEFCENT</TD><TD>-   </TD><TD>- </TD><TD>R</TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>DHIGHPG</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>DKUPDTWT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.8 </TD><TD>Unsupported - always zero          </TD></TR>
+<TR><TD>DPGSRES</TD><TD>0-32767</TD><TD>0</TD><TD>NR</TD><TD>1.21</TD><TD>OK</TD></TR>
+<TR><TD>DPGSUSED</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK (and see note below)</TD></TR>
+<TR><TD>DRESERVE</TD><TD>0-100</TD><TD>15</TD><TD>NR</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>DSIZE</TD><TD>2-2G</TD><TD>15</TD><TD>R*</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>DUFILES</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>DUPTERM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2? </TD><TD>Unsupported          </TD></TR>
+<TR><TD>DVADD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>EDIT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ENQRETRY</TD><TD>0-255</TD><TD>3</TD><TD>R</TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>EOVFLADD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>EOVFLDEL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ERASE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>ERMX</TD><TD>any</TD><TD>5 </TD><TD>R </TD><TD>3.3 </TD><TD>OK (see note below)</TD></TR>
+<TR><TD>ERRLEN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.3 </TD><TD>Unsupported - always whole message</TD></TR>
+<TR><TD>ERRSAVE</TD><TD>0-1000</TD><TD>4</TD><TD>R</TD><TD>3.3 </TD><TD>OK          </TD></TR>
+<TR><TD>EXCPVR</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>EXTNADD</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>EXTNDEL</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK (only affected when whole records are deleted)</TD></TR>
+<TR><TD>FICREATE</TD><TD>@</TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>OK-ish. Letters from A onwards.  Used internally.</TD></TR>
+<TR><TD>FIFLAGS</TD><TD>various</TD><TD>0</TD><TD>NR</TD><TD>-</TD><TD>OK (some values)</TD></TR>
+<TR><TD>FIFORMAT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>FILEMODL</TD><TD>-</TD><TD>0</TD><TD>- </TD><TD>1.14</TD><TD>Replaced - see similar FMODLDPT later</TD></TR>
+<TR><TD>FILEORG</TD><TD>0 or 36</TD><TD>0</TD><TD>NR</TD><TD>3.2, 1.14</TD><TD>Only entry order and RRN are emulated</TD></TR>
+<TR><TD>FISTAT</TD><TD>various</TD><TD>0</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>FITRANS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>FIXSIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>FLUSH</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>FOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.3 </TD><TD>Unsupported (but see RCVOPT)</TD></TR>
+<TR><TD>FRCVOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.21</TD><TD>Unsupported (but see RCVOPT)</TD></TR>
+<TR><TD>FREESIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2</TD><TD>Unsupported          </TD></TR>
+<TR><TD>FSATTN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported (always effectively the 'escape' key)</TD></TR>
+<TR><TD>FSOUTPUT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported - always effectively on</TD></TR>
+<TR><TD>FSTRMOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>FVFPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.41</TD><TD>Unsupported          </TD></TR>
+<TR><TD>HASHKEY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>HDRCTL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>HIGHSORT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>HTLEN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.7 </TD><TD>Unsupported (but see DPT custom OUTFLAGS later)</TD></TR>
+<TR><TD>IFAMBS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>IFAMCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>INCCC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>INCSLICE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>INMRL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>INPUT</TD><TD>-   </TD><TD>- </TD><TD>NR </TD><TD>1.2 </TD><TD>OS file name or IP address     </TD></TR>
+<TR><TD>IODEV</TD><TD>Any positive</TD><TD>various</TD><TD>R </TD><TD>1.2 </TD><TD>OK - (see note below)</TD></TR>
+<TR><TD>IOSLICE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>IVERIFY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5/3.7?</TD><TD>Unsupported          </TD></TR>
+<TR><TD>JESID</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>JOBNM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>KOMMOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LANGFILE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LAUDIT</TD><TD>0-7</TD><TD>0 </TD><TD>R </TD><TD>- </TD><TD>(see note below)</TD></TR>
+<TR><TD>LAUDPROC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.8</TD><TD>Unsupported (whole proc name appears)          </TD></TR>
+<TR><TD>LCPDLST</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported (the system is ALL C!)          </TD></TR>
+<TR><TD>LDKBMRAW</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported (too advanced)         </TD></TR>
+<TR><TD>LDKBMW</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported (too advanced)         </TD></TR>
+<TR><TD>LDKBMWND</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported (too advanced)          </TD></TR>
+<TR><TD>LECHO</TD><TD>0-7</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK (see note below)</TD></TR>
+<TR><TD>LEECHO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LENQTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LFSCB</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LFTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LGTBL</TD><TD>0-2G</TD><TD>1K</TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>LHEAP</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LIBUFF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2?, 3.6</TD><TD>Unsupported          </TD></TR>
+<TR><TD>LINEEND</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.1, 3.6</TD><TD>Unsupported          </TD></TR>
+<TR><TD>LINENO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LITBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LNTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOBUFF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6</TD><TD>Unsupported (but see DPT custom OUTFLAGS later)</TD></TR>
+<TR><TD>LOCATION</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOGADD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOGFAIL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOGONENQ</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOGTRY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LOUTPB</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LPFORCE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LQTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LRETBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LRUPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LRUTIM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LSECHO</TD><TD>0-5</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK (see note below)</TD></TR>
+<TR><TD>LSERVER</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LSERVPD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LSTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LTTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>LVLTRC</TD><TD>0-1</TD><TD>0 </TD><TD>R </TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>LVTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported (but see DPT custom LVARTBL later)          </TD></TR>
+<TR><TD>LXTBL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MAXBUF</TD><TD>0-2G</TD><TD>varies</TD><TD>R***</TD><TD>2.2 </TD><TD>Slightly different meaning - see <A HREF = "sysconfig.html#Memory_Management">memory management</A></TD></TR>
+<TR><TD>MAXHDR</TD><TD>0-1000</TD><TD>5</TD><TD>R</TD><TD>-</TD><TD>OK (see note on resetting below)         </TD></TR>
+<TR><TD>MAXINCL</TD><TD>0-40</TD><TD>5</TD><TD>R</TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>MAXSPINS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MAXTIME</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MAXTRL</TD><TD>0-1000</TD><TD>5</TD><TD>R</TD><TD>-</TD><TD>OK  (see note on resetting below)      </TD></TR>
+<TR><TD>MAXUD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MBSCAN</TD><TD>-1-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>MCNCT</TD><TD>0-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>MCPU</TD><TD>0-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK (see note in "statistics" later)          </TD></TR>
+<TR><TD>MDKRD</TD><TD>0-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>MDKWR</TD><TD>0-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>MINBUF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MODEL</TD><TD>1-25599</TD><TD>2</TD><TD>R</TD><TD>3.6 </TD><TD>See note below</TD></TR>
+<TR><TD>MOUT</TD><TD>0-2G</TD><TD>0</TD><TD>R </TD><TD>- </TD><TD>OK      </TD></TR>
+<TR><TD>MPOPTS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>MSGCTL</TD><TD>bits</TD><TD>0 </TD><TD>R </TD><TD>3.3</TD><TD>Some differences (see note below)   </TD></TR>
+<TR><TD>MSTRADD</TD><TD>-   </TD><TD>- </TD><TD>R</TD><TD>-</TD><TD>OK          </TD></TR>
+<TR><TD>MSTRDEL</TD><TD>-   </TD><TD>- </TD><TD>R</TD><TD>-</TD><TD>OK         </TD></TR>
+<TR><TD>MUDD</TD><TD>0-2G</TD><TD>0</TD><TD>R</TD><TD>-</TD><TD>OK         </TD></TR>
+<TR><TD>MVFPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.41</TD><TD>Unsupported          </TD></TR>
+<TR><TD>NBKPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NDCBS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported - only limited by OS          </TD></TR>
+<TR><TD>NECBS</TD><TD>0-2000</TD><TD>0 </TD><TD>- </TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>NDIR</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported - only limited by OS          </TD></TR>
+<TR><TD>NFILES</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported - only limited by OS         </TD></TR>
+<TR><TD>NGROUP</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.24</TD><TD>Unsupported - only limited by memory        </TD></TR>
+<TR><TD>NJBUFF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.8 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NMPSUBS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NORQS</TD><TD>0-1000</TD><TD>10</TD><TD>R</TD><TD>-</TD><TD>OK - resettable too!</TD></TR>
+<TR><TD>NOTERM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2? </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NOTHREAD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2? </TD><TD>Unsupported       </TD></TR>
+<TR><TD>NOUTBUF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NRMTFILE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NRMTLOCS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NSERVS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1, 2.2</TD><TD>Unsupported          </TD></TR>
+<TR><TD>NSUBTKS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NUMBUF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>NUSERS  </TD><TD>1-99</TD><TD>99</TD><TD>R***</TD><TD>-   </TD><TD>OK     </TD></TR> 
+<TR><TD>OIDEPTH</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2</TD><TD>Unsupported - <A HREF = "dbaguide.html#Structures">btrees are held at field level</A></TD></TR>
+
+<TR><TD>OILEAVES</TD><TD>-   </TD><TD>- </TD><TD>R*</TD><TD>3.2 </TD><TD>As IODEPTH</TD></TR>
+<TR><TD>OILPACT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2</TD><TD>Unsupported          </TD></TR>
+<TR><TD>OINBYTES</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2</TD><TD>Unsupported          </TD></TR>
+<TR><TD>OINENTRY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2</TD><TD>As OIDEPTH</TD></TR>
+<TR><TD>OINODES</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.2 </TD><TD>As OIDEPTH</TD></TR>
+<TR><TD>OPENCTL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>OPSYS</TD><TD>-   </TD><TD>- </TD><TD>NR</TD><TD>2.5 </TD><TD>Textual value instead of a number</TD></TR>
+<TR><TD>OUTCCC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.7 </TD><TD>Unsupported (but see  DPT custom OUTFLAGS later)</TD></TR>
+<TR><TD>OUTLPP</TD><TD>-1-32K</TD><TD>varies</TD><TD>R**</TD><TD>3.6</TD><TD>OK (and can be reset on any IODev)</TD></TR>
+<TR><TD>OUTMRL</TD><TD>0-32K</TD><TD>0</TD><TD>R</TD><TD>3.6</TD><TD>Stands in for some others too (see also OUTFLAGS)</TD></TR>
+<TR><TD>OUTPNO</TD><TD>any</TD><TD>- </TD><TD>R*</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>OUTPUT</TD><TD>-   </TD><TD>- </TD><TD>NR </TD><TD>1.2 </TD><TD>OS file name or IP address </TD></TR>
+<TR><TD>OVFLADD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>OVFLDEL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>PAGE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PAGEFIX</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PAGESZ</TD><TD>-   </TD><TD>- </TD><TD>NR </TD><TD>2.3</TD><TD>OK (System level not file, always 8192)</TD></TR>
+<TR><TD>PDSIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PDSTRPPG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PGSEP</TD><TD>-</TD><TD>-</TD><TD>-</TD><TD>3.6, 2.4 </TD><TD>OK (all thread types)</TD></TR>
+<TR><TD>POLLNO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.2? </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PQOOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PQOSYS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PRCLDEF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PRIOMAX</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PRIORITY</TD><TD>-   </TD><TD>- </TD><TD>NR </TD><TD>2.1</TD><TD>OK</TD></TR>
+<TR><TD>PRIVDEF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PROBECTL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>PROMPT</TD><TD>various</TD><TD>X'09'</TD><TD>R**</TD><TD>3.6 </TD><TD>OK - see note below</TD></TR>
+<TR><TD>RCVOPT</TD><TD>Bits</TD><TD>3</TD><TD>R***</TD><TD>1.8, 1.21</TD><TD>OK-ish, but mostly <A HREF = "sysconfig.html#System_Integrity">custom bit settings</A> </TD></TR>
+<TR><TD>READLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RECSCTY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RECSECID</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RESCURR</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RESHIGH</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RESSIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RESTHRSH</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>RETRVKEY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported (unnecessary in the custom IDE)</TD></TR>
+<TR><TD>RPTCNT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.22 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SCHDOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.7 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SECTRLOG</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SECTY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SELLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SEQOPT</TD><TD>0-255</TD><TD>0 </TD><TD>R </TD><TD>2.3</TD><TD>OK, but is a <A HREF = "dbaguide.html#Miscnotes">a file level parameter</A></TD></TR>
+<TR><TD>SERVACTV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SERVSIZE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SIOSLICE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SLICEMAX</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SMFLORN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SMFSLRN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SMFSVC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SMPLTIM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.22</TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPCLS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPCTL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPDEST</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPID</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPLIM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SNAPPDLS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SORTKEY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>SPCORE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SPILLADD</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>SPILLDEL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.14</TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLBSCAN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLBUFSZ</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLCNVER</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLFILE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLIQBSZ</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SQLLPLIM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.3 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SRVSLICE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>STEPNM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>STORCUR</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>STORINIT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>STORMAX</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SUB</TD><TD>0-5</TD><TD>4</TD><TD>R</TD><TD>- </TD><TD>OK        </TD></TR>
+<TR><TD>SVIOMAXT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SYSDATE</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SYSDINFO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>SYSID</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported (but see DPT custom SYSNAME later)          </TD></TR>
+<TR><TD>SYSOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5</TD><TD>Unsupported</TD></TR>
+<TR><TD>SYSTIME</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TABSP</TD><TD>1-32K</TD><TD>10</TD><TD>R</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>TCPNAME</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported (but see DPT custom SYSPORT later)          </TD></TR>
+<TR><TD>TEMPCUR</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TEMPHIGH</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TEMPMAX</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TERMBUF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.2 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TERMCPS</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TERMID</TD><TD>-   </TD><TD>- </TD><TD>NR</TD><TD>1.2 </TD><TD>Same as INPUT/OUTPUT on socket threads only </TD></TR>
+<TR><TD>TERMOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TIMELEF</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TIMEOUT</TD><TD>-</TD><TD>-</TD><TD>-</TD><TD>2.5</TD><TD>Always effectively 0</TD></TR>
+<TR><TD>TIMESTOP</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>TIMESVC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>UDDCCC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6 </TD><TD>Unsupported (but see DPT custom OUTFLAGS later)</TD></TR>
+<TR><TD>UDDLPP</TD><TD>-1-32K</TD><TD>56</TD><TD>R</TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>UDDRFM</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>3.6, 2.8</TD><TD>Unsupported          </TD></TR>
+<TR><TD>UPDTID</TD><TD>0...   </TD><TD>- </TD><TD>NR </TD><TD>- </TD><TD>OK         </TD></TR>
+<TR><TD>UPDTLVL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>UPRIV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>1.1 </TD><TD>OK</TD></TR>
+<TR><TD>USERID</TD><TD>@/0-29(+)</TD><TD>-</TD><TD>NR</TD><TD>1.1 </TD><TD>OK-ish, but no automatic security checks applied</TD></TR>
+<TR><TD>VDP</TD><TD>0-15</TD><TD>0</TD><TD>R</TD><TD>- </TD><TD>OK          </TD></TR>
+<TR><TD>VERIFY</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5/3.7?</TD><TD>Unsupported          </TD></TR>
+<TR><TD>VERSION</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported (but see DPT custom VERSDPT later)          </TD></TR>
+<TR><TD>VLEN</TD><TD>0-255</TD><TD>20</TD><TD>R</TD><TD>- </TD><TD>OK       </TD></TR>
+<TR><TD>VMFSCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VMIFCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VMIOCHNL</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VTAMNAME</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.4 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VTAMNTO</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.4 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VTGCSSRV</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.4 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>VTYPE</TD><TD>various</TD><TD>STRING</TD><TD>R</TD><TD>- </TD><TD>OK        </TD></TR>
+<TR><TD>WAITSCAN</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.1 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>WAITTIME</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>XMEMOPT</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+<TR><TD>XMEMSVC</TD><TD>-   </TD><TD>- </TD><TD>- </TD><TD>2.5 </TD><TD>Unsupported          </TD></TR>
+
+</TABLE>
+
+<A NAME = EMPARM_NOTES></A><H4>Notes on emulated M204 parameters</H4>
+
+<P><U>Parameter categories in the VIEW command</U>
+<BR>Parameters are still viewable by category, but there are no CWAIT and UTABLE categories, for reasons discussed elsewhere.  LGTBL is now a USER parameter, as are the other remaining UTABLE parameters, MAXHDR, MAXTRL and NORQS.  All the other <A HREF = "sysconfig.html#Memory_Management">L?TBL type parameters have been dropped</A>.  UNSUPPORTED is a special category simply listing unsupported Model 204 parameters.
+
+<U><P>Maximums, minimums, defaults etc. </U>
+<BR>These are not always the same as on Model 204.
+
+<A NAME = Audits_Echoes ><U><P>Audits & Echoes</U></A>
+<BR>The set of parameters CAUDIT, CECHO, LAUDIT, LECHO, LSAUDIT, LSECHO is emulated, but given the nature of procedure and terminal handling, may behave slightly differently in some circumstances.  The new parameters LLECHO and LLAUDIT (logical line) add a further distinction, being roughly equivalent to Lxxxxx, but with comments and blank lines taken out.  To help clear this up at run time, all the echoes and audits are prefixed with the parameter that has triggered them, e.g. "LECHO: BEGIN".
+
+  
+<U><P>CPTIME</U>
+<BR>Unlike on Model 204, resetting this parameter has an effect even if no pseudo-user was initiated at start-up time.  If you reset CPTIME from zero to a non-zero value, the checkpointing daemon is simply started.  Likewise if you set it to zero, the daemon logs off and automatic checkpointing ceases.  When changing from one positive value to another, the new value takes effect next time the daemon wakes up.
+
+<U><P>DPGSUSED</U>
+<BR>"Table D" pages, as we know, get used for all sorts of things.  On DPT DPGSUSED is recorded as a whole, but also for each page type in the shape of parameters DPGS_1, DPGS_2, etc.  If you do a VIEW TABLES command you can see all these and get a simple description of what each one means. 
+
+<A NAME = ERMX> </A> <U><P>ERMX</U>
+<BR>On Model 204, if the error count reaches ERMX, the user is restarted "softly", which means it's often a good idea to cancel a compilation at the new page prompt.  DPT softens this action even further (there never seemed anything soft about a M204 soft restart anyway), and it behaves much the same as if attention had been pressed.  This means any request being compiled is aborted, and the user is returned to command level.  Unless they're in a subsystem, in which case the error procedure is invoked with error global value ATN.  The default is 5 and not 30 like M204 because of the fact that error messages don't invoke paging, so the full quota of messages always gets listed.  (Compiler messages after the first handful are usually unreliable anyway aren't they...).
+  
+<A NAME = Parm_IODev></A><U><P>IODEV</U>
+<BR>This parameter is resettable, to cater for the possible desire of User Language applications to invoke different code paths depending on the value of the parameter.  For example to display a confirmation screen if a program is being run on a screen-based thread, but assume a default response on a BATCH2 or other robot thread:
+
+<PRE CLASS=code>
+IF $VIEW('IODEV') EQ 7 THEN
+    READ SCREEN CONFIRM
+    %CONFIRMED = (%CONFIRM:PFKEY EQ 3)
+ELSEIF $VIEW('IODEV') EQ 15 THEN
+    %CONFIRMED = ($READ('Really delete record (enter ''Y'')?') EQ 'Y')
+ELSE
+    %CONFIRMED = 1
+END IF
+
+IF %CONFIRMED THEN
+    DELETE RECORD
+END IF
+</PRE>
+
+<P>Note that there is absolutely no internal effect of resetting IODEV, so for example if a program running on an IODev7 thread resets its IODEV parameter to 3, subsequent READ SCREEN statements will invoke the full screen interface as usual.  But a program running on a real IODev 3 (file-based thread) clearly cannot, and will not invoke full-screen processing.
+
+<A NAME = PARM_MODEL></A>
+<U><P>MODEL</U>
+<BR>On DPT this parameter only affects the size of User Language screens, and is unrelated to both the editor, and OUTMRL as used in printed output (which in any case <A HREF = "ideuser.html#Print_OUTMRL">is handled differently</A>).
+
+<P>Values of 1 to 5 cause the size of a screen "panel" to take the appropriate values listed in the Model 204 manual for those 3270 models. You can then define screens which contain items positioned anywhere within those boundaries, and they will work as normal, taking into account the general <A HREF = "ideuser.html#Fullscreen_Mode">screen handling characteristics of the DPT client front end</A>.
+
+<P>If you want to be creative it is also possible to do something similar to the Sirius "Model 6" setting.  On DPT you specify a value in the form CCCRR, where CCC is the number of columns and RR is the number of rows.  So for example if you had a very large monitor and a <A HREF = "ideuser.html#Display_Fonts">very small font installed</A>, the maximum value of 25599 would allow you to generate some very detailed UL fullscreen displays indeed.  The value 8023 would just cause the same behaviour as the default of 2.
+
+
+<A NAME = MSGCTL></A>
+<U><P>MSGCTL</U>
+<BR>The MSGCTL parameter is user-specific on DPT instead of system-wide, meaning that each user can suppress all terminal messaging from their thread if required, without issuing lots of and <A HREF = "language.html#MSGCTL">MSGCTL commands</A>.  It is therefore something of a hybrid in functionality between M204's MSGCTL and DEBUGUL (which is not used). If the subsystem message-suppression options are used, they cause a hidden MSGCTL command to be issued when entering and leaving a subsystem.
+
+<P>There is a DPT custom switch bit, X'20' (32), which can be added to any other value.  This causes audited messages to be accompanied by the procedure name and line number, as they normally are on the terminal.  It can be useful if for some reason terminal messages are suppressed (e.g. in an APSY), or if the failing code is being run by a daemon, in which case looking at the audit trail is more convenient than browsing the daemon's output file.
+
+<U><P>PROMPT</U>
+<BR>The 4 bit of this parameter, and to a lesser extent the 1 bit, is puzzling, and it does not seem fully clear how or why it works on Model 204.  However, the rule on DPT is that whenever a dummy string, of any type (?&, ??, ?$), results in a terminal read, the display of the dummy string name is controlled by the 1 bit of PROMPT.  If the bit is off, the user is expected to just know that they have to enter a dummy string value at that point, so you would think it should always be left on on an interactive IODev.  (Although perhaps a more descriptive UL-generated prompt might have been PRINTed beforehand).  In any case, whether the dummy string originated at command level or inside a procedure seems irrelevant here, and the 4 bit of PROMPT is simply ignored.  The distinction between command-level and in-procedure originated dummy strings is provided however by the SUB parameter, controlling whether to process dummy strings at all, and also the LSECHO/LSAUDIT parameters, which control the echoing of lines which experience dummy string substitutions.
+
+<P><HR>
+<A NAME = Parms_Special> <H3> "Special" VIEWable I/O Parameters</H3> </A>
+These are treated to all intents and purposes exactly the same as normal parameters - who knows why they aren't listed as such in the M204 manuals.  DPT treats the file-related ones as fully paid-up file parameters, holds them in the FCT, and shows them when you do a VIEW FILE or VIEW FPARMS.  The rest are regarded as system parameters, and are included in the output from VIEW SYSTEM.
+
+<P><TABLE BORDER>
+<TR><TH>Parameter</TH><TH>Min-Max / pattern</TH><TH>Default</TH>
+             <TH>Reset?</TH><TH>(Ref)</TH><TH>Comments  </TH></TR>
+
+<TR><TD>FIWHEN</TD><TD>-</TD><TD>-</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR> 
+<TR><TD>FIWHO</TD><TD>-</TD><TD>-</TD><TD>R*</TD><TD>-</TD><TD>Contains user id not terminal</TD></TR> 
+<TR><TD>DTSLUPDT</TD><TD>-</TD><TD>-</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR> 
+<TR><TD>DTSLDKWR</TD><TD>-</TD><TD>-</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR> 
+<TR><TD>DTSLCHKP</TD><TD>-</TD><TD>-</TD><TD>R*</TD><TD>-</TD><TD>OK</TD></TR> 
+<TR><TD>DTSLRCVY</TD><TD>-</TD><TD>-</TD><TD>NR</TD><TD>-</TD><TD>OK (start of last attempted recovery!)</TD></TR> 
+<TR><TD>DTSLRFWD</TD><TD>-</TD><TD>-</TD><TD>-</TD><TD>1.8</TD><TD>Unsupported</TD></TR> 
+<TR><TD>DTSLBOPR</TD><TD>-</TD><TD>-</TD><TD>-</TD><TD>1.8</TD><TD>Unsupported</TD></TR> 
+
+</TABLE>
+
+<P>
+<HR>
+<A NAME = Parms_Custom> <H3> Custom DPT Parameters </H3> </A>
+
+<P><TABLE BORDER>
+<TR><TH>Parameter</TH><TH>Min-Max/pattern</TH><TH>Default</TH>
+             <TH>Reset?</TH><TH>Comments  </TH></TR>
+
+<TR><TD>ATRFLD</TD><TD>0-64K</TD><TD>-</TD><TD>R*</TD><TD>Number of fields defined to a file</TD></TR> 
+<TR><TD>AUDCTL</TD><TD>bits</TD><TD>10</TD><TD>R***</TD><TD>See below</TD></TR> 
+<TR><TD>AUDKEEP</TD><TD>0-any</TD><TD>3</TD><TD>R***</TD><TD>Old generations of the audit file to keep</TD></TR> 
+<TR><TD>BTREEPAD</TD><TD>0-8100</TD><TD>0</TD><TD>R***</TD><TD>See <A HREF = "language.html#ANALYZE">Analyze command</A></TD></TR> 
+<TR><TD>BUFAGE</TD><TD>0-any</TD><TD>600</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>CODESA2E</TD><TD>/256(+)</TD><TD>see below</TD><TD>R***</TD><TD>See below</TD></TR> 
+<TR><TD>CODESE2A</TD><TD>/256(+)</TD><TD>see below</TD><TD>R***</TD><TD>See below</TD></TR> 
+<TR><TD>CSTFLAGS</TD><TD>32 bits</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>DPGS_X</TD><TD>0-any</TD><TD>0</TD><TD>NR</TD><TD>See standard DPGSUSED comment above</TD></TR> 
+<TR><TD>EACTIVE</TD><TD>0-any</TD><TD>-</TD><TD>R*</TD><TD>See below</TD></TR> 
+<TR><TD>FMODLDPT</TD><TD>0-1</TD><TD>1</TD><TD>R*</TD><TD>See <A HREF = "dbaguide.html#LOADING">Numeric values in files</A></TD></TR> 
+<TR><TD>FUNNDAEM</TD><TD>any</TD><TD>1</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>ILACTIVE</TD><TD>0-any</TD><TD>-</TD><TD>R*</TD><TD>See below</TD></TR> 
+<TR><TD>LOADxxxx</TD><TD>-</TD><TD>-</TD><TD>-</TD><TD>See below</TD></TR> 
+<TR><TD>LVARTBL</TD><TD>0-any</TD><TD>100K</TD><TD>R</TD><TD>Related to <A HREF = "sysconfig.html#Memory_Management"> the unused L?TBL</A></TD></TR> 
+<TR><TD>MAXRECNO</TD><TD>0-2G</TD><TD>16777215</TD><TD>R</TD><TD>Recs before table B is considered "full"</TD></TR> 
+<TR><TD>NCPUS</TD><TD>1+</TD><TD>-</TD><TD>NR</TD><TD>See below</TD></TR> 
+<TR><TD>OSNAME</TD><TD>*</TD><TD>-</TD><TD>NR</TD><TD>View-only file parameter showing the OS file name (DSN)</TD></TR>
+<TR><TD>OUTFLAGS</TD><TD>bits</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>PRSUFFIX</TD><TD>"/0-1(!.)/0-10(@,#)"</TD><TD>".txt"</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>RETCODE</TD><TD>any</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR>
+<TR><TD>RTTRACE</TD><TD>bits</TD><TD>0</TD><TD>R*</TD><TD>See below</TD></TR>
+<TR><TD>SPYFLAGS</TD><TD>bits</TD><TD>0</TD><TD>R*</TD><TD>See below</TD></TR>
+<TR><TD>SPYMODE</TD><TD>0-3</TD><TD>0</TD><TD>R*</TD><TD>See below</TD></TR>
+<TR><TD>SRVSTPWT</TD><TD>1-3600</TD><TD>20</TD><TD>R***</TD><TD>Windows <A HREF = "sysconfig.html#Config_Service">service</A> stop wait hint seconds</TD></TR>
+<TR><TD>STRINGMAX</TD><TD>255-2G</TD><TD>255</TD><TD>R</TD><TD>See below</TD></TR>
+<TR><TD>STRINGRSV</TD><TD>0-1</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR>
+<TR><TD>SYSNAME </TD><TD>"@/1-29(+)"</TD><TD>"DPToolkit" </TD><TD>R***</TD><TD>See <A HREF = "sysconfig.html#The_Host_Application"> system config options</A></TD></TR> 
+<TR><TD>SYSPORT </TD><TD>-1-65535</TD><TD>13204</TD><TD>R*</TD><TD>See <A HREF = "sysconfig.html#Setting_up_Thread_Types"> socket threads</A></TD></TR> 
+<TR><TD>VERSDPT</TD><TD>V...</TD><TD>varies</TD><TD>R*</TD><TD>Analogous to M204's 
+
+<TR><TD>WEBCONTO</TD><TD>1-60</TD><TD>5</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBDMINI</TD><TD>*</TD><TD>-</TD><TD>R***</TD><TD>See below</TD></TR> 
+<TR><TD>WEBDMLGN</TD><TD>*</TD><TD>-</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBPCURT</TD><TD>any</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBEXTN</TD><TD>*</TD><TD>.dptw</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBFLAGS</TD><TD>bits</TD><TD>X'00001000'</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBHOME</TD><TD>*</TD><TD>index.html</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBNDAEM</TD><TD>0-any</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBPORT</TD><TD>-1-65535</TD><TD>-1</TD><TD>R*</TD><TD>See below</TD></TR> 
+<TR><TD>WEBPMAX</TD><TD>any</TD><TD>-1</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBPMAXT</TD><TD>any</TD><TD>-1</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBPRDSN</TD><TD>*</TD><TD>WEBPROC</TD><TD>R</TD><TD>See below</TD></TR>
+<TR><TD>WEBPROC</TD><TD>*</TD><TD>WEBPROC</TD><TD>R</TD><TD>See below</TD></TR> 
+<TR><TD>WEBROOT</TD><TD>"@*"</TD><TD>-</TD><TD>R***</TD><TD>See below</TD></TR> <TR><TD>WEBSSI</TD><TD>0-any</TD><TD>0</TD><TD>R</TD><TD>See below</TD></TR>  
+</TABLE>
+
+<H4>Notes on custom DPT parameters</H4>
+
+<A NAME = AUDCTL> </A>
+<U>AUDCTL: </U>
+<BR>The bits in this parameter control various aspects of the columnar layout of the audit trail, with bits enabling columns as follows:
+
+<UL>
+	<LI>X'01' = Date
+	<LI>X'02' = Time
+	<LI>X'04' = Milliseconds (requires X'02')
+	<LI>X'08' = User number
+	<LI>X'10' = Line type (ERR, STT etc.)
+</UL>
+
+<P>If the X'01' bit is not set, the date is printed once at the top of the file.
+
+
+<P><A NAME = BUFAGE> </A>
+<U>BUFAGE: </U>
+<BR>This parameter controls a pseudo-user (daemon), similar to the familiar checkpointing daemon, which wakes up periodically to perform some task.  In this case the daemon ID used is PST_T.  As with CPTIME, the main meaning of the parameter is the interval in seconds between wake-ups, with zero indicating the facility is turned off.  In this case the task performed is to put in some work tidying up <A HREF = "sysconfig.html#Memory_Buffers">the disk buffer pool</A>.
+
+<P>What happens when the buffer-tidying daemon wakes up is that it looks for all buffer pages older than BUFAGE seconds, that aren't currently in active use by any threads, and aren't dirty.  All such pages are deleted from the buffer pool, freeing up the physical memory they occupy.  On a quiet system therefore, buffer memory use should become very small after a maximum of (BUFAGE x 2) seconds.  This is behaviour you probably don't usually want in a development environment, which is why the default value for the parameter is quite large.  The tidy-up mechanism can in any case be invoked manually, using the <A HREF = "language.html#BBTIDY">=BUFFTIDY command</A>.
+
+<P>As with CPTIME, resetting this parameter on DPT is effective even if the value was zero in the start-up parameters.  In other words, a daemon is initiated if one isn't active already.  Otherwise the change takes effect next time the daemon wakes up.
+
+
+<A NAME = EBCDIC>
+<U><P>CODESA2E, CODESE2A</U>
+<BR>These two parameters hold the code pages which are used to perform the conversions in DPT's  character-set related $functions such as <A HREF = "language.html#FUNC_CHARSET">$EBCDIC</A>, and file loading tools.  The supplied default tables are based on the "EBCDIC 500" (international EBCDIC) and "Windows-1252" ASCII code pages, translated via Unicode.  This scheme gives a successful conversion in 224 out of 256 characters, including all likely textual characters in typical applications.  The default convention is that in the remaining 32 cases, a period character in the target character set is the result.
+
+<P>You can set your own code pages if you like, for example to use other EBCDIC and/or ASCII table versions, or to make the conversions performed by $ASCII and $EBCDIC reversible for all 256 values, or perhaps to perform entirely custom character coding/decoding.  These parameters can only be reset by user 0 at startup time (parms.ini file), and must both be strings of length 256.  Generally you would supply values in hex format, because of the awkwardness of various control characters like newlines and tabs.  For example:
+
+<PRE>
+CODESA2E = X'000102030405060708090a0b0c0d0e0f10111213141516 ... etc.
+</PRE>
+
+<P>Note: Viewing these parameters in their stretched-out form is not very easy on the eye, so the supplied DEMOPROC contains a short UL request which $VIEWs the values and tabulates them nicely.
+
+
+<A NAME = CSTFLAGS> </A> <U><P>CSTFLAGS</U>
+<BR>This system-level parameter is a collection of bit-settings controlling general system behaviour, but mainly concerned with custom features like $functions, plus the set of DPT commands and UL statements that are not Model 204 standard.  Each bit disables some kind of custom processing, so that a value of X'FFFF' is the "strictest" setting as regards Model 204 compatibility.  
+
+<P>CSTFLAGS can be reset dynamically or in the ini file. If access control is enabled, it can only be reset by a system administrator.
+
+
+
+<UL>
+	<LI><U>'00??' - M204 compatibility switches</U>
+	<LI>X'0001'
+	<BR>Disable DPT custom commands (e.g. <A HREF = "language.html#BBSHELL">=SHELL</A>) and custom options on standard commands (e.g. <A HREF = "language.html#ANALYZE">ANALYZE LEAFPAGES option</A>).  Several custom commands that are required for system operation are unaffected by this flag (i.e. they are always enabled).  This includes the PST commands and various "hidden" commands used by the front end.
+
+	<LI>X'0002'
+	<BR>Disable custom User Language statements and options, such as the printable term <A HREF = "language.html#PRINT">*RECINFO</A>, and <A HREF = "language.html#COMP_CALLFUNC">callable $functions</A>.
+
+	<LI>X'0004'
+	<BR>Disable the pre-installed custom $functions and any non-standard options on standard $functions (e.g. <A HREF = "language.html#ITSOPEN">PROCDIR option</A> on $ITSOPEN).  User-written custom $functions can respect or ignore this flag as they wish.
+
+	<LI>X'0008'
+	<BR>Force run-time error when calling <A HREF = #Functions>"category 3" unsupported $functions</A>.  If this bit is left off, a call to any of this group of 20 or so functions generates an informational message and a dummy result is returned, usually zero or null string depending on the return type.  With the bit set a run-time error occurs, cancelling the request.  
+	<BR>This flag is intended to allow existing requests containing these functions to compile if you know that they will never be called, or if they will be called but the results are not of interest to you.
+
+	<LI>X'0010'
+	<BR>Disallow hex numeric literals in User Language of the form e.g. 0xffff, 0X0D0A, etc. (upper and lower case both valid). This switch defaults to off, thus allowing such hex numeric literals. It is a compatibility switch not a pure custom switch because I really can't remember now if M204 allowed this somehow - or maybe it does now anyway :)
+
+	<BR><BR>
+	<LI><U>'0?00' - Pure custom processing switches</U>
+	<LI>X'0100'
+	<BR><A HREF = "sysconfig.html#APSY">Close subsystem files</A> when leaving a subsystem.
+
+	<LI>X'0200'
+	<BR><A HREF = "language.html#LOGON">Prompt for a password</A> as well as a user name when making a connection to DPT host. This switch is closely related to X'0400' below. If this switch is left off, the DPT connection sequence works the same as pre V3.03, just asking for an optional user name and giving the new session default privileges. That is to say if access control is enabled with the X'0400' switch, the user would get minimum privileges, or if access control is not enabled, the user would get full privileges.
+
+	<LI>X'0400'
+	<BR>Enable access control checks for all <A HREF = "language.html#LOGCTL">controlled operations</A>. If this switch is left off, DPT works the same as pre V3.03, allowing full access to everything for all users. If you turn on this switch but leave the X'0200' switch off, it will mean any existing (pre-V3.03) connection scripts you have will still work correctly without requiring an extra input line (the password). But the downside would be that terminal users requiring more than default privileges would have to explicitly request them (LOGON command or function). Conversely if you leave this switch off but enable X'0200', the user will have to supply a valid password, but they will always get full privileges. All 4 combinations of these two switches could be useful sometimes.
+
+	<BR><BR>
+	<LI><U>'?000' - Fudge switches</U>
+	<BR>These are temporary flags controlling things where it's not currently known how Model 204 works, for example obscure or rare situations, or because there is disagreement between sources.  Making them options means people can set DPT up to work how they want it for the time being until the real answer can be resolved.  Here the default of not-set means DPT works how it's currently thought M204 most probably works.
+
+	<LI>X'1000'
+	<BR>Controls whether <A HREF = "language.html#LSTPROC">$LSTPROC</A> puts a century flag on procedure modified dates.
+	<LI>X'2000'
+	<BR>By default (this switch off), print lines sent to a $list because of $LIST_CAPTURE increment the line-on-page counter ($GETL), which means page throws will occur every OUTLPP lines, and headers etc. will appear in the final $list contents.  This does however mess up the line counting and pagination for printing that may have been temporarily suspended on the terminal or USE destination.  Turning on this fudge bit tells $LIST_CAPTURE output not to increment the line counter, which means it doesn't get headers, but does not affect pagination of "normal" reporting.
+	<LI>X'4000'
+	<BR>The sample code in the Sirius documentation suggests that $RANDOM returns an integer on or between the two limit parameters given.  By default therefore (this switch off) the DPT version of $RANDOM returns an integer that would suitably deal "cards" from a 52 card "deck" using $RANDOM(1,52).  
+	<BR>Turning this switch on makes the result a floating point value distributed between the two limits, like $RANDOM(3.14, 3.15).  This type of result (i.e. with decimal places) might often be more useful, which is why I'm suspicious as to which way it should really work and have put this fudge switch here.
+	<BR>Note that in this case even if you were using the result as an integer such as an array subscript, $RANDOM(1,52) would no longer be a fair dealer, since all 51.xxxx would be rounded down, and the 52nd card would be dealt extremely rarely if at all.
+	<LI>X'8000'
+	<BR>When $IMGOVL (and $LISTOVLI when parm 4 is given) assigns to the image item, its messaging and other error-handling behaviour is by default the same as during a regular assigmnent statement.  This means you can tweak the MSGCTL settings for various conditions like "variable too small for result", "string truncated" etc. to customize behaviour.  Turning on this fudge switch means all such conditions just cancel the request.
+</UL>
+
+<A NAME = EACTIVE> </A> <U><P>EACTIVE</U>
+<BR>This parameter is a sort of cross between Model 204's DACTIVE and EHIGHPG, reflecting the different implementation of "Table E" on DPT as a non-contiguous area.
+
+
+<A NAME = FUNNDAEM>
+<U><P>FUNNDAEM</U>
+<BR>The number of <A HREF = "language.html#FUNC_SIRDAEM">$function-support daemons</A> to keep running at any time.  If this parameter is non-zero the daemons start automatically when the system starts.  If you reset it during a run the daemons adjust their numbers automatically to match.  If daemons crash, (or log off - you could tell one of them to issue a LOGOFF command an it would comply), they will respawn as required.
+
+<P>The number of these daemons you need will be dependent on what you intend to to with them, but one or two ought to be enough.  As a rule it is a better idea to <A HREF = "language.html#BBSPAWN">spawn your own dedicated daemon thread using $SPAWN or =SPAWN</A> for anything that's going to take a significant amount of time.  That leaves the $function daemons to take care of small quick requests, which is the whole reason they exist.
+
+
+<A NAME = ILACTIVE> </A> <U><P>ILACTIVE</U>
+<BR>This parameter is much like Model 204's DACTIVE.  It indicates the page number in "table D" currently being used to build inverted list master records. 
+
+<A NAME = LOADXXXX></A>
+<U><P>LOADxxxx</U>
+<BR>This group of parameters controls various aspects of the processing related to data loads and unloads.  This means plain deferred-update loads (STORE RECORDS statement), but also commands such as REORGANIZE, =LOAD and some variations of REDEFINE FIELD, which invoke the same DBMS routines under the covers.
+
+<A NAME = LOADCTL></A>
+<P><LI><U>LOADCTL:</U> Miscellaneous control flags [<I>default=0</I>]<BR>Bit settings as follows:
+<UL>
+	<LI>X'0001' : Use alternate (slower) memory-availability algorithm.  This flag is here purely to support Wine installations, where the faster all-in-one function call returns an incorrect result (at the time of writing) causing large single-step loads to fail with an out-of-memory condition.  Enabling this flag should make such loads run successfully, but fractionally slower.
+
+	<LI>X'0002': Affects the index phase of a fast load or reorg when loading inverted lists (<A HREF ="language.html#BLOD_PROCESSING">processing summary...</A>).  If a record number on an inverted list does not correspond to one of the records loaded during the data phase of the same load operation, the default is to cancel the load.  Generally this is best because data and index entries are loaded together, but if performing more imaginitive index building operations you can set this bit to disable the check.  If there was no TAPED file at all, the check does not happen anyway.  Related to X'0004' below.
+	<LI>X'0004': Affects the index phase of a fast unload or reorg when index entries point to nonexistent records.  This situation is usually the result of application error/oversight when deleting records, either when fields are invisible or when "dirty delete" is used.  However, such index entries might represent valid information and DPT retains them by default.  Setting this parameter switch causes the unload to mask all inverted lists against the file's existence bitmap, thus performing a more rigorous index cleanup as part of a reorg, but slowing the process down somewhat.  Related to X'0002' above.
+	<LI>X'0008': In the event of a REORGANIZE command failing during the load stage, the default is to delete any temporary sequential files from the unload phase. Set this flag to make DPT leave them there so they can be examined.
+</UL>
+
+<A NAME = LOADDIAG></A>
+<P><LI><U>LOADDIAG:</U> Run-time diagnostics level [<I>default=0</I>]
+<BR>Specifies the amount of diagnostic detail sent to the audit trail.  Valid settings are:
+<UL>
+	<LI>0 : Use default for current operation (see below)
+	<LI>1 : Minimal or no diagnostics
+	<LI>2 : Concise diagnostics, plus maybe some more detail at process end
+	<LI>3 : Summary info for each chunk/phase.
+	<LI>4 : Detailed info for each chunk/phase, including SL stats
+</UL>
+
+If this parameter is left at zero, the default level of diagnostics varies depending on the operation currently being performed.  For example single-step deferred update processing defaults to level 4 (detailed), whereas most others including REDEFINE and fast loads/unloads default to level 1 (minimal).
+
+<P><LI><U>LOADFVPC:</U> Field-value pairs per chunk [<I>default=0</I>]
+<BR>Used for diagnostics and testing.  Setting this to a small positive value forces DPT to build indexes in lots of tiny chunks instead of its usual more-or-less intelligent approach based on memory availability (see LOADMEMP).  This is a quick way to find out the point where OS file handles will be exhausted during the merge phase (see LOADMMFH).
+
+<P><LI><U>LOADMEMP:</U>  Target real memory usage percent [<I>default=75</I>]
+<BR>Affects processes which attempt to achieve optimum performance by building data structures in physical RAM.  More is almost certainly better.  The valid range of settings is 5 to 95.
+
+<P><LI><U>LOADMMFH:</U>  Merge - max OS file handles [<I>default=256</I>]
+<BR>Specifies the number of chunk files to open concurrently during the merge phase of an index build.  If there are more chunks, DPT performs an extra merge pass over some or all of the sorted files, in groups of this size, until few enough remain for the final table-D-updating pass.  This extra processing is efficient and not a huge overhead, but it's still an overhead so if you have a load which uses say 1000  chunks, and a machine/OS you know will have 1000 OS file handles free, increasing LOADMMFH is worthwhile.  On extremely restricted platforms reducing this parameter would be how to stop "insufficient file handles" error messages.
+
+<A NAME = LOADTHRD></A>
+<P><LI><U>LOADTHRD:</U>  Parallel-processing threads [<I>default=1</I>]
+
+<BR>Affects fast loads and unloads, reorgs, and single-step deferred update processing.  During an unload (=UNLOAD command or phase 1 of a REORG command) all file areas can all be extracted in parallel.  During a load (=LOAD command or phase 2 of a REORG command) the field definitions and data are loaded on their own but indexes can be loaded in parallel. During single-step deferred update processing the final index load phase can be done in parallel for all fields, except ones defined with the NO MERGE attribute.
+
+<P>The default for LOADTHRD is 1, i.e. no parallelism.  This is because the fast unload and load processing is highly CPU-efficient and therefore usually IO-bound, meaning that on storage hardware with no parallel processing support (typical at the time of writing) trying to parallel process is counter-productive.  It results in the disk head having to keep moving between 2 (or 4 etc.) work locations rather than making a single relatively smooth pass across the file sectors.  LOADTHRD can be set up to the number of CPUs on the host machine, but is intended for users with fancy storage hardware like RAID or solid state.  
+
+<P>Note that DPT does not currently support files made up from several datasets (which could be on separate disks) like Model 204 does.  However, using multiple user threads to load data into a group where each member resides on a different disk has been shown to be beneficial on a multi-CPU machine.
+
+
+<A NAME = NCPUS>
+<P><U>NCPUS:</U>  Number of CPUs on host machine [<I>read-only</I>]
+<BR>This system parameter might be useful to application programs under certain circumstances. DPT makes occasional internal use of parallel processing, for example during file unloads and loads, and there is no need for user code to worry about this issue then.  However you might have an application doing some heavy number crunching that was CPU-bound for long periods, in which case you could consider <A HREF = "language.html#FUNCBBSPAWN">$SPAWN</A>ing or <A HREF = "language.html#FUNC_SIRIUS">$COMMBG</A>ing one or more new threads to help out if <TT>$VIEW('NCPUS')</TT> > 1.
+
+
+<A NAME = OUTFLAGS> </A> <U><P>OUTFLAGS</U>
+<BR>This parameter initially sprung from a (probably misguided) attempt to consolidate several very similar M204 parameters into one, namely OUTMRL.  It may be removed in a later release if people want to go back to OUTCCC, HTLEN, etc.
+
+<P>Needless to say losing 4 whole parameters, however much they duplicate each other's functionality, is bound to lose at least one piece of non-trivial control.  And indeed, one example is the ability to turn off line spills with OUTCCC=0.  However, it didn't seem right to re-introduce OUTCCC just to use its kluge setting, so OUTFLAGS was born.  As it's turned out, having somewhere to hold a variety of output-control switches is quite handy, and in that respect OUTFLAGS performs a similar kind of function as PROMPT does for line input.
+
+<P>The 1 bit 
+<BR>activates the Model 204 OUTCCC=0 behaviour, namely that once OUTMRL has been reached, a line can not be extended any more with further terms on a PRINT statement, or a continuation of a previous statement that ended with "...".  This setting also kicks in when for example an AT specification is less than the current print position on the line.
+
+<P>The 2 bit 
+<BR>tells the system not to insert a hyphen and line-end sequence (i.e. CRLF on Windows) when writing past the end of the line.  This behaviour is intended to provide the ability to write continuous "non-record-style" data to a file by extending a single line indefinitely with "PRINT ...".  Because in this mode there is no "left margin" of a notional output page, TAB has no effect, and works the same as WITH.
+
+<P>The 4 bit 
+<BR>is custom DPT functionality, and controls whether partially-filled pages are padded out with blank lines before actually throwing the new page.  On interactive devices like line-mode telnet and the IODev7 client, doing so would usually be unhelpful.  On IODev3 or user 0, it might be more handy.  Note that if there are UL trailers defined, pages are always padded anyway.  Conversely if OUTLPP/UDDLPP is set to 0 or -1 no padding is ever done, since the page length is undefined.  At other times on all device types the default is off - no padding - which is the most logical behaviour, and the main reason this control bit was introduced.  
+
+<A NAME = PRSUFFIX></A>
+<U><P>PRSUFFIX</U>
+<BR>Assumed <A HREF = "dbaguide.html#Proc_OSNames">file extension of procedures</A>, unless overridden on the ALLOCATE command.  The slightly complicated validation pattern given in the above table is intended to ensure valid Windows file extensions are used.  It is restricted for simplicity to a single optional full stop, followed by up to 10 alpha or numeric characters, but no special characters.  This pattern allows for a null string and (surely!) all realistic file extensions.
+
+<P>Note that to reset PRSUFFIX to a null string you can either use the <A HREF = "language.html#RESET">C'' syntax</A>, or give it as a stand-alone dot, which is taken to be the same thing since Windows file names can't end with a dot.  Null PRSUFFIX would be useful to access OS files which have no extension, or simply if you prefer to always see and type the file extensions.  It might be more usual to do that with a per-file override rather than the main parameter though..
+
+
+<U><P>RETCODE</U>
+<BR>This "parameter" is provided as a potentially more convenient access path to the system-wide value traditionally maintained by the <A HREF = "language.html#JOBCODE">$JOBCODE function</A>.
+
+<U><P>RTTRACE, SPYMODE, SPYFLAGS</U>
+<BR>These parameters are really just control switches used by the UL evaluator, and can only be set by the <A HREF = "language.html#BBSPY">SPY command</A>.  They are made viewable for interest.
+
+<A NAME = STRINGMAX>
+<U><P>STRINGMAX</U>
+<BR>This parameter controls the longest string that the system will accept.  The default is 255, in other words the same as Model 204.  STRINGMAX is consulted internally in a number of situations, as follows:
+
+<UL>
+	<LI>Validation of the LEN of string variables
+	<LI>When manipulating strings in expressions etc. at run time
+	<LI>Decisions about whether to truncate values, issue messages etc.
+	<LI>Truncation of $function arguments and results (also during string-building $functions such as $SUBREP to cause behaviours other than simple truncation)
+	<LI>Pattern values used in some commands
+	<LI>Line lengths in procedures (DPT allows longer lines, but issues a message)
+</UL>
+
+<P>Increasing the value of STRINGMAX is how applications on DPT can get access to internal objects of arbitrary length, such as data POSTed from HTML forms, or from the LOOK PAGE statement.  It also removes the need for a Sirius-style "longstring" object type.
+
+<P>Note that the idea of variable-length strings has not been extended, despite the temptation, to STRING and ORDERED CHARACTER fields in files, which are still stored with a length byte, and therefore limited to 255-character string values.  Extra-long string values used in UL database access statements will either cause run-time errors, or truncate depending on the situation.
+
+<A NAME = STRINGRSV>
+<U><P>STRINGRSV</U>
+<BR>This parameter controls whether User Language STRING variables allocate memory for their entire potential length at compile time, or initially take a minimal allocation and expand at run time when they are populated.  The default of zero means expand at run time. 
+
+<P>Setting STRINGRSV to 1 would give Model 204-like behaviour in the sense that if a request compiles there may be less chance of memory problems at run time.  However, the underlying string-manipulation facilities are designed to work best with the default setting, and STRINGRSV=1 is unlikely to be helpful in many situations, if any.
+
+<A NAME = PARM_WEBxxx>
+<U><P>WEBxxxx</U>
+<BR>The following bunch of parameters was added in version 2.0 for controlling the web server functionality, and all have the prefix 'WEB'.
+
+<A NAME = WEBCONTO>
+<U><P>WEBCONTO</U>
+<BR>Quiet web connections are timed out (closed) after this number of seconds.  Browsers will sometimes make a connection and speculatively leave it open after displaying a complete page, to cater for the user requesting more content from the same server.  DPT colludes with this for WEBCONTO seconds but no more.
+
+<P>In other situations a browser may send part of a request message before giving up or being prematurely closed by the user.  DPT will wait at the break in the incoming message stream for WEBCONTO seconds before deciding that no more is going to arrive.  Just in case the browser is still there it is sent a HTTP 408 response before the socket is closed.
+
+
+<A NAME = WEBDMINI>
+<U><P>WEBDMINI</U>
+<BR>The name of the procedure run in WEBPROC when the first server daemon starts (a similar idea to M204 subsystem processing where the initialization procedure is run once when the subsystem starts).  Only the first daemon runs this procedure, and if WEBNDAEM (the number of daemons) is more than 1, the others wait till the init proc has been run before logging on (at which point they'll run WEBDMLGN - see below).  
+
+<P>The init proc would be a good place to put ALLOCATE commands for web-related files which will be required by OPEN commands in the login proc.  It would also be perfectly reasonable to leave WEBDMINI null and just have everything initialized by user 0.
+
+
+<P>Note that a common convention is for user 0 to perform system initialization work, and often the web parts of an application will require this initialization to be complete before they log on.  For example user 0 allocates some general-purpose files which are also incidentally accessed by web code and therefore should be opened in the daemon login proc.  In such cases the daemons can be held back by leaving WEBNDAEM set to zero and then having user 0 reset it when it has completed initialization.  (This is how the demo system is configured).
+
+<A NAME = WEBDMLGN>
+<U><P>WEBDMLGN</U>
+<BR>The name of the procedure run in WEBPROC when server daemon users start up their sessions.  This is the place to put file OPEN commands etc. to save them having to be repeatedly issued before each user script is run.
+
+<A NAME = WEBEXTN>
+<U><P>WEBEXTN</U>
+<BR>This parameter is the URI extension which is considered to be a request for DPT to run a script and generate some dynamic content.  The dot is optional.  By default it is set to ".dptw" which suggests that a <U>DPT W</U>eb script will be run, but feel free to use any other descriptive abbreviation or acronym, or even a null string which would mean you would just request scripts by their "procedure name", with no extension at all.
+
+<A NAME = WEBFLAGS>
+<U><P>WEBFLAGS</U>
+<BR>This parameter contains bit settings enabling or disabling the following things.
+
+<UL>
+	<LI><U><B>X'0000000x'</U> = Access control options</B> (trigger HTTP code 403)
+	<UL>
+	<LI><B>X'00000001'</B> = allow requests for directory listings (URIs ending in "/")
+	<LI><B>X'00000002'</B> = allow requests for resources in directories outside the "subtree" starting at WEBROOT.  Note that this only applies to the actual requested URI - there would be nothing to stop a User Language script calling in content from anywhere accessible to the dpthost.exe process.  Clearing this flag also prohibits all requests given in absolute host path format (e.g. C:/system.ini"), regardless of whether the requested file is within the WEBROOT subtree or not.
+	<LI><B>X'00000004'</B> = <U>dis</U>allow usage of the =COMMAND script
+	</UL>
+
+	<LI><U><B>X'000000x0'</U> = Reserved</B>
+	<LI><U><B>X'0000xx00'</U> = Case translation options</B>
+	<UL>
+	<LI>Note that technically speaking HTTP header names are case-insensitive, so uppercasing them on the way in usually makes for simpler UL coding and is the default.
+	<LI><B>X'00000100'</B> = Uppercase URI parameter names (also =COMMAND script argument)
+	<LI><B>X'00000200'</B> = Uppercase URI parameter values
+	<LI><B>X'00000400'</B> = Uppercase POST parameter names
+	<LI><B>X'00000800'</B> = Uppercase POST parameter values
+	<LI><B>X'00001000'</B> = Uppercase HTTP incoming header names (default on)
+	<LI><B>X'00002000'</B> = Uppercase HTTP incoming header values
+	<LI><B>X'00004000'</B> = Uppercase HTTP outgoing header names
+	<LI><B>X'00008000'</B> = Uppercase HTTP outgoing header values
+	</UL>
+
+	<LI><U><B>X'000x0000'</U> = Miscellaneous options</B>
+	<UL>
+	<LI><B>X'00010000'</B> = Cookie "expires" date/time values are sent with hyphen date separators (31-Dec-1999) instead of <A HREF = "webguide.html#HTTPDates">the default space</A>.  Some (older?) browsers insist(ed) on this.
+	<LI><B>X'00020000'</B> = Make automatic error trigger level for the built-in <A HREF = "webguide.html#Coding_Command">command script</A> default to 0 instead of -1.  A call to $WEB_AUTO_ERROR as part of the command line would override this in any case though.
+	</UL>
+
+	<LI><U><B>X'0xx00000'</U> = Diagnostics options</B>
+	<UL>
+	<LI><B>X'00100000'</B> = The <A HREF = "webguide.html#HTTPErrors">standard error page</A> is sent with HTTP response code 200.
+	<LI><B>X'00200000'</B> = Super-detailed error report for <A HREF = "webguide.html#Coding_Errors">application script errors</A>.
+	<LI><U><B>X'0x000000'</B></U> = Diagnostics to the audit trail, as follows.
+	<LI>These diagnostics all appear with audit trail line type 'WEB'.  They are issued after case translation has been applied as per any above flags.  Note that these can generate a *lot* of audit trail messages, which often noticeably reduces the promptness of serving non-trivial pages to the browser.  Keep off most of the time in production!
+	<UL>
+	<LI><B>X'01000000'</B> = audit client connections as they are opened and closed
+	<LI><B>X'02000000'</B> = audit simple information about resource requests and responses
+	<LI><B>X'04000000</B>' = audit detailed information about the above, plus other assorted, and quite detailed, information
+	</UL>
+	<LI><U><B>X'x0000000'</U> = Reserved</B>
+	</UL>
+</UL>
+
+<A NAME = WEBHOME>
+<U><P>WEBHOME</U>
+<BR>This parameter is the file name assumed if a request for a resource with a null name arrives.  On most web servers the default for this is "index.html" and DPT is the same.  The name specified can be either an absolute host-local file name or otherwise it is taken to be relative to WEBROOT - see below.  
+
+<A NAME = WEBNDAEM>
+<U><P>WEBNDAEM</U>
+<BR>If this parameter is non-zero in the ini file the daemons start automatically when the system starts.  If you reset it during a run the daemons adjust their numbers automatically to match.  If daemons crash, (or log off - you might code LOGOFF in certain serious caught-error situations), they will respawn as required.
+
+<P>Running with more than one daemon means that users with slow connections, or who run complex database searches, do not hold up the processing of small requests for other users.  It also offers the chance for browsers to multi-stream requests for several resources on the same page, which often makes things appear smoother to the end-user.
+
+<P>If user 0 will be performing system initialization (e.g. allocating files) that the daemons will need in place when they log in, it can be best to leave WEBNDAEM at zero till all this initialization has taken place.  (See also WEBDMINI comments above).
+
+<A NAME = WEBPORT>
+<U><P>WEBPORT</U>
+<BR>This parameter can be consdered together with SYSPORT, as they are both TCP/IP port numbers on which incoming connections can be received.  In both cases a "listener" process runs within the DPT host, accepting connections and starting user threads as appropriate.   In both cases the listener process can be dynamically stopped and started using the <A HREF = "language.html#BBSOCKET">=SOCKET command</A>, and that is what you have to do if you want to reset this parameter on the fly.  WEBPORT defaults to -1, which means don't listen for web connections - i.e. the web server is inactive.
+
+<A NAME = WEBPMAX>
+<U><P>WEBPMAX / WEBPMAXT / WEBPCURT</U>
+<BR>These parameters cater for the accidental or deliberate posting of enormous HTTP messages which could block the system whilst it deals with them.  PMAX and PMAXT specify a maximum size in bytes for the message data block, over which the request gets turned away.  PMAX applies to a single message, and PMAXT applies to the aggregate total for the current DPT run.  The special, and default, settings of -1 mean no check is applied.
+
+<P>PCURT is the current aggregate against which the incoming message size and PMAXT are compared, and is updated after each message is processed.  If PMAXT is exceeded but you're happy that no funny business is going on, you can reset PCURT to zero again.
+
+<A NAME = WEBPROC>
+<A NAME = WEBPRDSN>
+<U><P>WEBPROC, WEBPRDSN</U>
+<BR>When the first web server daemon starts it automatically allocates the proc directory which will be allocated and used as the default source of user "script" procedures.  The value of WEBPROC will be the directory name as you would use from the command line (e.g. IN WEBPROC INCLUDE MYSCRIPT), and WEBPRDSN is obviously the OS file name. They are processed just as they would be in an ALLOCATE command.  You don't have to code this ALLOCATE yourself anywhere - this scheme is used so that the web daemons can get up and running even if user 0 encounters problems before it might have reached an ALLOCATE command coded in its input file (see also WEBDMINI comments).  If the directory specified by WEBPRDSN doesn't exist, it is created.
+
+<P>WEBPROC can be null, in which case the daemons start with no WEBPROC open, meaning they can serve static content, but run no dynamic scripts.  WEBPROC can also be specified as a group, but this requires clever sequencing of actions in the init and login procs - see if you can work out how to do it!   (Hint: if these daemons log off, new ones will start automatically).
+
+<A NAME = WEBROOT>
+<U><P>WEBROOT</U>
+<BR>This is the directory which will be regarded as the logical "root" from the perspective of web browsers.  If you change the default you can give it as an absolute directory location ("C:\etc.) or as dpthost-relative, which might be more usual.  The default null value means that a request for an otherwise unqualified page name will be serviced by locating the file in dpthost.exe's working directory.  See also notes above about the WEBFLAGS bits which control public access below the "root".
+
+<A NAME = WEBSSI>
+<U><P>WEBSSI</U>
+<BR>Controls whether the system processes <A HREF = "webguide.html#HTTPSSI">SSI directives</A> when serving HTML files.  The value of the parameter is the number of SSI directives allowed in a single page.  When setting it try to use a value a little over the maximum number that you expect any of your SSI pages will need - that way the parameter serves to guard against the possibility of accidental circular recursion.   The default is 0 (no SSI), but the demo installation has some SSI pages for illustration, so it will be around 10 or so.  It is more efficient to have this parameter turned off unless it's needed, since scanning for the SSI directives is a CPU overhead.
+
+<P><A HREF= #Top>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Statistics> <H2> Emulation of Statistics </H2> </A>
+
+<UL>
+	<LI><A HREF= #Stats_M204   > Emulated M204 Statistics</A>
+	<LI><A HREF= #Stats_Custom > Custom DPT Statistics</A>
+</UL>
+
+<P>See also the system config guide for <A HREF = "sysconfig.html#Statistics">some more background on the subject of statistics</A>.
+
+<H3>M204 stats: Not-emulated at all</H3>
+BLKI, BLKO, BLKRLK, CDLWAIT, DEVxx (see note), DKAR, DKRR, DUMP, DUPDTS, ECxxxx, ERRPDL, FSCB, FTBL, HEAP, INxxx (see note), ITBL, IXDEL, LKPOST, LKWAIT, LONGUPxx, MOVE, MPHASHD, MQXXX, NTBL, OUTxxx (see note), PBRSFLT, PCPU, PDL, PFLxxx, PNGDTIME, PR, QTBL, REDY, REST, RETRY, RSXCOMP, RUNG, SCHDCPU, SGMTI/SGMTO (see note), SLIC, SQRD, SQWR, SRBT, SRVC, STBL, STCPU, STDEQ, STIMERS, STPOST, STWAIT, SVxx, SWPG, SWT, TCON, TFMX, TQWT, TTBL, USRS, VTBL, WAIT, WTSERV, XTBL.
+
+<U><P>Note re. DEVxxx, INxxx, OUTxxx, SGMTx</U>
+<BR>All these have been consolidated under the more descriptive:
+<UL>
+	<LI>IN/OUT = physical lines from/to user IO devices
+	<LI>PROCI/PROCO physical lines from/to procedures (see custom stats below)
+	<LI>SEQI/SEQO = physical lines from/to sequential files  (see custom stats below)
+	<LI>UDD = physical lines to USE destinations (in parallel with either PROCO or SEQO)
+</UL>
+
+<H3>M204 stats: Collected at user logout, user since-last and system level only</H3>
+AUDIT, BLKCFRE, CNCT, CPU, IN, OUT, REQ, RQTM, SCREENS, SORTS, UDD, WTCFR, WTRLK.
+
+<A NAME = TIMESTATS></A>
+<U><P>Notes re. time accounting</U>
+<BR>Precision: Various levels of timing precision are available on Windows, ranging from simple nearest-second times (used on DPT for checkpoints and file-open time stamps), to hardware-implemented high-resolution counters not available on all machines and typically used for low level code tuning.  Generally speaking, the better the precision, the higher the run-time cost of obtaining it, so DPT does not overdo things unless necessary.  DKUPTIME and UPDTTIME for example are only accurate to the nearest 10ms or so.
+
+<P>Thread CPU: In the important case of CPU, the fact that DPT relies on Windows for thread-scheduling services (see notes elsewhere) means that we are also at its mercy when it comes to accounting.  There are lots of interesting implications here, and you should consult Windows documentation for more details.  For example an IO-hungry thread which is always paged out for IO before it uses its whole time slice will register zero CPU.  CNCT is often a more useful stat, especially in a single-user situation on a personal computer.
+
+<H3>M204 stats: Collected at file level as well as the other 3 levels</H3>
+BACKOUTS, BADD, BCHG, BDEL, BXDEL, BXFIND, BXFREE, BXINSE, BXNEXT, BXRFND, BXSPLI, COMMITS, DIRRCD, DKPR, DKRD, DKSxxx (see note), DKWR, FBWT (see note), FINDS, RECADD, RECDEL, RECDS, STRECDS, UPDTTIME.
+
+<U><P>Note re. Disk buffer stats (DKSxxx and FBWT)</U>
+<BR>The disk buffer manager on DPT maintains various of these statistics.  However, the algorithms used by Model 204 in this key module are largely a black box, and the appropriate stat to increment on DPT at various points was just guesswork.  Anybody planning serious analysis of the values reported should contact DPT HQ for an explanation of exactly what they mean.
+
+<H3>M204 stats: Other notes</H3>
+
+<LI>BXCHG is not recorded because on DPT btree value entries are only ever added or deleted.  What is the meaning of BXCHG on Model 204?  Possibly it reflects a change to one of the inverted lists actually held within the btree leaves (IMMED parameter).  On DPT this would register under ILCHG - see below.  If anyone wants to isolate such cases, BXCHG could easily be reinstated, if this is what it really means.
+
+<LI>SORTS is not held at file level, since in many cases the sorted records might come from the members of a group.  On DPT SORTS is incremented for value sorts as well as records sorts (see also the custom STVALS stat below).
+
+<LI>RQTM simply reports the internal CNCT statistic, but always at since-last level, regardless of the level requested.
+
+<P><HR>
+<A NAME = Stats_Custom> <H3> Custom DPT Stats </H3> </A>
+
+<P><B>Line IO stats</B>
+<BR>PROCI and PROCO replace all M204 stats representing procedure IO, for example SGMTI and SGMTO.  Note that PROCO includes procedure writes during normal save processing.  COPY proc is not included however, since that is a blocked copy.
+<BR>SEQI and SEQO replace all M204 stats representing physical IO to sequential files.  For the same reason as above, COPY DATASET UNFORMATTED does not register either SEQI or SEQO.
+
+<P><B>ILxxxxx</B>  
+<BR>Information about inverted list (bitmaps etc.) maintenance and retrieval.  Stat names like ILADD, ILCHG etc., with the obvious meanings.  On DPT ILCHG covers the case where a very small inverted list is actually held within the b-tree rather than needing any other supplementary structures (see earlier note about BXCHG).
+
+<P><B>MERGES, MRGVALS, STVALS</B>  
+<BR>Extra information about value processing.  As mentioned above, SORTS includes value sorts on DPT, including cases where this is implied by FRV {fieldname} IN {kooky} ORDER. The STVALS statistic is analogous to STRECS, although it is not maintained at file level since in group context we could not know which file should be considered the "true" supplier of a value that occurred in more than one member.  MERGES and MRGVALS are only relevant to group value processing, where in many cases a full sort is not necessary because all members' value subsets start in the same, correct order.  MRGVALS is the sum of all member value set sizes, including the pre-merge dupes.
+
+<P><B>VARTBL</B>  
+<BR>High-water mark, analogous to GTBL, (and the unused other ?TBL).  Appears in SL stats for both CMPL and EVAL.
+
+<BR><A HREF= #Top><BR>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Misc> <H2> Miscellaneous System Features</H2> </A>
+<A NAME = System>
+
+<H3>Security</H3>
+Model 204 itself has security scattered through a wide range of its features, allowing selective access to entities like fields, procedures, subsystems etc.  At present none of this is supported on DPT - all users have all access.
+
+<P>From version 2.16 DPT does have a built-in password file and a <A HREF = "sysconfig.html#ACCESSCONTROL">small set of facilities</A> developers can use for maintaining and querying  the file.  Support for various of M204's integrated security checks may be added over time if requested by users.
+
+<H3>Dynamic output</H3>
+USE $PRINT is supported and is handled internally as a Windows print job to the system default printer, but only a small range of <A HREF = "language.html#USECMD">control and text formatting options </A> are available.
+
+<P>USE $JOB could easily have been implemented by shelling off an OS process, but did not make it into the current release.  You can however easily simulate this and other similar "pseudo-destinations" with the <A HREF = "language.html#BBSHELL">=SHELL command</A>.  
+
+
+<H3>Wait states (WT) and flags (FLGS)</H3>
+These codes are shown on M204's basic MONITOR display, and DPT provides some "nearest equivalents" on that display, purely for familiarity purposes.  These codes are not used for anything internally.
+
+<P>On DPT each WT value is always shown with the same FLGS, since they both come from a look-up table for the display.  This may or may not be the case on Model 204.
+
+<H4>FLGS</H4>
+
+The X'40' and X'08' bits would always be set, so the meaningful bits in FLGS values would in theory always be the result of taking off X'48'.  For clarity however, these bits are left off, so that for example a value of X'04' can be more clearly seen to simply mean that the user is bumpable.
+
+<P><TABLE BORDER>
+<TR><TH>Bit</TH><TH>(Ref)</TH><TH>Comments  </TH></TR>
+
+<TR><TD>40</TD><TD>2.1</TD><TD>Since Windows does the scheduling, all users are permanently "swappable", but the bit is never shown set (see note above)</TD></TR>
+
+<TR><TD>20</TD><TD>2.1</TD><TD>The term "ECB" is slightly alien to the architecture, although it has a similar meaning when we talk about the thread synchronization functions $POST and $WAIT etc.  This "internal ECB" bit should be thought of as meaning that the wait will end at some point "within DPT's control".</TD></TR>
+
+<TR><TD>08</TD><TD>?</TD><TD>I can't think of any situations where only one user can wait for a resource, but the bit is never shown set (see note at the top)</TD></TR>
+
+<TR><TD>04</TD><TD>-</TD><TD>Bumpable: This may not be in exactly the same situations as on M204, but the meaning is the same.  Bumping a thread with this value *should* make it log off fairly soon.</TD></TR>
+
+<TR><TD>02</TD><TD>2.5</TD><TD>There are no inter-user messaging facilities on DPT.  This bit is never set.</TD></TR>
+
+<TR><TD>01</TD><TD>-</TD><TD>Timed waits - probably mostly the same situations (*SLEEP etc.)</TD></TR>
+
+</TABLE>
+
+<H4>M204 WT values</H4>
+The values shown in this table are only those that are shown in the M204 system manager's guide (p 4-13) as having some meaning (i.e. where it says "unspecified" or "reserved", the value is not included below).
+
+<P><TABLE BORDER>
+<TR><TH>Value</TH><TH>FLGS</TH><TH>(Ref)</TH><TH>Comments  </TH></TR>
+
+<TR><TD>1</TD><TD>00</TD><TD>2.2</TD><TD>Disk IO (only database files).  If the buffers spill to the OS swap file the user would show as WT=8, not 0.</TD></TR>
+<TR><TD>2</TD><TD>04</TD><TD>-</TD><TD>User o/p of any kind</TD></TR>
+<TR><TD>3</TD><TD>04</TD><TD>-</TD><TD>User i/p of any kind</TD></TR>
+<TR><TD>4</TD><TD>00</TD><TD>2.5</TD><TD>User 0 when HALTed only</TD></TR>
+<TR><TD>5</TD><TD>-</TD><TD>2.3</TD><TD>Unsupported</TD></TR>
+<TR><TD>6</TD><TD>-</TD><TD>2.3</TD><TD>Unsupported</TD></TR>
+<TR><TD>7</TD><TD>24</TD><TD>2.3</TD><TD>Record locks only</TD></TR>
+<TR><TD>8</TD><TD>20</TD><TD>2.3, 2.2</TD><TD>See also WT=1 and WT=98. </TD></TR>
+<TR><TD>9</TD><TD>-</TD><TD>2.1</TD><TD>Unsupported</TD></TR>
+<TR><TD>10</TD><TD>-</TD><TD>2.1</TD><TD>Unsupported</TD></TR>
+<TR><TD>11</TD><TD>-</TD><TD>1.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>12</TD><TD>25</TD><TD>-</TD><TD>*SLEEP, UL PAUSE n, =PSTxxxx, MONITOR EVERY</TD></TR>
+<TR><TD>13</TD><TD>-</TD><TD>2.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>15</TD><TD>-</TD><TD>1.8</TD><TD>Unsupported</TD></TR>
+<TR><TD>16</TD><TD>00</TD><TD>-</TD><TD>All reads and writes to the checkpoint file</TD></TR>
+<TR><TD>17</TD><TD>-</TD><TD>2.5</TD><TD>Unsupported</TD></TR>
+<TR><TD>18</TD><TD>-</TD><TD>2.5?</TD><TD>Unsupported (what is it?)</TD></TR>
+<TR><TD>19</TD><TD>20</TD><TD>-</TD><TD>Waiting for all updaters to finish before taking checkpoint - possibly not what it means on M204!  Use CHKABORT to effectively bump.</TD></TR>
+<TR><TD>20</TD><TD>20</TD><TD>-</TD><TD>Waiting for a checkpoint to finish on another thread before starting an update.  Similar comments as 19.</TD></TR>
+<TR><TD>21</TD><TD>-</TD><TD>2.1</TD><TD>Unsupported</TD></TR>
+<TR><TD>22</TD><TD>00</TD><TD>2.8</TD><TD>Read/write to sequential file (image and USE)</TD></TR>
+<TR><TD>23</TD><TD>-</TD><TD>1.1</TD><TD>Unsupported</TD></TR>
+<TR><TD>24</TD><TD>20</TD><TD>-</TD><TD>Use MONITOR RESOURCE to see which CFR - then bump the holder not the waiter!</TD></TR>
+<TR><TD>25</TD><TD>20</TD><TD>-</TD><TD>as above</TD></TR>
+<TR><TD>26</TD><TD>-</TD><TD>2.4</TD><TD>Unsupported</TD></TR>
+<TR><TD>27</TD><TD>-</TD><TD>1.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>28</TD><TD>-</TD><TD>1.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>29</TD><TD>-</TD><TD>1.1</TD><TD>Unsupported</TD></TR>
+<TR><TD>30</TD><TD>24</TD><TD>-</TD><TD>OK</TD></TR>
+<TR><TD>32</TD><TD>-</TD><TD>1.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>37</TD><TD>-</TD><TD>1.8</TD><TD>Unsupported (only user 0 is allowed on during recovery)</TD></TR>
+<TR><TD>38-39</TD><TD>-</TD><TD>3.6</TD><TD>Unsupported - no spy daemons</TD></TR>
+<TR><TD>40-46</TD><TD>-</TD><TD>1.2</TD><TD>Unsupported</TD></TR>
+<TR><TD>47-48</TD><TD>-</TD><TD>1.8</TD><TD>Unsupported - no extended quiesce</TD></TR>
+
+</TABLE>
+
+<A NAME = WT_Special></A>
+<H4>DPT special WT values</H4>
+These are provided as extra detail in some situations.
+
+<P><TABLE BORDER>
+<TR><TH>Value</TH><TH>FLGS</TH><TH>(Ref)</TH><TH>Comments  </TH></TR>
+
+<TR><TD>90</TD><TD>24</TD><TD>-</TD><TD>API thread in default null wait state</TD></TR>
+<TR><TD>91</TD><TD>24</TD><TD>-</TD><TD>Waiting for unspecified resource using the <A HREF = "language.html#BBRESXXX">=RESGET command</A></TD></TR>
+<TR><TD>93</TD><TD>24</TD><TD>-</TD><TD>Calling $SOCK_ACCEPT or $SOCK_RECEIVE</TD></TR>
+<TR><TD>94</TD><TD>24</TD><TD>-</TD><TD>Web server or $COMMxx daemon waiting for work</TD></TR>
+<TR><TD>95</TD><TD>24</TD><TD>-</TD><TD>Web server daemon in the act of sending HTTP response data.</TD></TR>
+<TR><TD>96</TD><TD>24</TD><TD>-</TD><TD>User has initiated a synchronous daemon thread ($SPAWN) or $COMMxx request and is waiting for it to finish.</TD></TR>
+<TR><TD>97</TD><TD>24</TD><TD>-</TD><TD>User is performing buffer housekeeping (see <A HREF = "language.html#BBTIDY">=BUFFTIDY</A>).  Others may well be, also unbumpably, in WT=8 while this happens, but buffer housekeeping should not take very long.</TD></TR>
+<TR><TD>98</TD><TD>20</TD><TD>-</TD><TD>Waiting for another user to free up buffers.  Evolves from WT=8 when the complete buffer pool is *actively* in use (i.e. not on LRUQ - in theory very rare).  This is the only time the FBWT stat is incremented. WT=98 lasts for a maximum of 5 seconds before "out of memory" is assumed.</TD></TR>
+<TR><TD>99</TD><TD>20</TD><TD>2.3</TD><TD>Waiting for a page-level database lock</TD></TR>
+
+</TABLE>
+
+<A HREF= #Top><P>Top</A>
+<P>
+
+<HR><BR>
+
+
+
+
+</HTML>

@@ -1,0 +1,2882 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Database Programmer's Toolkit DB API</TITLE>
+<H1 ALIGN = CENTER> Database Programmer's Toolkit</H1>
+<H1 ALIGN = CENTER> Database API Programming Guide</H1>
+
+<HR>
+
+<H2>Introduction</H2> </A>
+
+<P>This document covers in detail the various parts of the DPT database API, and shows how it can be used to access DPT files from your own programs.  This could be for example to incorporate M204-like file handling functionality into an application, or perhaps to develop add-ons to the basic DPT toolset, such as DBA utilities, custom $functions, or new interfaces like ODBC and SQL.
+
+<P>You could argue this is all somewhat outside the DPT "mission" of providing a coding and debugging platform for mainframe UL programmers, but since there is a formalised database API layer (on top of which the commands and User Language layer was built), it seems reasonable to make it available.  It could also be seen as adding to the "M204 emulation" aspect of things, since this configuration approximates one or more of the IFAMs.
+
+<P>See also the source code download package which includes a variety of walkthroughs, ideas and source code examples.  The code snippets throughout this guide below should all work.
+
+<H3>Contents</H3>
+<UL>
+	<LI><A HREF= #Compilation  > Calling Languages and Compilation </A>
+	<LI><A HREF= #Architecture > DPT Architecture Overview, and a First Program</A>
+	<LI><A HREF= #Conventions  > User API Design and Conventions </A>
+	<LI><A HREF= #Training     > Detailed Walkthrough </A>
+
+	<P><LI><A HREF= #Appendixes>Appendixes</A>
+	<UL>
+	<LI><A HREF= #Core         > Appendix 1. More on Core Services </A>
+	<LI><A HREF= #Multi        > Appendix 2. Multi-user API programs</A>
+	<LI><A HREF= #Miscellaneous> Appendix 3. Miscellaneous Tips and Ideas</A>
+	<LI><A HREF= #CAPI         > Appendix 4. The C API</A>
+	<LI><A HREF= #JAPI         > Appendix 5. The Java API</A>
+	</UL>
+</UL>
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = Compilation> <H2>Calling Languages and Compilation</H2></A>
+
+The discussion and code examples in this guide are written as if you were going to code in C++ to manipulate DPT classes, and then compile the entire source code including DPT into a final binary.  There are however a variety of other options which in many if not most cases will prove more convenient.  It still makes sense for the detailed discussion to be at the C++ level though, since the other options are just extra wrapper layers.  The internal DBMS architecture remains the same and the API layout is broadly the same (functions are grouped, named, etc. according to their original C++ classes).  Shown pictorially, the guide is presented as if we are working in orange or green.
+
+<P><IMG SRC="images\DPT_APIs.gif" BORDER = 1></IMG>
+
+<P>In the above diagram, there are 5 interfaces shown, as follows:
+<UL>
+<LI>Green:  The naked C++ API.  The other parts of DPT such as the User Language compiler are built on this interface.
+<LI>Orange:  The C++ API with most objects wrapped conveniently as smart pointers, classes tidied up to mask off obscure and advanced functionality, and some new utility functions added to make life easier for garbage-collected calling environments (e.g. avoiding parameter modification).  The code samples throughout this guide use this layer.
+<LI>Pink:  The wrapper generator "SWIG" (<A HREF = "http:\\www.swig.org">swig.org</A>) can take a set of C++ headers and generate a layer of wrapper classes for many different calling languages - with this method DPT has been used from Python.  There are other wrapper generators too.
+<LI>Blue: The API wrapped with C functions and packaged in a DLL.  C-style function linkage is very widely supported so this is a handy "lowest common denominator" API.  A pre-built DLL is also very convenient as it can be tricky to get downloaded source code to build perfectly, even if all the compiler settings and hardware appear the same.  On the downside, being non-object-oriented, calling code is somewhat less elegant. The DLL download package contains some installation notes and sample programs, and <A HREF = #CAPI>Appendix 4</A> covers all the differences in usage compared to the C++ examples in the rest of this guide.
+<LI>Brown: For Java there is once again a class-based API, reconstructed back out of the "flat" intermediate layer. Since Java is so similar to C++, code written for this API looks more or less the same as that shown throughout this guide.  The downloads page has a variety of extra notes covering installation etc., plus some sample code including a useful DPT file browser application. <A HREF = #JAPI>Appendix 5</A> below outlines the nuts and bolts of how this API works, and covers any significant differences in usage compared to the C++.
+</UL>
+
+<H3>Compiling DPT source code</H3>
+
+<P>DPT's "home" compilation platform is Microsoft Visual C++ 6, but since that is becoming rather old (it's over 10 years old now), and also is not free, assuming you could even find a copy, most users will be wanting to use other compilers.  The notes that come with the source code download contain more up-to-date information about which compilers currently give successful builds, and any specific tips about getting things to work in different cases.  At the time of writing, gcc and MSVC++ "express" (the free version) are the best bets.
+
+<P>If you link DPT with a single-threading runtime, it should work OK if you only write a single-user application.  In a multi-user application multi-threading libraries should be used, if there is a choice, to ensure correct operation.  Usually these days there is no choice so this is not an issue any more.
+
+<H3>Using the DLL</H3>
+
+It's never a trivial exercise to get somebody else's code to build perfectly, even if all the software and configuration settings and hardware appear the same.  A pre-built DLL is therefore very convenient, even if writing C makes the calling code slighty less elegant.  The C API download package contains some documentation and sample programs, and <A HREF = #CAPI>Appendix 4</A> covers all the differences in usage compared to the C++ examples in the rest of this guide.
+
+<H3>DPT in "managed thread" environments</H3>
+DPT internal thread management relies on an explicit OS thread ID for each user.  This means multithreaded DPT applications may throw up subtle synchronization bugs if compiled and/or executed in environments where there is no fixed, exclusive, one-to-one correspondence between OS threads and apparent "threads" created by user code.  For example .NET "lightweight" threads, and Java "green" threads, both shift their execution between many OS threads throughout their execution. If given the choice, disabling such features should do the trick.
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Architecture><H2>DPT Architecture Overview, and a First Program</H2></A>
+
+
+<P><A HREF= #API_Tiers         > API Tiers</A>
+<BR><A HREF= #Service_Objects   > Service Objects</A>
+<BR><A HREF= #Simplest_Program  > The simplest program</A>
+
+
+<A NAME = API_Tiers><H3>API Tiers</H3></A>
+The DPT main host application dpthost.exe is constructed as three layers, each with a distinct level of functionality.  To write a custom database API program you need to be aware what these are, and where your code will fit in:
+
+<OL>
+	<LI>"Core Services".  A set of low level functions, providing for basic multi-threading and sharing, parameters and statistics, messaging and the audit trail, and "mainframe-style" file allocation.
+	<LI>"Database Services".  All the database functionality, plus some related modules like sequential file handling.
+	<LI>"Session Layer".  The familiar Model-204-emulating user interfaces: the User Language compiler and debugger, commands, IODevs, procedures, hooks to the editor, the web server etc.
+</OL>
+
+There were two reasons for doing it like this.  The first was simply that breaking it into three parts made DPT easier to develop and test.  The second reason was to make it simple to disconnect the tiers for separate use, specifically levels 1 and 2 being used as the "database API" here.  Or to be more precise:
+
+<OL>
+	<LI>Core Services
+	<LI>Database Services
+	<LI>Your code
+</OL>
+
+<P>If you are writing an API client program which will interact with a user or users, it will have to provide a user interface itself, since the familiar DPT interfaces (the "session layer" above) are not included in that configuration.  If you are a source code contributor writing a custom $function or enhancement to the main host system, the "session layer" will be present and you can work with it.
+
+<P>Apart from these issues, the final application you get will behave much like the regular host system in many ways, such as its handling of startup, recovery, the audit trail etc, and the <A HREF= "sysconfig.html">system config</A> and <A HREF= "dbaguide.html">DBA guides</A> a will be equally applicable.
+
+
+<A NAME = Service_Objects><H3>Service Objects</H3></A>
+DPT is fundamentally a multi-user application and the API, being a central part of things, therefore provides multi-user functionality.
+
+The way this is managed is to provide each user thread with a set of "Service Objects", which keep track of which shared resources within the system that thread is using.  All operations are performed through member functions of these service objects, which ensure correct sharing, and clean up in the event of errors or just normal termination.  As a simple example, a thread's <TT>GroupServices</TT> object keeps a table of what temporary groups the user has created, and ensures they're deleted when the user logs off (i.e. when the service object is deleted).
+
+<P>In many cases there is some system-wide initialization or clean-up to do relating to particular services, and this is always done by the first such object when it is created.  To continue the above example, the <TT>GroupServices</TT> class as a whole keeps a note of all the system-wide, sharable groups that anybody has defined, and deletes those when the last user logs off. 
+
+<P>Luckily in simple cases an API program initially only needs to deal with service objects of type <TT>DatabaseServices</TT>, one for each user thread required.  Creating one of these takes care of the creation of all the other service objects, and deleting it ensures everything is cleaned up for that user.
+
+<P>The main service objects are:
+
+<UL>
+	<LI>Database
+	<UL>
+		<LI>Groups
+		<LI>Sequential files
+		<LI>Core
+		<UL>
+			<LI>Message routing
+			<LI>Parameter viewing/resetting
+			<LI>Statistics viewing and reporting
+			<LI>Access control
+		</UL>
+	</UL>
+</UL>
+
+<P>We will encounter all these service objects later on, but for now let's just concentrate on  Database Services.
+
+
+
+<A NAME = Simplest_Program></A>
+<H3>The simplest program</H3>
+<PRE CLASS=code>
+#include "dptdb.h"      //All DPT headers you will need
+
+using namespace dpt;    //Alternatively qualify all DPT identifiers with dpt::
+
+int main() 
+{
+	APIDatabaseServices api;
+}
+</PRE>
+
+All the DPT objects reside in namespace <TT>dpt</TT>, but in this document the namespace qualifier is usually omitted in class names etc, for clarity.  This implies that a "using" directive is always in effect, which some would say is bad form, especially in the global namespace as above.  If you prefer you can use the dpt:: qualifier.  Up to you.  
+
+<P>The class name used here (beginning with "<TT>API</TT>") is an indication that we are using a wrapper class (orange in the <A HREF = #Compilation>diagram</A>) specially prepared for user code.  This wrapper layer is discussed in more detail shortly.
+
+<P>The above example creates a single <TT>APIDatabaseServices</TT> object, and then terminates immediately.  Well actually, as you may have noticed if you tried it, it's not quite immediately since the constructor goes through the motions of effectively starting up a host system. This means an audit trail, checkpoint file, etc. will also have been created.  What's more, when the variable went out of scope at the end of <TT>main()</TT>, the destructor will have gone through the motions of closing down the system.  With any luck the audit trail should contain a nice clean set of messages.  With less-serious problems, an appropriate message will appear in the audit trail.  In more serious cases (e.g. the audit trail could not be opened) the <TT>APIDatabaseServices</TT> constructor will throw an exception, so your code should usually be prepared for this - see later for more on the exceptions that can be thrown out of DPT.
+
+<P>Creating the user API as a stack object like this rather than with "new", helps ensure correct clean-up when the thread terminates by relieving you of the responsibility to explicitly delete it.  This is one of the reasons why the wrapper classes are convenient to use.  With multithreaded programs (<A HREF= #Multi>more later</A>) things obviously get more complex since each thread needs to have its own dedicated API object.
+
+
+
+<A NAME = Garbage_Destructor></A>
+<P><U>Note re. garbage-collected environments</U>
+<BR>When working in e.g. Python or Java (<A HREF = #Compilation>pink or brown</A>), the variable <TT>api</TT> above would go out of scope at the same time as in C++, but the APIDatabaseServices destructor would not necessarily be called right in that instant, because of delayed garbage collection.  If it's the very end of the program that call will "probably" follow soon, but if you want to have specific control over the process of user logout (and DBMS closedown if it's the last user), you can force it as follows:
+
+<PRE CLASS=code>
+	...
+	api.Destroy();          //object now unusable
+	...
+</PRE>
+
+Apart from this, the variable scope/destructor/garbage-collection issue will generally not be a problem, since many things are cleaned up by DPT.
+ 
+
+<H3>The simplest program, take 2</H3>
+<P>Now some slight elaborations on the above to make DPT actually do something apart from initialize and terminate.
+
+<PRE CLASS = code>
+int main() 
+{
+	APIDatabaseServices api(
+		"myoutput.txt",         //Default: "sysprint.txt"
+		"Richard",              //Default: it varies
+		"myparms.ini",          //Default: "parms.ini"
+		"mymsgctl.ini",         //Default: "msgctl.ini"
+		"myaudit.txt");         //Default: "audit.txt"
+
+	api.Core().Output()->WriteLine("Hello World");
+
+	return api.Core().GetRouter().GetJobCode();  //should be 0 here
+}
+</PRE>
+
+<P>Firstly some comments about the constructor parameters.
+
+<P>Output destination:  The API requires that each thread has an output destination that M204-style numbered messages can be sent to, and the above constructor assumes that you want to create a text file to take these messages.  If you want them to go to some destination that you've already created in your program, such as a Windows list box or something, there's another slightly more complicated constructor.
+
+<P>User name:  DPT's security provisions are rudimentary at the time of writing, and the user name is mainly just to help you pick out messages in the audit trail.  User 0 (the first API thread in any OS process) is a special case, since the value you give here is ignored.  User 0's name is taken from the <TT>SYSNAME</TT> parameter, which can be set in the <A HREF="sysconfig.html#Specifying_Configuration_Options">parameter overrides file</A>.
+
+<P>Other constructor parameters: The meaning of these three parameters shown above is also explained in the System Config Guide.
+
+<P>The "Hello World" line is accessing the <TT>CoreServices</TT> service object, and within that the output destination which was supplied earlier as "myoutput.txt".  The <TT>WriteLine()</TT> method is part of a DPT custom interface called <TT>LineOutput</TT>, discussed further shortly.
+
+<P>The final line uses the <TT>MessageRouter</TT> service object owned by <TT>CoreServices</TT>, which controls M204-style numbered messaging (<TT>MSGCTL</TT> parameter etc.) as well as maintaining various high water marks.  Here we're accessing the equivalent of M204's <TT>$JOBCODE</TT>.
+
+<P>So that's the "hello world" program out of the way.  We'll get a lot more complicated later on, but first some background on various interface conventions...
+
+<P><HR>
+<!************************************************************************************>
+
+<A NAME = Conventions><H2>User API Design and Conventions</H2></A>
+
+<P><A HREF= #DataTypes     > Basic data types used (including custom types) </A>
+<BR><A HREF= #MROs          > Managed Results Objects (MROs)</A>
+<BR><A HREF= #Containers    > Sets and cursors</A>
+<BR><A HREF= #ParmSpecifications  > Complex input parameters </A>
+<BR><A HREF = #APIDesign     > The C++ Wrappers in relation to DPT internals</A>
+<BR><A HREF= #Exceptions    > Exceptions and messaging</A>
+<BR><A HREF= #Concurrency   > Concurrency considerations</A>
+
+
+
+<A NAME = DataTypes></A>
+<H3>Basic data types used</H3>
+Many of the DPT interface functions accept, and return, results as the fundamental C++ data types <TT>int</TT> and <TT>double</TT>, and the standard library <TT>&ltstring&gt</TT> type.  There is also occasional use of the STL <TT>&ltvector&gt</TT> type when a function returns several result values in one go.
+
+<P>In addition to these standard types, the following simple DPT custom types are also used.  The usage of these types is covered in more detail in the walkthrough sections later.
+
+<P><TT><U>APIFieldValue</U></TT> (defined in fieldval.h)
+<BR>This is a kind of variant type, although not very sophisticated in that it only holds either a string or an 8-byte floating point value.  It is used whenever values are passed into the API which are going to be stored in the database, or when extracting values from the database.  (An important thing to be aware of with the DPT database is that it only provides this very limited range of two storage types).
+
+<P>The numeric constructor ensures that numeric values pass the <TT>RoundedDouble</TT> validation.  Prior to DPT version 3.0 the string constructor also ensured a length of < 255 bytes, but this restriction has now been lifted because of BLOB fields.  The API functions which use these objects will now reject such superlong values where appropriate (i.e. everywhere except when using non-BLOB fields).
+
+<PRE CLASS=code>
+APIFieldValue fv1 = 3.14;                     //ok
+APIFieldValue fv2 = "Jones";                  //ok
+APIFieldValue fv3 = std::string(256, '*');    //ok for V3+
+if (fv1 == fv2) ...                           //different types - exception thrown
+</PRE>
+
+<P>The decision to use this variant type was partly because in many cases it makes for less cluttered interfaces and more concise calling code.  Also it was because Model 204 programmers are used to the behaviour of User Language where a program continues to work exactly the same if the DBAs change the type of a field in the database.  This situation can not be achieved exactly in a strongly-typed language like C/C++, but we can get much closer with a variant type like this.  When calling database-related functions, the API will internally convert the supplied value to the appropriate type if required.  (Note: The conveniences of this object are one of the most painful things to lose when using the DPT API via its <A HREF = #CAPI>C wrappers</A>).
+
+<P>The <TT>APIFieldValue</TT> class also provides simple string extraction functions, which can be convenient when reading database information out.
+
+<P><TT><U>APIRoundedDouble</U></TT> (defined in floatnum.h)
+<BR>This DPT custom type is used to impose M204-like handling of floating point numbers (see also the <A HREF = "language.html#Number_Handling">comments re. User Language number handling</A>.  The constructor perhaps throwing an exception (see below) if the number is invalid according to the M204 rules.  
+
+<PRE CLASS=code>
+APIRoundedDouble rd1 = 3.33333333333333333333;    //ok - but gets rounded to 15 dsf
+APIRoundedDouble rd2 = "10";                      //ok - string constructor provided
+APIRoundedDouble rd3 = "junk";                    //invalid - exception thrown
+APIRoundedDouble rd4 = 1E76;                      //out of range - set to zero like in UL
+
+APIRoundedDouble::SetRangeThrowOption(true);
+APIRoundedDouble rd5 = 1E76;                      //out of range - exception thrown
+</PRE>
+
+<P>Internally the DBMS code applies these rounding rules to all input, but you can explicitly create them as above if you really insist on full control in the calling code.  Mostly the class is exposed for its extraction/printing functions, and the throw option shown above.
+
+<P><U>Automatic type conversions</U>
+<BR>Where possible the API is defined to make use of the C++ compiler convention where parameters of the form <TT>"const T&"</TT> can be supplied in user code as any type for which a constructor for a temporary intermediate object can be inferred.  This means calling code can be made briefer and more readable in common cases such as C-style strings (<TT>char*</TT>) for <TT>std::string</TT> or <TT>APIFieldValue</TT> parameters, or numeric literals for <TT>APIFieldValue</TT> parameters:
+
+<PRE CLASS=code>
+f.FindRecords("SURNAME", FD_EQ, "SMITH");                //this
+
+f.FindRecords("SURNAME", FD_EQ, FieldValue("SMITH"));    //instead of this
+</PRE>
+
+<P><U>Symbolic constants </U> (mostly defined in apiconst.h)
+<BR>Many operations use special symbolic constants as a way of specifying certain parameters.  For instance <TT>FD_EQ</TT> as shown above to mean an equality find; or e.g. <TT>FILEORG_RRN</TT> can be used when creating a file to mean "reuse record numbers".
+
+<P>Where this is possible the function prototype or comments in the header file will make it clear, for example using a typedef.
+
+
+
+<A NAME = LINEIO></A>
+<P><U>Line-mode input and output</U>
+<BR>There are a few situations, such as when using sequential files, and the <TT>APIDatabaseServices</TT> constructor, where your code may interact with DPT objects of class "<TT>LineInput</TT>" and/or "<TT>LineOutput</TT>".  These are abstract classes allowing simple line-mode (CRLF-terminated) I/O, and if you create your own derived classes you can provide alternate interfaces to some features of the API.
+
+
+<A NAME = 64bit></A>
+<P><U>64 bit integers</U>
+<BR>Some DPT internal variables are maintained as 64 bit integers, but where these are offered to the user API (statistic values for example), the functions which supply them return 32 bit integers.  In the (rare?) cases that the high-order word is non-zero you can access it if you wish using a special extra parameter.  The syntax is covered in the sections below.
+
+
+<A NAME = Output_parms></A>
+<P><U>Native type output parameters in Java, Python, Ruby etc.</U>
+<BR>If you have managed to build DPT and get it working from a language with sophisticated data management features such as garbage collection, there are one or two situations where the DPT API provides one or more special variants of a function in order to avoid stepping on the toes of the calling language environment.  You should make sure to use these special variation(s) where appropriate to avoid possible runtime problems, or just use them even from C++ if you prefer the look of them.
+
+<P>The issue concerns functions which modify parameter objects (aka "output parameters").  For example the neatest way to access record data in C++ is using the function illustrated in the main walkthrough section of this document, as follows:
+
+<PRE CLASS=code>
+class APIRecord {
+...
+bool GetNextFVPair(std::string&, APIFieldValue&, int&);
+...
+};
+
+std::string fname;
+APIFieldValue fval;
+int fvcount= 0;
+while (rec.GetNextFVPair(fname, fval, fvcount))
+	//use results etc.
+</PRE>
+
+The calling code here must have 3 variables, which are all modified by the DPT function - one way of looking at this is that the function effectively has 4 return values.  At the time of writing, Python wrappers generated by SWIG implement the "<TT>int</TT>" and the "<TT>std::string</TT>" parameters as Python native-type objects, which are therefore subject to all that entails in terms of native data management.  So for example the Python language environment will be maintaining reference counters and other control information in order to do cool stuff like shared storage for variables with the same value, and of course garbage collection when variables go out of scope.  But for this data management to work reliably, all access to such variables has to be via Python language statements, and things are liable to break if underlying storage is modified via other means - in this case by the "black box" that is DPT.  Therefore alternative functions are provided which do not modify any parameter objects:
+
+<PRE CLASS=code>
+while (rec.AdvanceToNextFVPair()) {
+	std::string fname  = rec.LastAdvancedFieldName();
+	APIFieldValue fval = rec.LastAdvancedFieldValue();
+	etc.
+}
+</PRE>
+
+There are a handful of other, less important, places throughout the DPT API where output parameters are used, and the alternative functions, if present, are commented clearly in the header files.
+
+
+<A NAME = MROs><H3>Managed Results Objects (MROs)</H3></A>
+<P>This term is used to cover a wide range of more complex DPT data types than the simple ones described above.  When the API gives you the results of a call, they will come in one of two forms. The first, and simplest, is where the result data is located and copied into your program's local storage.  This happens when, say, you retrieve a field value from a record.  
+
+<P>Equally common are "managed result objects" (MROs), where the information is located but the API keeps it internally and only gives your code a pointer to it.   A good example of this is a record set resulting from a database search.  In these cases DPT is taking care of the various resource acquisitions required to prepare and hold the results, and likewise the release of resources if or when your code says to do so.
+
+<P>MROs are actually a very similar idea to service objects.  The main difference is that while the service objects are always present, MROs are only created as the result of some request issued to one of the service objects or another MRO.  For example, when opening a file prior to doing a database search:
+
+<PRE CLASS=code>
+void anyfunc(const APIDatabaseServices& api) 
+{
+	APIDatabaseFileContext custfile = api.Open("FILE CUST");
+}
+</PRE>
+
+This function call creates a result object which is completely owned and managed by Database Services, and will be completely cleaned up, if we don't issue a <TT>Close()</TT> first, when the thread deletes the <TT>APIDatabaseServices</TT> object.  
+
+<P>After opening, a context object can be regarded as effectively just another service object, which has its own member functions (e.g. find records), which will keep track of activity for the current user (e.g. only keep one copy of a file open even if it's re-opened), and which will clean up all its own managed objects on destruction if user code hasn't requested that first (e.g. releasing record sets and value sets).
+
+
+
+<P><U>Hierarchy of MRO construction paths</U>
+<BR>Here is a diagram showing which results are supplied by which objects.  Square brackets means the result data is handed over to user storage with no strings attached.  Otherwise the data is an MRO owned by the parent object.  There are several ways of accessing some entities, as per the side remarks saying which User Language statement creates each under the covers.
+
+<P><TABLE BORDER><TD>
+<UL>
+<TT>
+<LI>APIDatabaseServices</LI>
+	<UL>
+	<LI>APIDatabaseFileContext</LI>
+		<UL>
+		<LI>APIFoundSet </TT><I>(FIND RECORDS)</I><TT></LI>
+			<UL>
+			<LI>APIRecordSetCursor </TT><I>(FOR EACH RECORD)</I><TT></LI>
+				<UL>
+				<LI>APIRecord </LI>
+					<UL>
+					<LI>[APIRecordCopy] </LI>
+					<LI>[APIFieldValue] </LI>
+					<LI>[field names]</LI>
+					</UL>
+				</UL>
+			</UL>
+		<LI>APIRecordList <I></TT>(UL-style lists)</I><TT> </LI>
+			<UL>
+			<LI>Descendants as APIFoundSet </LI>
+			</UL>
+		<LI>APISortRecordSet </LI>
+			<UL>
+			<LI>Descendants as APIFoundSet </LI>
+			</UL>
+		<LI>APIDirectValueCursor </TT><I>(IN file FOR EACH VALUE)</I><TT></LI>
+			<UL>
+			<LI>[APIFieldValue] </LI>
+			</UL>
+		<LI>APIValueSet </TT><I>(FIND VALUES)</I><TT></LI>
+			<UL>
+			<LI>APIValueSetCursor </TT><I>(FOR EACH VALUE in value-set)</I><TT></LI>
+				<UL>
+				<LI>Descendants as APIDirectValueCursor </LI>
+				</UL>
+			</UL>
+		<LI>APIFieldAttributeCursor </TT><I>($LSTFLD)</I><TT></LI>
+			<UL>
+			<LI>[APIFieldAttributes] </LI>
+			</UL>
+		<LI>[APIFieldAttributes] </TT><I>($FDEF)</I><TT></LI>
+		</UL>
+	</UL>
+</UL>
+<TT/>
+</TD></TABLE>
+
+<P><U>Destruction of MROs</U>
+<BR>By definition the destructors for MROs are private functions you can't use directly.  MROs must be deleted via the same "parent" object that was used to create them.   So to close the file above (thus deleting associated resources and invalidating the pointer), you would use:
+
+<PRE CLASS=code>
+	...
+	api.Close(custfile);
+}
+</PRE>
+
+
+
+
+<A NAME = Containers><H3>Sets and cursors</H3></A>
+These groups of MROs deserve a special mention.  In various instances the API will generate a result object which is not of direct interest in itself, but rather is a collection of objects which are of interest.  For example if you do a database search the result is the set of records matching the search criteria.  Usually you're interested in the records themselves rather than the set (but not always - you might just want to count the set).
+
+<P>In cases like these the contents of the set are accessed using another object, a cursor, which is opened once you have the set.  The cursor is a child MRO of the set, and when the set is destroyed, so are any cursors open against it.  So in this example the <TT>CloseCursor()</TT> call is optional.
+
+<PRE CLASS=code>
+void FindAndLoop(APIDatabaseFileContext& f, LineOutput& op)
+{
+	APIFoundSet s = f.Find("SURNAME", FD_EQ, "JONES");
+
+	for (APIRecordSetCursor c = s.OpenCursor(); c.Accessible(); c.Advance(1)) 
+	{
+		APIReadableRecord r = c.AccessCurrentRecordForRead();
+
+		op.WriteLine(r.GetFieldValue("SURNAME").Cstr());
+	}
+	s.CloseCursor(c);  //optional
+
+	f.DestroyRecordSet(s);
+}
+</PRE>
+
+<P>Using cursors has several benefits.  One is that it hides the implementation details of the set.  A record set is again a good example, since we know that the representation is probably, but not necessarily, a bitmap.  Accessing records via a cursor means it doesn't matter.  
+
+<P>Another benefit is that code can be written which will generically access different types of set.  Taking the above found set example, if you later decide you want to sort the set before looping on it, the loop code need not change since sorted record sets are polymorphically based on the same record set base class as found sets.  More details and code samples on this issue, and on particular kinds of cursors, are given throughout the document.
+
+<P>The <TT>"CloseCursor"</TT> and <TT>"DestroyRecordSet"</TT> calls in the above example might easily be eliminated with a little RAII groundwork (C++ technique) if you wanted to do so, making the loop more modular and robust in the case of exceptions thrown out of it.
+
+<P><U>Cursor options</U>
+<BR>The different types of cursors  provide certain general functions (<TT>Advance</TT>, <TT>GotoFirst</TT>, etc.), and certain specific functions appropriate to their situation.  In many cases it is also possible to control behaviour via options, which can be ORed together for example:
+
+<PRE CLASS=code>
+	...
+	APIDirectValueCursor c = file.OpenDirectValueCursor();
+	c.SetOptions(CURSOR_ADV_NO_OVERRUN | CURSOR_POSFAIL_REMAIN);
+	...
+</PRE>
+
+Other options specific to each type of cursor are discussed in more detail later where appropriate, but the <TT>NO_OVERRUN</TT> option is general and tells the cursor to remain in position on the last element in a set when <TT>Advance()</TT> would otherwise go "off one end" and make the cursor become inaccessible.  This is not the default as it's probably a minority taste.
+
+
+<A NAME = ParmSpecifications><H3>Complex input parameters</H3></A>
+This means objects such as find specifications, context speficications and sort specifications, where the input parameters to a function are sufficiently complex to require significant preparation and arrangement before "submitting" them.  In each case the user code owns the parameter object and manipulates it using its suite of member operators.  Each of these examples is covered in the walkthrough later.
+
+<A NAME = APIDesign><H3>The C++ Wrappers in relation to DPT internals</H3></A>
+The C++ wrapper headers (<A HREF = #Compilation>orange</A>) expose only a subset of DPT's database functionality.  This is partly because some operations are unsafe, or at least too subtle in operation, to be offered for general use, but also partly because a cleaner interface should present fewer obstacles to getting it to work with user code.  Further functions can always be added/reinstated later if called for.
+
+<P>So the complexity of the underlying implementation is hidden with C++ wrapper classes, all beginning with the prefix "API".  Most of the interaction your code does with DPT can be via these wrapper classes, although with one or two simple utility classes it's not (<TT>LineOuput</TT> for example if you use that).  The wrapper classes were designed to be simple and easy to use and it doesn't really matter how they relate to the DPT internal interfaces, except to know that they are just very thin wrappers implementing a kind of "smart pointer" for each of the wrapped classes.  In other words they mean you don't have to issue "<TT>new</TT>" and "<TT>delete</TT>" but just declare stack objects and the wrappers take care of all that.  
+
+<P>The following additional notes on how the wrappers are implemented may be interesting background, and perhaps also prove useful in some coding situations.
+
+<P>If you're building DPT from source you have the option of using the wrappers - your calling code will then look like that in this document - or going straight in and manipulating the underlying objects however you like.  In general you should have few problems calling the "public" C++ functions of the internal classes, since many were made public with the eventual open source situation in mind.  Moving functions from private/protected to public should be done with more caution (as always of course in C++).
+
+<P>Returning to the wrappers, take for example the internal <TT>GroupServices</TT> class:
+
+<PRE CLASS=code>
+class GroupServices {
+	//implementation data
+	//private apis
+
+public:
+	//functions "public" to DPT internal code
+	~GroupServices();
+	//etc.
+	
+	//functions suitable for user API
+	CreateGroup(...);	
+};
+</PRE>
+
+This is presented to the user API something like this:
+
+<PRE CLASS=code>
+class APIGroupServices {
+public:
+	GroupServices* target;
+
+	CreateGroup(...);		//Simply passes through to target
+};
+</PRE>
+
+<P>When you get an object of this class all operations you perform on it are simply passed through to the wrapped object via the "target" pointer.   The  member variable is public, but it would probably be unusual for user code to access it.
+
+<P>You can pass these objects around by value if you wish, and in most cases the copy mechanics are trivial (a single pointer and maybe a reference count manipulation).  This is not always true however and generally speaking, as with any C++ object, passing pointers or C++ references gives the most predictable runtime behaviour.  For example:
+
+<PRE CLASS=code>
+void f(APIDatabaseContext f)
+{
+	APIValueSet vs = f.FindValues("SURNAME", FD_LK, "J*")        //3 million values
+
+	APIValueSet* pvs = &vs;             //Simple - takes address
+	APIValueSet& rvs = vs;              //Same - just different C++ syntax
+	APIValueSet  cvs = vs;              //Does it copy all 3M values?
+}
+</PRE>
+
+For what it's worth, in the above DPT example the values are not copied, leaving variables "<TT>vs</TT>" and "<TT>cvs</TT>" both targeted at the same underlying data.  So passing an <TT>APIValueSet</TT> object by value as a function parameter would be reasonable.  Reasonable in the current implementation that is - there is no guarantee that the copy mechanics for any object will remain trivial in future even if they are now, and it would be best not to rely on this behaviour.
+
+<P>Some types, such as <TT>APIValueSet</TT>, have explicit "clone" functions for use in cases where you might want to copy the underlying data only occasionally.  Hopefully it will become clear during the walkthrough sections later, why and when this separate functionality is provided.
+
+
+<A NAME = Exceptions><H3>Exceptions and messaging</H3></A>
+Many of the API functions throw C++ exceptions when there are errors, rather than setting special return codes, and you have the choice of catching and handling these if you want to (many of the examples below do not bother, for readability's sake).  As a minimum you would probably want to wrap your entire program, or the entire session for each user thread, in an overall try/catch block, if only to be able to issue diagnostics before terminating.
+
+
+<P>In nearly all cases the DPT infrastructure throws exceptions of a single type, namely "<TT>dpt::Exception</TT>".  When you catch an object of this class you can access its contents, which consist of a numerical code plus a more-or-less helpful string value.  The numerical code can sometimes be used to test the exception and re-throw it if appropriate.  This is not very sophisticated exception handling, but it has the important feature that the exception codes always match the numerical M204-style message codes issued to the terminal and audit trail.
+
+<P>The above example might reasonably have been coded to ensure correct cleanup, a little like this:
+
+<PRE CLASS=code>
+void FindAndLoop(APIDatabaseFileContext f, LineOutput* op)
+{
+	try {
+		//as above
+	}
+	catch (Exception& e) {
+		s.CloseCursor(c);
+		f.DestroyRecordSet(s);
+
+		char buff[64];
+		sprintf(buff, "Error in find/loop function, code %d: ", e.Code());
+		op->Write(buff);
+		op->WriteLine(e.What());
+	}
+}
+</PRE>
+
+
+The exception code constants are defined in various header files with names of the form <TT>msg_xxx.h</TT>.  One or two of the codes are mentioned in this document where it might be useful to know them.
+
+<P>In most cases before throwing the exception out to your code, the infrastructure will have already taken a certain amount of action, such as releasing resources and memory, invoking transaction backout if necessary, and writing a message, via normal "MSGCTL" controlled message routing. 
+
+<P><U>Special exception types</U>
+<BR>There is one case where the API throws an exception of a different type, although it is also a type derived from <TT>dpt::Exception</TT>, and so long as you catch exceptions by reference as shown above, a single catch block can cater for all cases.  In this special situation, namely a <A HREF = #Locking_Finds>record locking conflict</A>, the thrown object contains some more information, which can be useful in deciding how to proceed.  If and when DPT provides DBMS facilities like M204 <TT>UNIQUE</TT> fields, a similar convention might apply for the "<TT>ON FIELD CONSTRAINT CONFLICT</TT>" exceptions.
+
+
+<A NAME = Concurrency><H3>Concurrency considerations</H3></A>
+In general you shouldn't have to worry *too* much about low-level structure locking issues like Critical File Resources, although see the DBA Guide for <A HREF = "dbaguide.html#CFR">a little background</A> if interested.
+
+<P>Application level record locking is discussed in later sections, for example those on <A HREF = #Locking_Finds>locking finds</A> and <A HREF = #Ch7>record updates and LPU</A>.
+
+<P>In nearly all cases the API functions release the low level locks they take, which means your code can be confident that it will not deadlock because of locks that are held without your knowledge.  One exception to this rule is when you open files and groups.  Doing so places a lock on the file and/or group which isn't released until Close().  This however does not raise the possibility of deadlock, because the Open() call will always fail immediately if the file can't be opened - it does not wait.
+
+<P>See later on for <A HREF = #Multi>some notes about multi-threaded runs</A>.
+
+
+<P><A HREF = #Top>Back to top</A>
+
+
+
+
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Training><H2>Detailed API Walkthrough</H2></A>
+
+This is the main meat of this document.  It is modelled loosely on the structure of CCA's User Language training course, starting with simple file access and moving on to more advanced methods.
+
+
+<H3>An API function catalogue?</H3>
+Note that this walkthrough is not an exhaustive (and exhausting) survey of every single function, and every single function parameter option.  It does however show all the main objects being used, and you can then go and look at the header files to see what other methods are available for those objects.  In many cases the header files contain helpful comments about the intended usage of the various functions/overloads.  Therefore the answer at present is that no, a complete function catalogue is not included anywhere in this document.
+
+<H3>Walkthrough Topics</H3>
+<UL>
+	<LI><A HREF= #Ch1 > 1. Opening and closing files/groups </A>
+	<LI><A HREF= #Ch2 > 2. Simple finds </A>
+	<LI><A HREF= #Ch3 > 3. Simple record loops</A>
+	<LI><A HREF= #Ch4 > 4. Accessing record data</A>
+	<LI><A HREF= #Ch5 > 5. Advanced finds</A>
+	<LI><A HREF= #Ch6 > 6. Value processing</A>
+	<LI><A HREF= #Ch7 > 7. Updating functions</A>
+	<LI><A HREF= #Ch8 > 8. Lists </A>
+	<LI><A HREF= #Ch9 > 9. Sorted record sets</A>
+	<LI><A HREF= #Ch10> 10. DBA functions</A>
+	<LI><A HREF= #Ch11> 11. Groups</A>
+	<LI><A HREF= #Ch12> 12. Housekeeping functions</A>
+</UL>
+<A HREF = #Top>Back to top</A>
+
+
+
+
+<P><HR>
+<!************************************************************************>
+<A NAME = Ch1><H2>Chapter 1. Opening and closing files/groups</H2></A>
+As you can see from the hierarchy chart shown earlier, there's not much useful work you can do without obtaining a file or group context.  Plus before that the file must be attached to DPT so that it can manage sharing between different API threads.
+
+<H3>Allocating and opening</H3>
+
+<P>Issues surrounding <A HREF= "dbaguide.html#Allocating_Files">file allocation</A> are discussed in the DBA guide, but with the API we can usually reduce things right down to the file name and "dataset name", i.e. the OS file name.  The <TT>Allocate()</TT> function will throw exceptions in situations such as invalid file names or dispositions.
+
+<PRE CLASS=code>
+void f()
+{
+	APIDatabaseServices api;
+
+	api.Allocate("CUST", "demo\cust.204");                 		//default is OLD
+	api.Allocate("SALES", "demo\sales.204", FILEDISP_COND);		//create if nonexistent
+
+    ...
+</PRE>
+
+<P>Assuming the file has been created and initialized, we can now open it for use.  If not see the later section on <A HREF = #Ch10>DBA functions</A> such as defining fields.
+
+<P>When opening, simply specify the same strings as you would on the <TT>OPEN</TT> command on Model 204, such as "<TT>SALES</TT>", "<TT>TEMP GROUP SALES</TT>" etc.  The familiar Model 204 priority rules are applied when groups exist.  
+
+<PRE CLASS=code>
+    ...
+//Must be a single file
+	APIDatabaseFileContext cust = api.OpenContext("FILE CUST");
+
+//Might be a temp or perm group
+	APIDatabaseFileContext sales = api.OpenContext("SALES");
+
+	api.CloseContext(cust);
+	//or let them get closed automatically when api is destroyed
+}
+</PRE>
+
+<H3>Closing and freeing</H3>
+
+<P>When a file context is closed, the MRO becomes invalid for further use.
+
+<P>During the processing of a <TT>CloseContext()</TT> call, DPT will *not* by default release all resources and locks relating to that context, (foundsets, lists, value sets etc.).  Instead if any of these things remain the function fails and throws an exception.  Some DPT objects do "quietly" clean up their children, but others like this one do not.  Here we would expect child objects to have been explicitly dealt with first, and failing to do so is considered a mistake.  You can force everything to be released with an extra "force" parameter on the close function, but this is not something to get into the habit of doing as a matter of course, since you are giving DPT one less chance to highlight logic errors in your code.
+
+<P>Looking at one of the more relaxed cases, it is slightly less less bad form to let files be automatically de-allocated at the end of the run than it is to let them be closed, so <TT>Free()</TT> is optional there.  This function throws exceptions to indicate failure, for example if the named file is not actually allocated.  Note that this is different from the Model 204 FREE command, which produces no error message if the file is not allocated.
+
+<PRE CLASS=code>
+void anyfunc(APIDatabaseServices* db)
+{
+	db->Allocate("CUST", "demo\cust.204");
+
+	db->Free("CUST");
+	db->Free("CUST");  //already gone - throws an exception
+}
+</PRE>
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch2><H2>Chapter 2. Simple finds</H2></A>
+
+<P>Database find operations all result in a set of records, which can be examined, counted, etc. after the search.  DPT allows finds to be issued either in a lowish-level (some might say long-winded) C++ style, and (from Version 3.0) a textual way similar to User Language.  Which way is more convenient will depend on the application.
+
+<P>Here the syntax is introduced, and in <A HREF = #Ch5>Chapter 5</A> much more detail is covered.
+
+<H3>C++ Style</H3>
+<P>In this style the field names, operators, and values are all given as separate function parameters, letting the compiler do its usual helpful stuff like type checking, automatic value implication, and so on.
+
+<PRE CLASS=code>
+void anyfunc(APIDatabaseFileContext& f)
+{
+	APIFoundSet s1 = f.FindRecords("SURNAME", FD_EQ, "ADAMS");      //equality
+	APIFoundSet s2 = f.FindRecords("SURNAME", FD_NOT_EQ, "ADAMS");  //reverses bitmap afterward
+	APIFoundSet s3 = f.FindRecords("SALARY", FD_GT, 1000);          //range
+	APIFoundSet s4 = f.FindRecords("SURNAME", FD_LIKE, "A*");       //pattern match
+	APIFoundSet s5 = f.FindRecords("PETS", FD_PRESENT);             //table B search >:-O
+	APIFoundSet s6 = f.FindRecords();                               //Complete EBP copy: all records
+}
+</PRE>
+
+<H3>Text Style</H3>
+<P>Doing it this way entails constructing a single query string and letting DPT pick it apart into its components.  This can greatly simplify GUIs, where users are often given the ability to enter queries by hand, being more convenient than laboriously choosing items from dropdown menus etc.  This type of API call however gives less detailed control, and fewer opportunities for the C++ compiler to help us out.  Here are the same queries as above:
+
+<PRE CLASS=code>
+void anyfunc(APIDatabaseFileContext& f)
+{
+	APIFoundSet s1 = f.FindRecords("SURNAME = ADAMS");
+	APIFoundSet s2 = f.FindRecords("SURNAME NE ADAMS");
+	APIFoundSet s3 = f.FindRecords("SALARY GT 1000");
+	APIFoundSet s4 = f.FindRecords("SURNAME is like A*");
+	APIFoundSet s5 = f.FindRecords("PETS is present");
+	APIFoundSet s6 = f.FindRecords("");
+}
+</PRE>
+
+The section later on <A HREF = #Ch5>Advanced Finds</A> has some more details about the full syntax supported in this style.
+
+
+<H3>Modified operators</H3>
+<P>In each case above we did not say whether we wanted a character or numeric format search, so DPT goes by the attributes of the field in the database.  You can force a particular comparison type if you want to, as shown here.  All operators can have their results negated using a <TT>FD_NOT_xxx version</TT>.  
+
+<PRE CLASS=code>
+void anyfunc(APIDatabaseFileContext& f)
+{
+	APIFoundSet sa = f.FindRecords("SURNAME", FD_A_EQ,     "ADAMS");    //force char equality
+	APIFoundSet sa = f.FindRecords("SURNAME", FD_A_NOT_EQ, "ADAMS");    //inverse
+
+	* Text style
+	APIFoundSet sb = f.FindRecords("SALARY IS NUM GT 1000");            //force num range
+	APIFoundSet sc = f.FindRecords("SALARY IS NOT NUM GT 1000");        //inverse
+}
+</PRE>
+
+It could be argued that using these special operators enhances code readability, although you would have to be careful not to trigger a table B search (see below).  On DPT there is only ever one type of index per field, so unlike Model 204 there's no time we'll ever find ourselves in the situation where we have to tell the database which index to use.  
+
+<P>Remember that in User Language "<TT><I>field</I> IS NOT LIKE <I>pattern</I></TT>" picks up only records which have a value, which does not match the pattern, whereas "<TT>NOT <I>field</I> IS LIKE <I>pattern</I></TT>" picks up records with no value at all.  This distinction is provided by DPT as the operators <TT>FD_UNLIKE</TT> and <TT>FD_NOT_LIKE</TT> respectively.  
+
+
+<H3>Simple record set operations</H3>
+<P>Foundsets are one of several kinds of record sets (see later), which all share a range of abilities in common.  Some obvious ones:
+
+<PRE CLASS=code>
+void SetInfo(APIFoundSet& s) 
+{
+	cout << "Count: " << s.Count() << endl;
+	s.Clear();
+}
+</PRE>
+
+Clearing a set is equivalent to the User Language <TT>RELEASE RECORDS</TT> statement in that it just empties rather than destroys the set object.  To destroy it go via the context object that created the set.  There is no API equivalent of the UL <TT>RELEASE ALL RECORDS</TT> statement (i.e. clear all sets in all files), although there is a function to destroy all record sets.
+
+<P>More interesting record set operations such as looping and combining are covered in their own chapters later.
+
+
+<A NAME = Table_B_Search></A>
+<H3>Table B searches</H3>
+<P>A search where the number of table B records to be scanned exceeds MBSCAN makes a <A HREF = #DYRWT>"Do You Want To?" callback</A> query with the user thread, with a default answer of <B><TT>false</TT></B> (don't do the table B search).
+
+<P>If you do install your own callback function to deal with this rather than taking the default remember that, as on Model 204, this is a delicate moment because the DBMS is waiting with quite a lot of resources locked.  For example a find with any table B search criteria takes a share-mode record lock on every record in the file before it begins, and this lock will still be in place when the DYRWT is called.  In addition there will be a lock on the EXISTS CFR, and possibly also the INDEX CFR.
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+
+<P><HR>
+<!************************************************************************>
+<A NAME = Ch3><H2>Chapter 3. Simple record loops</H2></A>
+Remember from earlier that looping on container objects is done with "cursors", in this case an <TT>APIRecordSetCursor</TT>.  This is a type of cursor which also works with lists and sorted sets too (see later).
+
+<PRE CLASS=code>
+void f(APIFoundSet& s)
+{
+	APIRecordSetCursor c = s.OpenCursor();		//starts at first record
+
+	c.Advance();					//default = 1 record
+	c.Advance(10);					//now at 11th record
+	if (!c.Accessible()) 
+		cout << "No more records";
+
+	c.GotoLast();	
+	c.Advance(-1);					//move backwards
+	if (!c.Accessible()) 
+		cout << "No more records going backwards";
+}
+</PRE>
+
+All DPT cursors go to the start of the set when you open them.  However, if the record set (or other container) is empty, the cursor will be marked straight away as "inaccessible".  When advancing past the end of the set and the cursor becomes inaccessible, it is *not* possible then to backtrack by one to get the last record.
+
+<P><TT>RecordSetCursor</TT> objects do not hold any kind of structure locks on the file over and above those held by the set itself.  Only if you stop to pay closer attention to one of the records (see next chapter) do enqueueing considerations come in.  This is the same as User Language where you can e.g. print $CURREC without a record lock being required.
+
+<P>If the set on which a cursor is based is cleared, all cursors open against the set are rendered <TT>Inaccessible()</TT>.  Trying to use an inaccessible cursor will either return non-useful results, or throw an exception, depending on the situation.
+
+<P><I>Note: In certain cases it may be desirable to use random access into record sets rather than the strict directionality available with cursors.  This is discussed briefly in the <A HREF = #ScrollingGUI>miscellaneous ideas</A> section.</I>
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+<P><HR>
+<!************************************************************************>
+<A NAME = Ch4><H2>Chapter 4. Accessing record data</H2></A>
+
+<P><A HREF= #Record_Access > Accessing the current record </A>
+<BR><A HREF= #Single_Fields > Method 1: Accessing single fields </A>
+<BR><A HREF= #Record_Snapshot > Method 2: Taking a record snapshot </A>
+
+<A NAME = Record_Access ><H3> Accessing the current record</H3></A>
+When looping on a set using a record cursor, as in a <TT>FOR EACH RECORD</TT> loop on Model 204, you are really just traversing a list of record numbers (or often actually a bitmap).  This is quite a simple and efficient process, and without doing anything else can also yield some interesting information:
+
+<PRE CLASS=code>
+void setlooper(APIFoundSet& s)
+{
+	for (APIRecordSetCursor c = s.OpenCursor(); c.Accessible(); c.Advance()) 
+	{
+		printf("Positioned in set at record number %d in file %s\n",
+			c.LastAdvancedRecNum(),
+			c.LastAdvancedFileContext().GetShortName().c_str());
+	}
+	s.CloseCursor(c);
+}
+</PRE>
+
+The above example is equivalent to a record loop on Model 204 where you printed <TT>$CURREC</TT> and <TT>$CURFILE</TT> in the loop.  No access to table B is required to get this information - it is intrinsic to the set data structure.  However in most situations you do want to get at record data, for example:
+
+<PRE CLASS=code>
+void recinfo(APIRecordSetCursor& c)
+{
+	APIReadableRecord r = c.AccessCurrentRecordForRead();
+
+	printf("SURNAME = %s\n", r.GetFieldValue("SURNAME").Cstr());
+}
+</PRE>
+
+The first line here - the creation of the record MRO - is the point at which the EBP is checked for the existence of the record, so if you'd deleted it since creating the found set you'd get the well-loved "<TT>non-existent record</TT>" exception familiar from Model 204.  The second line - retrieving the field value - is when DPT finally goes to table B and scans the record for the requested field.
+
+<P>You might be wondering why we had to declare that we were accessing the record "for read" in the above example - this is not the same as Model 204 right?  One reason is that it allows DPT to go a little easier with resource locking under the covers, which saves time.  A second reason is that it makes for a cleaner generic class hierarchy including sorted record sets and read-only record snapshots (more on both later).  The distinction ultimately results in accessing objects of class <TT>APIRecord</TT> or <TT>APIReadableRecord</TT>.  The former allows all the record updating functions like <TT>ChangeField</TT> and <TT>DeleteField</TT>.  The latter only allows read functions.
+
+
+<A NAME = Single_Fields ><H3>Method 1: Accessing single fields</H3></A>
+This corresponds to the type of access in the User Language statements <TT>PRINT NAME</TT>, or <TT>%x = NAME(2)</TT>, and is supported by API functions with various overloads which you can choose from according to taste.  For example some are shown below, and another <A HREF = #Output_parms>is shown here</A>.
+
+<PRE CLASS=code>
+void PAI(APIReadableRecord& r, LineOutput* lout)
+{
+	APIFieldValue v = r.GetFieldValue("NAME")	//1st occurrence  
+	v = r.GetFieldValue("NAME", 2)			//2nd occurrence 
+	r.GetFieldValue("NAME", v, 3)			//3rd occurrence - alternate syntax
+
+	int ix = 0;					//All occs of all fields...
+	std::string fname;
+	while (r.GetNextFVPair(fname, v, ix)) {
+		lout->Write(fname);
+		lout->Write(" = ");
+		lout->WriteLine(v.ExtractString());
+	}
+}
+</PRE>
+
+When it performs these single accesses to the record on its table B page(s), DPT maintains its position within the record in a similar way to more recent versions of Model 204.  Subsequent accesses for a higher occurrence of the same field do not result in a re-scan from the start of the record, and the following is a good way to perform an occurrence loop:
+
+<PRE CLASS=code>
+void PAI(APIRecord& r)
+{
+	APIFieldValue v;
+	int occ = 1;
+	while (r.GetFieldValue("MIDDLE NAME", occ++))
+		cout << v.ExtractString().c_str() << endl;
+}
+</PRE>
+
+<P>It's worth noting that using the API gives an advantage not available in User Language, namely the ability to get more than one handle on the same record.  This is an efficient way of performing a loop on a multiply-occurring group of fields, since each <TT>APIReadableRecord</TT> object would be maintaining its own position in the record.  If the record is updated whilst such a loop is underway, it invalidates the remembered occurrence position, and in such cases DPT simply starts its scan again from the beginning of the record.
+
+<P><U>BLOB data</U>
+<BR>Another point to note is that BLOB fields (DPT version 3+) are accessed just the same as normal string fields, with the outcoming <TT>FieldValue</TT> object containing the extralong value.  To access the descriptor value held in table B, or perform conditional processing like the User Language PAI statement does, you must go via the "real" record MRO pointer 
+(<TT>APIRecord*</TT>).  Put another way, the special BLOB functions don't work on cached field value data in e.g. <TT>APIRecordCopy</TT> or <TT>APISortRecord</TT>, both covered later.  See comments in <TT>record.h</TT>. E.g. 
+
+<PRE CLASS=code>
+APIFieldValue desc = r.GetBLOBDescriptor("COMMENTS");
+</PRE>
+
+The two new functions which request BLOB descriptors just return regular field values if the field is not a BLOB field.  For example if <TT>COMMENTS</TT> above is just a regular STRING field, that call behaves the same as <TT>GetFieldValue("COMMENTS")</TT>.
+
+
+<A NAME = Record_Snapshot ><H3>Method 2: Taking a record snapshot</H3></A>
+When accessing a lot of field data from a record, it can be more efficient to just take the hit of retrieving the whole thing once from table B, and then working off the local data.
+
+<P>This is the way the UL compiler implements PAI statements (plus indirectly some others like <TT>PRINT EACH, SORT BY EACH</TT> etc.)  DPT acquires the appropriate file resources once only, and comes away with all the field information for the entire record in a local data structure.  This structure is a member of the same <TT>APIReadableRecord</TT> base class as an <TT>APIRecord</TT>, so it can be accessed for read operations in the same way.
+
+<PRE CLASS=code>
+void PAI(APIRecord& r)
+{
+	APIRecordCopy copy = r.CopyAllInformation();
+
+//Read exactly like normal now
+	int ix = 0;	
+	std::string fname;
+	APIFieldValue fval;
+	while (r.GetNextFVPair(fname, fval, ix)) {
+		cout << fname.c_str() << " = " 
+			<< v.ExtractString().c_str() << endl;
+	}
+}
+</PRE>
+
+<P>The main way in which these snapshots differ from accessing the record directly is when it comes to <A HREF = #Ch7>updating functions</A>: if you update the real record the snapshot will not be updated (just like User Language).
+
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch5><H2>Chapter 5. Advanced finds</H2></A>
+
+<P><A HREF = #Multi_Criteria >Multi-criterion finds</A>
+<BR><A HREF = #Refer_Back >Refer-back finds</A>
+<BR><A HREF = #Locking_finds>Record locking and finds</A>
+<BR><A HREF = #Special_Criteria >Special criteria and other notes</A>
+
+
+<A NAME = Multi_Criteria></A>
+<H3>Multi-criterion finds</H3>
+In a DPT API program you can if you want do complex finds piecemeal, by progressively refining found sets using referbacks, and that technique can sometimes improve efficiency (see later).  However let's first consider doing things in a single call. The API's find algorithm processes criteria in a reasonably intelligent order, and unless you're an advanced user and/or know your data well this is often the best way to proceed because of its neatness and lack of intermediate results detritus.
+
+<A NAME = TextStyleDetails></A>
+<H4>Text Style</H4>
+<P>As introduced earlier in <A HREF = #Ch2>Chapter 2</A> the API will accept simple queries in "C++ style" or "text style", and this is also true of arbitrarily complex queries.  This time let's take text style first as it's more obvious.  Simply append conditions to the query string, combining with AND/OR and parenthesizing as required.  The syntax is much the same as User Language, although slightly stricter and not supporting the same range of quirks and nuances you can use there.  The most important differences are:
+
+<UL>
+<LI>Newlines can be included for formatting but they are just treated as whitespace and do not imply AND.  Hyphens are therefore *not* required to continue the query if it contains line breaks.
+<LI>Operators must all be explicitly given, that is they can not be implied as in e.g. <TT>SURNAME = SMITH OR JONES</TT>.  You have to say <TT>SURNAME = SMITH OR SURNAME = JONES</TT>. 
+<LI>"IS" is just syntactic sugar - it does not imply a forced numerical find like in User Language.
+</UL>
+
+<P>The rules are summarised formally here, including a couple of non-User Language extensions to accommodate common language conventions like "!=" for "NOT EQ", and & for AND, and | for OR.  Quotes (either type so long as they match) must also be used to enclose spaces in operands.  Hex format can be used with quotes to express operands like e.g. <TT>x'0d0a'</TT>.  Query keywords can be in mixed case but operands are case sensitive.
+<UL>
+<LI><TT>operand ..... :  [[x|X]'|"]string['|"]</TT>
+<LI><TT>fieldname ... :  operand</TT>
+<LI><TT>type ........ :  ALPHA[BETICALLY] | NUM[ERICALLY]</TT>
+<LI><TT>operator .... :  [IS] [NOT] [type] [NOT] {EQ|=|NE|!=|¬=|^=|LT|<|LE|>=|GT|>|GE|>=|[IN] RANGE|BETWEEN|LIKE|UNLIKE|PRESENT|POINT$|REC$}</TT>
+<LI><TT>condition ... :  [fieldname] operator [[FROM] operand [{TO|AND} operand]]</TT>
+<LI><TT>expression .. :  [NOT] [(] condition [{AND|OR|'|'|'&'} expression] [)]</TT>
+</UL>
+
+Examples:
+<PRE CLASS=code>
+void TextualFinds(APIDatabaseFileContext& f)
+{
+    APIFoundSet s1 = f.FindRecords("SURNAME = 'PINKETT SMITH'");
+    APIFoundSet s2 = f.FindRecords("salary > 20000 and (age < 18 or age > 65)");
+    APIFoundSet s3 = f.FindRecords("DAYJOB='Journalist' & NIGHTJOB='Superhero'");
+    APIFoundSet s4 = f.FindRecords("year between 1918 and 1939");
+}
+</PRE>
+
+
+<H4>C++ Style</H4>
+<P>Now let's look at the more complex C++ style.  To set up a multi-criterion find this way you have to build an <TT>APIFindSpecification</TT> object containing all the field names, operators, and field values, and the appropriate combination of ANDs and ORs.  For example, say we want to code an API program to do the equivalent of this User Language statement:
+
+<PRE CLASS=code>
+IN VEHICLES FIND ALL RECORDS WHERE -
+	COLOR = BLUE AND (MAKE = FORD OR MAKE = TOYOTA AND (BODY = 2DR OR 4DR))
+END FIND
+</PRE>
+
+To construct the find specification we must first construct each single condition and then combine them:
+
+<PRE CLASS=code>
+APIFoundSet FD(APIDatabaseFileContext& f)
+{
+    APIFindSpecification cb("COLOR", FD_EQ, "BLUE");                //local variables
+    APIFindSpecification mf("MAKE", FD_EQ, "FORD");
+    APIFindSpecification mt("MAKE", FD_EQ, "TOYOTA");
+    APIFindSpecification b2("BODY", FD_EQ, "2DR");
+    APIFindSpecification b4("BODY", FD_EQ, "4DR");
+
+    APIFindSpecification total_expr = cb & (mf | mt & (b2 | b4));   //builds expression tree
+
+    return f.FindRecords(total_expr);                               //optimizes and executes
+}
+</PRE>
+
+The C++ compiler takes care of AND/OR precedence because the "&" and "|" operators are overloaded for class <TT>APIFindSpecification</TT>.  At run time the <TT>FindRecords()</TT> call will receive a combined expression with the following structure, which it can evaluate from the leaves back to the root.
+
+<P><TABLE BORDER>
+<TR><TD><PRE>
+            Total Expression   
+                   |
+       ---------- AND ---------
+       |                      |
+COLOR = BLUE        --------- OR ---------
+                    |                    |
+               MAKE = FORD     -------- AND --------    
+                               |                   |
+                          MAKE = TOYOTA   -------- OR --------
+                                          |                  |
+                                     BODY = 2DR         BODY = 4DR
+</PRE>
+</TD></TR></TABLE>
+
+<P>If working in a language via wrappers which can't overload these combination operators, use the alternative functions like <TT>Splice()</TT> to combine criteria explicitly, if less neatly.
+
+
+<!**********************>
+<H3>Negating criteria</H3>
+
+Individual criteria can be negated by incorporating the FD_NOT constant into the find operator used.  Alternatively, negate any tree "node" when building the expression using the C++ NOT (!) operator.
+
+<PRE CLASS=code>
+	APIFindExpression blue   ("COLOR", FD_EQ, "BLUE");
+	APIFindExpression red    ("COLOR", FD_EQ, "RED");
+
+//These two will give the same final result
+	APIFindExpression notblue1("COLOR", FD_NOT | FD_EQ, "BLUE");
+	APIFindExpression notblue2 = !blue;
+
+//Negate whole subexpressions
+	APIFindExpression neither = !(blue | red);
+	APIFindExpression allrecs = !(blue & notblue);
+</PRE>
+
+As ever, complex expressions with double negatives like this are best avoided.  Not because the computer has trouble with them, but because the human reader has trouble visualizing what the computer is going to do.  DPT actually implements expression negation such as the last one as if you'd said:
+
+<PRE CLASS=code>
+	APIFindExpression allrecs = !blue | !notblue;
+</PRE>
+
+Which is if you think about it the same thing (but you had to think about it didn't you?!), since according to De Morgan's theorem !(A & B) = !A | !B.  DPT manages all the technical aspects of this (EBP retrievals etc.) in an appropriately efficient way.
+
+
+
+
+
+<!**********************>
+<A NAME = Refer_Back ><H3>Refer-back finds</H3></A>
+
+This is a very important technique from a performance point of view, used commonly to move constant criteria out of loops etc., but also by advanced programmers to influence the default <A HREF = "language.html#COMP_FINDS">order that the system evaluates criteria</A> in a multi-criterion find.  These ideas are probably best illustrated with a few (rather complex) examples.
+
+<P>Consider a file of 5 segments:
+
+<PRE CLASS=code>
+void FD(APIDatabaseFileContext& f)
+{
+//records in segments 1 and 2
+	APIFindSpecification agespec("DATE OF BIRTH", FD_GE, 19900101);
+
+	APIFoundSet ageset = f.FindRecords(agespec);
+	...
+</PRE>
+
+To refine this set of youngsters to those born in England, we have three choices.  Expressed in User Language terms they are to do a complete new find using two criteria, or to make use of the work already done and refer back using either 
+<TT>"FD IN..."</TT> style syntax, or <TT>"FIND$..."</TT> style syntax.  <TT>"FD IN..."</TT> is usually preferred as it can be somewhat faster - it doesn't read the EBP again.  <TT>FIND$</TT> can sometimes be neater in situations with many sets to combine.
+
+<P>Here are those alternatives expressed as DPT API calls:
+
+<PRE CLASS=code>
+//records in all 5 segments
+	APIFindSpecification ctyspec("COUNTRY", FD_EQ, "ENGLAND");
+
+//Search all segments twice - EQ outranks GE
+	APIFoundSet s1 = f.FindRecords(agespec & ctyspec);
+
+//"FD IN..." - searches just segs 1 and 2
+	APIFoundSet s2 = f.FindRecords(ctyspec, ageset);      
+
+//"FD FIND$..." - FIND$ outranks EQ - 2 segs, but EBP again also
+	APIFindSpecification referback(ageset);
+	APIFoundSet s3 = f.FindRecords(referback & ctyspec);
+}
+</PRE>
+
+Any <TT>FindRecords(...)</TT> call can be given a final parameter of another found set (or list - see later), and it will use that set as the basis for the find instead of the EBP (i.e. the whole file).  In both cases the base set must relate to the same file context as that in which the find is being performed, or else an exception will be thrown.
+
+
+<!**********************>
+<A NAME = Locking_Finds><H3>Record locking and finds</H3></A>
+
+<P>As with User Language, an API program has the option to request different levels of record locking on found sets.  By default DPT places a share record lock, but to create sets with no locks or exclusive locks, simply pass the appropriate symbolic constant into the <TT>FindRecords()</TT> call.  Again as with User Language you should use the default unless there is a good reason not to do so.  Some of the implications of reading data via unlocked found sets are discussed throughout this document.
+
+<PRE CLASS=code>
+void anyfunc(APIDatabaseFileContext& f)
+{
+	APIFindSpecification allrecs;	
+	APIFoundSet excl_set    = f.FindRecords(allrecs, FD_LOCK_EXCL);
+	APIFoundSet no_lock_set = f.FindRecords(allrecs, FD_LOCK_NONE);
+
+	excl_set.Clear();                       //removes exclusive lock and frees memory
+	no_lock_set.Clear();                    //just frees memory - still worthwhile
+	...
+</PRE>
+
+An API program also has an option not directly available in User Language, namely to retain a set but remove the lock on it:
+
+<PRE CLASS=code>
+	...
+	excl_set.Unlock();
+}
+</PRE>
+
+If you fail to clear or destroy foundsets explicitly, all their associated resources get be destroyed when closing the context. 
+
+<P><U>Record locking failure</U>
+<BR>In all cases where this occurs, including situations involving record updates (which require an EXCL lock), the API indicates a failure to get the required lock by throwing a special exception object.  This object is derived from a normal DPT "<TT>Exception</TT>", but also contains all the information that is obtainable from the UL <TT>$RLCxxx</TT> functions.
+
+<PRE CLASS=code>
+for (;;) {
+	try {
+		//operation that clashes with another user
+	}
+	catch (Exception_RLC& e) {
+		cout << "Record locking conflict" << endl;
+		cout << "File      : " << e.RLCFILE().c_str() << endl;
+		cout << "Record #  : " << e.RLCREC().c_str() << endl;
+		cout << "Enemy name: " << e.RLCUID().c_str() << endl;
+		cout << "User #    : " << e.RLCUSR().c_str() << endl;
+
+		if (/* ask if they want to try again */) {
+			break; //no
+		else
+			Sleep(1000); //small pause?
+	}
+}
+</PRE>
+
+Under the covers the RLC exception is only thrown after normal M204-style <TT>ENQRETRY</TT> processing has taken place. To be more explicit, the API does the work to build the found set, then makes N attempts to lock it, where N is the value of the <TT>ENQRETRY</TT> parameter + 1, and there is a 3-second wait in between attempts. (The 3 seconds is arbitrary, but is a convention copied from Model 204.)  If all these attempts fail, the found set is discarded again and control returned to the calling code with the exception.  It's up to you then whether to try again - in User Language this is where the ON RECORD LOCKING CONFLICT unit would be called, and you could code RETRY in there.
+
+<P>Note that this is not somewhere that the API automatically invokes the <A HREF = #DYRWT>"do you really want to" callback</A>, but doing so explicitly would be one reasonable way to handle the user prompt in the above example.
+
+<PRE CLASS=code>
+	...
+	if (!core.InteractiveYesNo("Do you want to try again?", false))
+		break;
+	...
+</PRE>
+
+<A NAME = Special_Criteria><H3>Special criteria and other notes</H3></A>
+API functionality is present to support all the things you can do in User Language (that was what the DPT database was built for after all).  This includes for example "<TT>FRN</TT>" style access, <TT>POINT$</TT>, and importantly two-ended ranges.  The <TT>RANGE</TT> operator has the same optimization benefit of the equivalent User Language syntax, that is, it ensures the minimum possible part of the b-tree is scanned.
+
+<P>Here are some examples - take a look in "<TT>apiconst.h</TT>" to see all the choices.
+
+<PRE CLASS=code>
+void SpecialFinds(APIDatabaseFileContext& f)
+{
+	APIFoundSet s1 = f.FindRecords(APIFindSpecification(FD_FILE$, "MYFILE"));
+	APIFoundSet s2 = f.FindRecords(APIFindSpecification(FD_SINGLEREC, 100));
+	APIFoundSet s3 = f.FindRecords(APIFindSpecification("AGE", FD_RANGE, 18, 25));
+
+//Achieve same set as s2
+	APIFoundSet s4 = f.FindRecords(
+				APIFindSpecification(FD_POINT$, 100) &
+				APIFindSpecification(FD_NOT_POINT$, 101));
+}
+</PRE>
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch6><H2>Chapter 6. Value processing</H2></A>
+
+<P>As with M204, there are two ways of achieving a User Language style value loop. The first is to tell the system to retrieve and cache all the desired values of the field, and walk along the cached values.  The second is to tell the system to walk along the actual database b-tree leaf values.  The first way is more efficient if you're going to do several iterations over the same set of values, although in a big file the memory required to cache the set might become a consideration.  The second way is best in most other cases, uses minimal memory and is simpler too.  
+
+<P>Note that you the programmer have to make the decision about which way to code it, based on the field attributes and data characteristics as you know them.  The dynamic decision between the two techniques which is sometimes made in User Language is a service of the UL compiler that is not available at API level.
+
+<P>Because of the significant difference in the two ideas, they are supported by two different types of cursor, as shown here.  
+
+<H3>Value set cursors</H3>
+
+<PRE CLASS=code>
+void ValueSetLoop(APIDatabaseFileContext& f)
+{
+	APIValueSet s = f.FindValues("SURNAME", FDV_LK, "A*");    //UL "FIND VALUES"
+	s.Sort(SORT_NUM);                                         //UL "SORT VALUES" (bizarre example)
+
+	APIValueSetCursor c = s.OpenCursor();                     //default = first value
+	c.GotoLast();
+
+	while (c.Accessible()) {                                  //UL "FRV IN label"
+		APIFieldValue v = c.GetCurrentValue();
+		std::string sval = v.ExtractString();             //cater for ORD NUM or ORD CHAR
+		c->Advance(-1);
+	}
+}
+</PRE>
+
+<H3>Direct b-tree cursors</H3>
+
+<PRE CLASS=code>
+void DirectValueLoop(APIDatabaseFileContext& f)
+{
+	APIDirectValueCursor c = f.OpenDirectValueCursor("SURNAME", CURSOR_DESCENDING);
+
+	while (c.Accessible()) {                                  //UL "IN F FRV SURNAME"
+		...
+		c->Advance(1);
+	}
+}
+</PRE>
+
+<H3>Remarks about value loops</H3>
+<P>A direct value cursor has the direction built into it, unlike set cursors we've seen till now which can only control their direction using a negative Advance() value.  In the example above a positive increment advances a reverse b-tree walk.
+
+<P>As with M204, any value loop order other than the index order for the field means that the values are going to have to be retrieved and sorted before looping can begin.  To do this you must use the <TT>ValueSet</TT> method.  In such cases requesting a sort into the order that the set was already ordered in does nothing and incurs no overhead.
+
+<P>If the field specified is not indexed, it will cause an exception with code <TT>DB_FIELD_NOT_INDEXED</TT> at the appropriate point.
+
+<P>Even a direct value cursor does not explicitly hold a lock on the b-tree across calls, since loops of this kind might take quite a long time, and it would not be acceptable to block all updating threads.  If the b-tree is updated, subsequent calls via the cursor will attempt to reposition at the point closest to the value they left off at.  As with M204, this may or may not require the tree to be re-searched from the root, (causing another <TT>BXFIND</TT> statistic to clock up).
+
+<P>There is no concise equivalent in the API to the User Language <TT>FR IN ORDER</TT> formulation.  The UL compiler provides this functionality with a combination of a <TT>DirectValueCursor</TT>, a <TT>RecordList</TT> and a <TT>RecordSetCursor</TT>.
+
+<H3>B-tree positioning</H3>
+<P>The API has a couple of built-in facilities for improving efficiency when managing the position of cursors in the b-tree, which you can use as appropriate to your application:
+
+<PRE CLASS=code>
+void myfunc(APIDatabaseFileContext& f)
+{
+	APIDirectValueCursor c = f.OpenDirectValueCursor("SURNAME");
+
+	c.SetOption(CURSOR_POSFAIL_NEXT);
+	c.SetPosition("BROWN");
+
+	//Make a "bookmark"
+	APIDirectValueCursor ctemp = c.CreateClone();
+
+	while (...)
+		c.Advance() //use cursor etc.
+
+	//Return to bookmark and do something else
+	c.AdoptPositionFrom(ctemp);
+
+	//Probably faster now than going from the start
+	c.SetPosition("JONES");
+}
+</PRE>
+
+The <TT>SetPosition()</TT> function will always be a little more efficient than looping the cursor to a particular entry yourself, since it is looping in code one level lower.  But more importantly there are times when it is much more efficient, since if the cursor is already some way into the b-tree (e.g. at "BROWN" above) it will only walk from that point, saving on page retrievals.  This behaviour can also be more finely controlled or even disabled with options, (<TT>SetOption()</TT>), as listed in <TT>apiconst.h</TT>.
+
+<P><TT>CreateClone()</TT> is a way to improve efficiency if you have points within the b-tree you want to return to repeatedly.  The clone acts as a "bookmark" and avoids having to walk the tree back to its position.  As previously described, such cursors will reposition themselves appropriately if the b-tree is updated between their creation and use, and a cursor you left on e.g. "SMITH" might later appear on "SMITS" if "SMITH" got deleted in the interim.
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch7><H2>Chapter 7. Updating functions</H2></A>
+
+<P><A HREF = #Store_Record>Record store/delete</A>
+<BR><A HREF = #Update_Record>Field updating</A>
+<BR><A HREF = #TBO>Transaction backout</A>
+<BR><A HREF = #Read_and_Update>Re-reading updated data</A>
+
+<H3><A NAME = Store_Record>Record store/delete</A></H3>
+The default <TT>StoreRecord()</TT> stores an empty record, which you could if you wished subsequently retrieve and add fields to.  However, as with User Language, it's neater and more efficient to prepare the fields and values beforehand and submit them all together to be stored in a single table B page hit.  This is done by preparing them in a structure very similar to the record snapshot copy we saw earlier.  In this case we're using it as a way to get data into rather than out of the API.
+
+<PRE CLASS=code>
+void Storer(APIDatabaseFileContext& f)
+{
+	APIStoreRecordTemplate r;
+
+	r.Append("SURNAME", "THATCHER");
+	r.Append("SALARY", "100000");
+	r.Append("JOB", "Prime Minister");
+
+	int new_record_number = f.StoreRecord(r);
+}
+</PRE>
+
+<P>If the same fields are used again and again when loading a large number of records, it's more efficient to just change the values each time after the first, rather than using the <TT>Append()</TT> function shown above to populate both the field name and value each time.  A variety of alternative methods on the <TT>APIStoreRecordTemplate</TT> object make it possible to do that in different ways.  (Including cases where some of the field names are fixed with a variable section afterwards - e.g. one or more multiply-occurring groups).
+
+<P>Field name=value pairs are stored into the database the same in the order they appear in the template.  There is no equivalent of the UL syntax where a missing value for one of the field names supplied in a STORE statement does not store a value.  Empty strings or zeros in the value will always store empty strings or zeros.
+
+<P>If there are any problems with the store, it will throw an exception.  The most likely reason might perhaps be an invalid value being specified for a <A HREF = "dbaguide.html#NumericVal">field defined as FLOAT</A>.
+
+<H3><A NAME = Update_Record>Field updating</A></H3>
+Most of the rest of the updating functions operate on an <TT>APIRecord</TT> MRO, for example:
+
+<PRE CLASS=code>
+void Updater(APIRecord* r)
+{
+	std::string field("POLICY");
+	APIFieldValue oldval("NATIONALISED INDUSTRY");
+	APIFieldValue newval("NO MILK IN SCHOOLS");
+
+	r->AddField(field, newval);
+
+	r->ChangeField(field, newval);				//1st occ
+	r->ChangeField(field, newval, 3);			//3rd occ, invalid on invisible fields
+	r->ChangeFieldByValue(field, newval, oldval);
+
+	r->DeleteField(field);
+	r->DeleteField(field, 3);
+	r->DeleteFieldByValue(field, oldval);
+ 
+	r->InsertField(field, value, 3);			//invalid for invisibles
+	r->DeleteAllOccurrences(field);
+
+	r->Delete();						//delete entire record
+
+//If the old value or occurrence is important e.g.
+	if (r->ChangeFieldByValue(field, newval, oldval) > 0)
+		cout << "Changed OK by value\n";
+	else
+		cout << "Old value not present, so added\n";
+//or e.g.
+	if (r->DeleteField(field, newval, 2, &oldval) == 2)
+		cout 	<< "2nd occurrence deleted, value was " 
+			<< oldval.ExtractString().c_str() 
+			<< endl;
+	else
+		cout << "No 2nd occurrence - nothing deleted" << endl;
+}
+</PRE>
+
+As in User Language, you can perform a change or delete by giving an existing occurrence number, or an existing value.  A well-known User Language quirk is also propagated, namely that a change behaves like an add if the specified occurrence or value does not exist.
+
+<P>The return code from change and delete indicates which old occurrence was affected.  -1 means the occ or value did not exist, and either delete had no effect or change was turned into add.  There is also an optional parameter to let you retrieve the old value changed/deleted when using the occurrence syntax.  This is shown in the final examples above.
+
+<P>If you request the old value to be returned from change or delete it has the type of the data, not the index, if they are different (e.g. <TT>STRING ORD NUM</TT>).  This kind of field attribute combination is not recommended however.
+
+<P>As with Store() above, there is no equivalent of the UL ADD and CHANGE syntax where no value is specified, and <TT>ADD</TT> does not add a value or <TT>CHANGE</TT> removes the value.  The UL evaluator achieves the former effect by doing nothing, and the latter using <TT>DeleteField()</TT>.
+
+<P>In addition to invalid field values as mentioned earlier, another possible problem in a multi-thread situation is <A HREF = #Locking_Finds>record locking</A>, since all record-updating operations attempt to place an exclusive record lock on the record.   If LPU ("Lock Pending Updates" - see below) is on, the lock is not removed again until <TT>Commit()</TT>.
+
+<P><B>Whole set updates</B>
+<BR>Finally there are some updating functions that operate on <TT>APIFoundSet</TT> or <TT>APIRecordList</TT> MROs.
+
+<PRE CLASS=code>
+void f(APIDatabaseFileContext& f)
+{
+	APIFoundSet ffs = f.FindRecords();
+
+	f.FileRecordsUnder(ffs, "TAG", "Retrieve later");          //field must be invisible
+
+	d.DirtyDeleteRecords(ffs);
+}
+</PRE>
+
+The dirty delete works like the User Language "<TT>DELETE RECORDS IN <I>label</TT></I>" statement, viz it simply turns off the bits corresponding to the records in the file existence bit map.  It places an exclusive record lock on the complete set, which may fail as with the other update statements above.  <TT>FileRecordsUnder(...)</TT> however does not apply any record lock. 
+
+<A NAME = TBO><H3>Transaction backout</H3></A>
+
+<P>Whenever you write application code to update records in a file you should bear data integrity issues in mind.  The general topics of <A HREF = "sysconfig.html#System_Integrity">TBO and checkpointing </A> are discussed in the System Config Guide - particularly important being your choice of the <TT>RCVOPT</TT> parameter setting to enable or disable these things.  Taking an explicit checkpoint via the API is discussed in the Housekeeping section later, but here here is the syntax for the TBO-related API functions, in the usual semi-plausible setting.
+
+<PRE CLASS=code>
+void Backouts(APIDabaseServices& db, APIDatabaseFileContext& f)
+{
+	printf("%d records\n", f.FindRecords().Count());	//0 (sloppy - see <A HREF = #MiscLeak>hints and tips</A>)
+
+	f.StoreRecord();
+	printf("%d records\n", f.FindRecords().Count());	//1
+
+	db.Backout();	
+	printf("%d records\n", f.FindRecords().Count());	//0
+
+	f.StoreRecord();
+	db.Commit();	
+	db.Backout();						//info message - nothing to back out
+	printf("%d records\n", f.FindRecords().Count());	//1
+
+	f.StoreRecord();
+	db.CloseContext(f);					//implied commit at close
+}
+</PRE>
+
+<P>Note that exceptions thrown by the infrastructure don't necessarily invoke a backout.  However if the exception is thrown so far out that some kind of destructor closes an updated file, any in-flight transaction including that file will get committed as part of the file close.
+
+
+<A NAME = Read_and_Update><H3>Re-reading updated data</H3></A>
+<P>The system must clearly allow a thread to see the updates it has made itself, even though the updated records are locked exclusively to other threads.  In practical terms this has two implications.  
+
+<P>One is at the record set level, where you may try to access a record you have already deleted - see <A HREF = #Record_Access>earlier comments</A>.  In fact this is largely indistinguishable to DPT from the situation where you had an unlocked set and someone else deleted a record before you tried to access it.
+
+<P>The second implication is at the record level, where any remembered occurrence positions currently held for a record are "reset" when the record is updated.  Again, this is analogous to the situation where you were looping on the occurrences of some field on an unlocked record, and someone else updated the record.  To illustrate this situation, think of this User Language program operating on a record with 4 occurrences:
+
+<PRE CLASS=code>
+A: FOR EACH OCCURRENCE OF ADDRESS
+    PRINT VALUE IN A
+    IF OCC IN A = 2 THEN
+        DELETE ADDRESS(2)
+    END IF
+END FOR
+</PRE>
+
+On the third time round the loop, the <TT>PRINT</TT> statement will print what was originally the fourth occurrence, and only three values will get printed in total.  This is because the <TT>DELETE</TT> operation told the Record MRO that it should discard any remembered occurrence position.  On being called for the third time, the cursor duly repositioned on on the second occurrence, which was the original occ 3, before advancing.
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch8><H2>Chapter 8. Lists</H2></A>
+
+<P>Another kind of record set is what is referred to in User Language as a "list".  It behaves just like a found-set without locks in all the functions that have been discussed so far.  Additionally it supports list operations, namely <TT>Place(...)</TT> and <TT>Remove(...)</TT>, which come in two flavours each for dealing with single records, and sets of records (found sets or other lists).
+
+<P>Unlike in User Language, lists must be declared in an open context before they can be used.
+
+<PRE CLASS=code>
+void ListFuncs(APIDatabaseFileContext& f)
+{
+	APIFoundSet allrecs = f.FindRecords();
+
+	APIRecordList minors = f.CreateRecordList();		//empty
+	APIRecordList majors = f.CreateRecordList();
+
+	majors.Place(allrecs);					//place whole set
+
+	for (APIRecordSetCursor c = allrecs.OpenCursor(); c.Accessible(); c.Advance())
+	{
+		APIReadableRecord r = c.GetCurrentRecordForRead();
+		APIFieldValue v = r.GetFieldValue("AGE");
+        	if (v.ExtractNumber() < 18) 
+		{
+			minors.Place(r);			//place single record
+			majors.Remove(r);
+		}
+	}
+}
+</PRE>
+
+Cross-reference problems with lists, such as trying to place records from one file context on a list declared in another, will throw exceptions.  Remember this applies to group contexts too in that records from one of the members still can't be placed on a list declared against the group.
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch9><H2>Chapter 9. Sorted record sets</H2></A>
+
+<H3>Background</H3>
+
+<P>A sorted set is an in-memory data structure consisting of objects, one for each record in the pre-sorted set, which contain field data off the pre-sorted records.  It can be counted, and iterated with a cursor just like the found sets and lists we've talked about already.  
+
+<P>Being a copy of the data on the actual records, each of the sorted records actually the same class as the record snapshot structure we saw earlier.  However there is a difference in that the sorted records do not necessarily contain all the field/value pairs off the original records.
+
+<P>When creating a sorted set you have a trade-off to consider between the time it takes to collect and sort the raw data, and the time you might save in later usage of the set.  This trade-off is similar to the one in User Language which you can control by using either the <TT>"SORT RECORDS"</TT> statement or the <TT>"SORT RECORD KEYS"</TT> statement.  Since the reader may not be that familiar with User Language, and since in any case the DPT UL compiler works a little differently (better!) to Model 204, and in any case also the options available to an API program are wider, the following discussion takes things from first principles.
+
+<H3>Creating a sorted set</H3>
+
+<P>During a <TT>Sort()</TT> call, DPT first loops on all the records in the base set, collecting some or all of the fields from each record into a kind of structured array.  Which fields are collected is determined by the sort specification supplied by the calling code.
+
+<P>Then the array is sorted, using the C++ standard library "stable sort" algorithm.  Only pointers are moved around during this process, so the number of fields collected earlier would, in an ideal world, have no effect on the speed of the sort.  However, collecting more fields than necessary is not good because it means the collection phase probably takes longer, plus it might constrain <TT>std::stable_sort()</TT> which is an algorithm which does benefit from more available memory.
+
+<P>What is most likely to affect the speed of the sort though is how many fields you say should be compared to ascertain the correct ordering of records, (and in reality how alike the records are and therefore how much comparison needs to be done).  The sort keys are the other main part of the sort specification supplied by calling code.
+
+<P>A simple example:
+
+<PRE CLASS=code>
+APISortRecordSet Sortem(APIFoundSet& s)
+{
+	APISortSpecification spec;
+
+	spec.AddKeyField("SALARY");
+	spec.AddKeyField("AGE", SORT_DESCENDING, SORT_NUMERIC);
+	spec.AddDataField("SURNAME");
+	
+	return f.Sort(spec);
+}
+</PRE>
+
+DPT first collects the three fields off each record in the unsorted record set, then performs a sort on <TT>SALARY</TT>, and within that descending <TT>AGE</TT> if necessary.  The result is  an array of record copies, each apparently containing 3 fields, which can be iterated using a record set cursor as previously seen with found sets.
+
+<H3>Accessing sorted set data</H3>
+Remember from earlier discussion that a record set cursor offers separate interfaces for read-only and updating operations.  Both are available when using a sorted set, but the meaning requires a little clarification.  If it sounds complicated blame the history of User Language, since this behaviour is largely here for emulation purposes!
+
+<P>Firstly the read-only interface works by default off the sorted copy of the records.  So in the above example if we ask for the field <TT>"MIDDLE NAME"</TT> from the records in the sorted set it will appear to be missing, even if the records in the file do actually contain the field.  Secondly the read-write interface causes the actual record to be updated on disk <I>but does not affect the sorted copy</I>.
+
+<PRE CLASS=code>
+//c is a cursor on the above sorted set
+
+	APIFieldValue v;
+
+	APIReadableRecord rr = c.AccessCurrentRecordForRead();
+	v = rr.GetFieldValue("MIDDLE NAME");			//missing
+
+	APIRecord r = c.AccessCurrentRecordForReadWrite();
+	r.AddField("MIDDLE NAME", "SPENCER");
+
+	v = rr.GetFieldValue("MIDDLE NAME");			//Still missing
+	v = r.GetFieldValue("MIDDLE NAME");			//"SPENCER"
+
+//Alternative function name
+	APIRecord real = c.AccessCurrentRealRecord();
+	v = real.GetFieldValue("MIDDLE NAME");			//"SPENCER"
+}
+</PRE>
+
+The confusion that might be caused by the sorted copy getting out of step with the actual record is both the reason for the separate record-accessing function names in DPT, and the changes CCA made to User Language a couple of versions ago to clarify updating against sorted sets.  The "sort keys only" option covered below adds yet another variation on this theme.
+ 
+<H3>Sort options</H3>
+In addition to the obvious ability to specify an arbitrary number of keys and non-key data items, there are some less obvious options.
+
+<P>Firstly on the subject of keys, you can specify a User Language style <TT>"BY EACH"</TT> ordering for any key.  For an explanation of what this means consult the Model 204 User Language manual.  Essentially the option is for dealing with multiply-occurring fields, and usually results in a sorted set containing many more records than the original.
+
+<P>There is also a corresponding option for non-key fields.  In this case if you say collect each occurrence it just means that the sorted records will contain all occurrences of the specified field instead of just the default of the first occurrence.  There is no effect on the number or order of the records in the final set.
+
+<P>A similar but more all-encompassing option can be used as a shorthand to say collect all occurrences of all fields.  This is what you would do if you were planning to do a total dump ("<TT>PAI</TT>") of the set.
+
+<P>You can also limit the number of records from the original set that will participate in the collection phase.  This is commonly used to get a small sample from a large file for diagnostic purposes.  In the following example the sorted set will contain only 100 records, with data collected from the first 100 in the found set.  It corresponds to the User Language syntax <TT>"SORT 100 RECORDS..."</TT>.
+
+<PRE CLASS=code>
+APISortRecordSet Sortem(APIFoundSet& s)
+{
+	APISortSpecification spec(100);
+	spec.AddKeyField("JOB TITLE", SORT_DESC, SORT_RIGHT_ADJUSTED);
+	spec.SetOptionCollectAllFields();
+	
+	return f.Sort(spec);
+}
+</PRE>
+
+Finally is the "keys only" option which affects both the collection phase and the later processing phase.  If you set this option the collection phase only collects the key fields, and nothing else, from the original data.  It also sets a flag in the structure representing the sorted set to say that all requests for field information should go through to the corresponding actual record in the file (even the keys).  In other words if you use <TT>"AccessCurrentRecordForRead()"</TT> as discussed earlier, it actually invokes <TT>"AccessCurrentRealRecord()"</TT>, as with User Language "<TT>SORT RECORD KEYS</TT>".
+
+<P>Using the "keys only" option gives a result set that is therefore the most behaviourally interchangeable with using a found set, but sacrifices any benefits that would have come from doing a single pass across the raw data and then making multiple accesses to the sorted copy.  For example on Model 204 a typical scrolling 3270 list display program would be significantly slowed down if it had to keep accessing the same records on disk as the user paged up and down.
+
+<H3>Custom sorting</H3>
+The API does not currently have much sort functionality apart from that required to emulate User Language, as covered above (see also <TT>apiconst.h</TT>).  In addition there is no way for an API program to alter the sort algorithm used away from <TT>std::stable_sort</TT>.  Options like this can be added later if appropriate, or you can tweak the sort processing code to work another way, or of course just extract data from a <TT>FoundSet</TT> into custom data structures and post-process it.
+
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch10><H2>Chapter 10. DBA functions</H2></A>
+
+<P><A HREF = #DBASumm >Summary</A>
+<BR><A HREF = #File_Creation >File creation and initialization</A>
+<BR><A HREF = #Field_Definition >Field definition maintenance</A>
+<BR><A HREF = #Loading >Sizing, loading and reorging</A>
+<BR><A HREF = #Seqfiles >Sequential file access</A>
+<BR><A HREF = #View_Reset_File >Viewing and resetting file parameters</A>
+
+
+<A NAME = DBASumm ><H3>Summary</H3></A>
+
+<P>Most of the DBA functions correspond to M204 commands, and <A HREF="dbaguide.html">more general background information</A> in all cases can be found in the DBA Guide.
+
+<P>All these functions require the complete file in exclusive mode.  In the case of <TT>CREATE</TT>, the file must not be open at all.  In all other cases you must have the file open as a non-group context, and the usual shared enqueue will be upgraded to exclusive for the duration of the function.  Therefore you should be prepared to catch a sharing-violation exception, which will be thrown either if other threads have the file open, or if the calling thread has got any open found sets etc. against the context.
+
+<P>All DBA functions are non-backoutable, and DPT, like Model 204, will not allow <A HREF = #Ch7>backoutable</A> and non-backoutable updates to be mixed in the same transaction.  When writing an API program this is more of a consideration than it is working as a Model 204 terminal user, because of the implied commit which always comes at return to terminal command level on M204.  The API throws an exception if you try a DBA function while there are still uncommitted data updates.  The reverse situation cannot occur on DPT because DBA functions all commit when they finish.
+
+
+<A NAME = File_Creation ><H3>File creation and initialization</H3></A>
+Like on Model 204, file creation must be performed with the file closed.  The API function call can be given anything from zero to eight file parameter values, corresponding to the most common non-default parameters that are used when creating Model 204 files.  Other lesser used parameters can be changed later <A HREF = #CoreParms>by resetting them</A>.
+
+<P>Calling <TT>Create()</TT> won't ask you for confirmation like the Model 204 <TT>CREATE</TT> command does!  It does however ensure that if the file exists already nobody has it open.
+
+
+<PRE CLASS=code>
+void f(APIDatabaseServices& db)
+{
+	db.Allocate("SALES", "sales.dpt");
+
+	int bsize = 1000;
+	int brecppg = 22;
+	int dsize = 2000;
+	int fileorg = FILEORG_REUSE;
+
+	db.Create("SALES", 
+		1000,			//bsize
+		22,			//brecppg
+		-1,			//breserve	-1 means take default
+		-1,			//breuse
+		2000,			//dsize
+		-1, 			//dreserve
+		-1,			//dpgsres
+		FILEORG_UNORD_RRN);	//fileorg
+}
+</PRE>
+
+<P>The only valid <TT>FILEORG</TT> values are 0 and 36.  The bits for RRN and unordered (0x04 and 0x20 respectively) are separated for M204 familiarity purposes, but on DPT they must be specified as a pair.
+
+<A NAME = Field_Definition><H3>Field definition maintenance</H3></A>
+
+Fields can be defined in a file at any time, even when the file already contains records - this is one of the great strengths of Model 204, and by extension DPT.  All existing records in the file are considered simply to be missing the new field.  Defining fields can only be done in a context which consists of a single file - no groups.  However you can query field attributes in a group context, since they <A HREF = "dbaguide.html#Groups">must be largely consistent</A>.
+
+<P>In User Language and at the Model 204 command line, field names are occasionally specified with embedded quotes in order to circumvent the parsers' <A HREF = "language.html#COMP_RESERVED">normal behaviour when it comes to reserved words</A>.  This is not necessary when using the API, and field names should be given exactly as intended.  Contradictory or incomplete combinations of attributes result in an exception being thrown.
+
+<P>The set of field attributes for a field is specified as a structure, "<TT>APIFieldAttributes</TT>", and this structure is used for both defining and querying.  
+
+<PRE CLASS= code>
+void Def(APIDatabaseFileContext& f)
+{
+	std::string fname("SALES Q1");
+	APIFieldAttributes fatts(FDEF_STRING, FDEF_ORDERED_CHARACTER);
+
+	f.DefineField(fname, fatts);
+
+//Retrieve just as we defined it
+	fatts = f.GetFieldAtts(fname);
+
+//Perhaps redefine
+	fatts.SetInvisibleFlag();
+	f.RedefineField(fname, fatts);
+</PRE>
+
+<P>If you want to display all the fields and their attributes this is done with a cursor.  Manipulating the cursor is conceptually the same as using the <TT>$LSTFLD</TT> function in User Language.
+
+<PRE CLASS= code>
+	...
+	//Emulate 'D FIELD (ABBREV) ALL'
+	for (APIFieldAttributeCursor c = f.OpenFieldAttCursor(); c.Accessible(); c.Advance()) 
+	{
+		cout << c.Name().c_str() << ": ";
+
+		APIFieldAttributes a = c.Atts();
+		if (a.IsInvisible())
+			cout << "INV ";
+		else if (a.IsFloat())
+			...
+			etc.
+
+		cout << endl;
+	}
+	f.CloseFieldAttCursor(c);
+}
+</PRE>
+
+<P>If you define a field while the cursor is in existence (e.g. inside the loop in the above example), the cursor will not pick it up.  Close and reopen the cursor if you need to do that.
+
+
+<A NAME = Loading><H3>Sizing, loading and reorging</H3></A>
+<P>Before version 3.0 DPT files had to be loaded using <TT>StoreRecord()</TT> and/or the field updating functions as covered already.  From version 3.0 onwards you also have the option of using the <A HREF = "dbaguide.html#LOADING_FAST">fast load</A> feature.  This will certainly be faster if the input data can easily be arranged in one of the accepted formats, since DPT parses the input file efficiently, and inserts information into the database via the most direct possible paths.  
+
+<H4>Fast load/unload/reorg</H4>
+<P>Here are the function names, called with default parameters.  All these functions accept various options, format specifications etc., as per the equivalent commands and $functions.
+
+<PRE CLASS=code>
+void FastFunctions(APIDatabaseFileContext f) 
+{
+	//Reorganize the file
+	f->Unload();
+	f->Initialize();
+	f->Load();
+
+	//All-in-one equivalent
+	f->Reorganize();
+}
+</PRE>
+
+
+<H4>Deferred index updates</H4>
+<P>If not using fast load, it's still probably best to turn on the <A HREF = "dbaguide.html#Deferred">deferred update feature</A>, and that is done just like at the DPT host command line, by using special variations of the <TT>OpenContext()</TT> function. There are two flavours of deferred update processing, namely the original, and rather complex, multi-step process, and the (from V2.14) much simpler and almost certainly much faster single-step process.  Examples of both are given below.
+
+<P><U>Single-step</U>
+<PRE CLASS=code>
+void Load(DatabaseServices& db) 
+{
+	APIDatabaseFileContext f = db.OpenContext_DUSingle("FIXTURES");
+
+	//Load data as normal
+	//StoreRecord() etc.
+
+	//This applies any final chunk of index updates
+	db.CloseContext(f);
+}
+</PRE>
+
+<P><U>Multi-step</U>
+<BR>Obviously a lot more complicated, and not really recommended from V2.14 on.
+
+<PRE CLASS=code>
+void Load(DatabaseServices& db) 
+{
+	//Allocate the two work files
+	APISequentialFileServices ss = db.SeqServs();
+	ss.Allocate("TAPEA", "tapea.txt");
+	ss.Allocate("TAPEN", "tapen.txt");
+
+	//V2.14 note new function name
+	APIDatabaseFileContext f = db.OpenContext_DUMulti("FIXTURES", "TAPEN", TAPEA");
+
+	//Load data as normal
+	//e.g. StoreRecord() etc.
+
+	//Make the files available for external sort program
+	db.CloseContext(f);
+	ss.Free("TAPEA");
+	ss.Free("TAPEN");
+
+	//Invoke external sort somehow, and wait for completion
+	//ShellExec(...) etc.
+	
+	//Then reopen file
+	ss.Allocate("TAPEA", "tapea.txt");
+	ss.Allocate("TAPEN", "tapen.txt");
+	APIDatabaseFileContext f = db.OpenContext("FIXTURES");
+
+	//And apply the sorted deferred updates
+	f.ApplyDeferredUpdates(...optional parms as per <A HREF = "language.html#Z">Z command</A>...);
+}
+</PRE>
+
+<P>You could alternatively structure the whole multistep load so that it consisted of two distinct DPT runs with a sort in between, all controlled by a DOS batch job, and that would correspond to the way you'd more usually do things with JCL and Model 204.  (You could even load the data in several separate runs, perhaps over several days, appending to <TT>TAPEA</TT> and <TT>TAPEN</TT> each time, before finally sorting the lot and loading them.)  The single-program method was used in this example just for neatness, but it is worth pointing out that some different function parameters might be required depending on how you structure the process overall.  This is because the DPT API largely mirrors the operation and conventions of the Model 204 <TT>ALLOCATE</TT> and <TT>OPEN</TT> commands.  Specifically: 
+
+<UL>
+	<LI>OLD vs MOD on ALLOCATE
+	<BR>Use FILEDISP_MOD on the Allocate() call for load steps after the first if you're loading data in more than one chunk before applying the index updates all at once.  Otherwise (OLD is the default) previous contents will be lost on each subsequent open.
+	<LI>"TAPEA", "TAPEN" DD names present or absent on OpenContext()
+	<BR>They should be given *only* on the first OpenContext() call of each DPT run, otherwise an exception is thrown. 
+	<LI>"TAPEA", "TAPEN" DD names prior to ApplyDeferredUpdates()
+	<BR>They should not be given at all at this final stage, since the DD names "TAPEA" and "TAPEN" are mandatory.  Any DD names you supplied would not be used, and it would just run the risk of losing previous contents, as above.  (Well actually if they were allocated as MOD it would avoid that, but it would be somewhat perverse coding, since ApplyDeferredUpdates() is a read-only process on TAPEA and TAPEN).
+	<LI>If the above sounds confusing, that's because it corresponds to the behaviour of the ALLOCATE, OPEN and Z  commands on Model 204, albeit with <A HREF = "m204strategy.html#PC">minor variations</A>.  See also the detailed <A HREF = "dbaguide.html#DEFERRED">deferred update notes</A> in the DPT DBA guide</A> and the 204 manuals themselves.
+</UL>
+
+
+<H3>Other DBA stuff:</H3> 
+
+<P>The <TT>Increase()</TT> function is also available, emulating the same-named command from Model 204:
+  
+<PRE CLASS=code>
+void Incr(APIDatabaseFileContext& f) 
+{
+//Add an extent to table B
+	f.Increase(100, false);
+
+	std::vector&ltint&gt e;
+	f.ShowTableExtents(&e);
+
+//Should now show 3 extents (B,D,B)
+	for (int x = 0; x < e.size(); x++)
+		printf("%c : %d \n", (x % 2) ? 'D' : 'B', e[x]);
+}
+</PRE>
+
+<P>The underlying DPT API also provides some diagnostic functions providing for example the output you would get at a M204 terminal from the <TT>TABLEB</TT> and <TT>ANALYZE</TT> commands.  These are not currently provided to the user API for simplicity, since for this kind of work you might often be better off allocating a file to the main DPT host and issuing those commands by hand.  However, these diagnostic functions could easily be added to the user API in future if required.
+
+
+
+<A NAME = Seqfiles><H3>Sequential file access</H3></A>
+The API contains a service object for managing sequential files as they would be managed on Model 204.  That is to say you allocate them to the system like a database file, open them for shared or exclusive access, and then read/write to them one "line" or "record" at a time instead of with fields and values.  Note however that there is little benefit to using this API feature unless you want Model 204 style functionality - in many cases the calling language's standard file IO would be equally or more appropriate.
+
+<P>When using a sequential file, a "record" means a CRLF-terminated string, and may or may not have a fixed length.  The <A HREF = "dbaguide.html#Alloc_RecLen">issue of record lengths and formats</A> is discussed in the DBA guide.
+
+
+<P>A sequential file is, in fact, a specialization of DPT's <A HREF = #LINEIO>general purpose line I/O classes</A>.  A particular instance can be used for read or write, but not both.  This is because of potential issues writing variable lengthed records (the usual) into the middle of a file.
+
+<PRE CLASS=code>
+APIDatabaseServices db("CONSOLE");
+APISequentialFileServices ss = db.SeqServs();
+
+ss.Allocate("report", "output\report.txt");
+APISequentialFile f = ss.OpenView("report");
+
+f.WriteLine("Report on Probability A");
+f.WriteLine("-----------------------");
+f.Write    ("Sample size: ");
+f.WriteLine(IntToString(trials));
+//etc...
+
+ss.CloseView(f);
+ss.Free("report");
+</PRE>
+
+
+<A NAME = View_Reset_File><H3>Viewing and resetting file parameters</H3></A>
+This functionality is <A HREF = #Core>provided by CoreServices</A>.
+
+
+<BR><BR><BR><A HREF= #Training>Back to walkthrough contents</A>
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch11><H2>Chapter 11. Groups</H2></A>
+
+Here are some functions which correspond to the group-handling commands, from Model 204.  The DBA guide contains some general notes comparing <A HREF="dbaguide.html#Groups">groups on DPT and Model 204</A>.
+
+<P>The infrastructure provides support for groups in all the situations you expect from M204, by using the <TT>APIDatabaseFileContext</TT> object we have seen all through these notes.  Simply specify a group-style context name when opening the context, such as <TT>"TEMP GROUP SALES"</TT>, or even just <TT>"SALES"</TT>, since if there is a group with that name it will be assumed that's what you mean even if there is also a file called <TT>"SALES"</TT>.
+
+<P>Then use the context as normal.  In cases where a function is not appropriate to group contexts, like defining a field or initializing the file, an exception is thrown.  If you want to perform a search just on a particular member of a group, the <TT>FILE$</TT> criterion is what you need.  This is how DPT's User Language compiler implements the <TT>IN GROUP MEMBER</TT> syntax.
+
+<P>Group definitions are manipulated using the <TT>"APIGroupServices"</TT> service object:
+
+<PRE CLASS=code>
+void Groups(APIDatabaseServices& db) 
+{
+	APIGroupServices g = db.GrpServs();
+
+	std::vector&ltstd::string&gt members1;
+	members1.push_back("SALES02")
+	members1.push_back("SALES03")
+	members1.push_back("SALES04");
+	g.Create("SALES", members1, GROUP_PERM);		//system-wide group
+
+	APIDatabaseFileContext f1 = db.OpenContext("SALES");
+
+	std::vector&ltstd::string&gt members2;
+	members2.push_back("SALES00")
+	members2.push_back("SALES04");
+	g.Create("SALES", members2, GROUP_TEMP);		//"temp" = user-specific group
+
+	APIDatabaseFileContext f2 = db.OpenContext("SALES");	//gets the temp group now
+
+	APIFoundSet s1 = f1.FindRecords();			//recs in 02,03,04
+	APIFoundSet s2 = f2.FindRecords();			//recs in 00,04
+	APIFoundSet s3 = f1.FindRecords(FD_FILE$, "SALES03");	//recs in 03
+	APIFoundSet s4 = f2.FindRecords(FD_FILE$, "SALES03");	//nothing
+}
+</PRE>
+
+When you define a group it creates a hidden system-managed object representing the group, which is used to resolve <TT>OpenContext(...)</TT> calls.  Your code is not allowed direct access to these objects since they are usually shared across all threads.  Instead, to request information about them go via Group Services using group names, and it will ensure thread-safe access to the shared information.
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Ch12><H2>Chapter 12. Housekeeping functions</H2></A>
+
+<UL>
+	<LI> <A HREF = #Chkp> Checkpointing  </A>
+	<LI> <A HREF = #Roll> Rollback </A>
+	<LI> <A HREF = #Tidy> Buffer tidy-up </A>
+</UL>
+
+<A NAME = Chkp></A>
+<H3>Checkpointing</H3>
+
+Any thread can ask for a checkpoint to be taken at any time by calling the <TT>Checkpoint()</TT> function.  This invokes the same processing that would be performed if you issued the <A HREF = "language.html#CHECKPOINT"><TT>CHECKPOINT</TT> command</A> at command level on the main DPT host.
+
+<P>There is no built-in periodic automatic checkpointing at the API level - the main DPT host performs this task via a daemon thread in the <A HREF = #API_Tiers>Session layer</A>.  Therefore if you are building an "OLTP" style of application, you will need to ensure <TT>Checkpoint()</TT> calls are made at appropriate intervals.  The simplest way is to spawn a dedicated user thread like the main DPT host does, but with clever coding you could probably make it a sort of shared responsibility between all the "normal" user threads.  In non-OLTP applications this would not be necessary, for example in both batch update runs and read-only "OLAP" style applications you might as well turn checkpointing off altogether.
+
+<A NAME = Roll></A>
+<H3>Rollback</H3>
+
+<P>Rollback is not performed automatically by DPT when it starts the first user thread, since sometimes you might want to start the system and examine files in their un-rolled-back state.  Therefore if you want the system to perform rollback you have to code for it, and this ranges from very simple to quite complicated.  In its simplest form you can let the system perform all <A HREF = "sysconfig.html#Integrity_Rollback">the default processing</A>, issuing messages to the audit trail, as follows:
+
+<PRE CLASS=code>
+APIDatabaseServices db("CONSOLE");
+
+if (db.Rollback1() == ROLLBACK_FAIL) {
+	//Close down system 
+	printf("Recovery failed: %s \n", db.RecoveryFailedReason().c_str());
+	exit(0);
+}
+else {
+	//Close any files opened for rollback and start normally
+	db.Rollback2();
+}	
+</PRE>
+
+There are a variety of ways you can make this more elaborate, mainly by installing appropriate callback functions to have the work involved in the main phase (<TT>Rollback1()</TT>) executed interactively.  For example the main DPT host installs callbacks which display a dialog box showing the progress of the various phases of rollback, and offering the user the chance to cancel, or in some cases bypass them.
+
+<P>There are 8 such callbacks you can install, 5 related to the 5 main phases of the recovery process, and 3 related to progress within each phase.  For the sake of brevity these are not covered here, but if anyone wants to build such an application, just get in touch with DPT HQ and full boring technical details can be supplied.
+
+
+<A NAME = Tidy></A>
+<H3>Buffer tidy-up</H3>
+Calling the <TT>Tidy()</TT> function invokes the same processing that would be performed if you issued the <A HREF = "language.html#BBTIDY"><TT>=BUFFTIDY</TT> command</A> at command level on the main DPT host.  As with checkpointing, if you want this processing performed, the simplest way is to start a dedicated user thread which sleeps and wakes up at the desired intervals.
+
+
+<P><A HREF= #Training>Back to walkthrough contents</A>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<P><HR><HR>
+<!************************************************************************************>
+<A NAME = Appendixes><H1>Appendixes</H1></A>
+
+<A HREF= #Core         > Appendix 1. More on Core Services </A>
+<BR><A HREF= #Multi        > Appendix 2. Multi-user API programs</A>
+<BR><A HREF= #Miscellaneous> Appendix 3. Miscellaneous Tips and Ideas</A>
+<BR><A HREF= #CAPI         > Appendix 4. The C API</A>
+<BR><A HREF= #JAPI         > Appendix 5. The Java API</A>
+
+<P><HR>
+
+<A NAME = Core><H2>Appendix 1. More on Core Services</H2></A>
+There are a few times, some of which have been mentioned above, that you might need to access the infrastructure that sits below Database Services.  Here are a few examples.
+
+<UL>
+	<LI> <A HREF = #CoreParms> Viewing and resetting parameters </A>
+	<LI> <A HREF = #CoreStats> Statistics control</A>
+	<LI> <A HREF = #DYRWT> "Do you really want to?" (DYRWT) </A>
+	<LI> <A HREF = #Progress> Progress reporting for lengthy activities</A>
+</UL>
+
+
+<A NAME = CoreParms></A>
+<H3>Viewing and resetting parameters</H3>
+Lots of the underlying objects within DPT have control parameters which you can view and (sometimes) reset.  This reflects the situation on Model 204 where for example there are parameters affecting user terminal I/O, the system-wide buffer pool, each database file, and many other things.
+
+<P>On DPT all these objects can be accessed via a single interface, which passes view/reset requests to the appropriate parts of the system.  If it's a file parameter (e.g. <TT>BSIZE</TT>), you must also specify which file to go to.
+
+<PRE CLASS=code>
+void f(APIDatabaseServices& db)
+{
+	APIDatabaseFileContext f = db.OpenContext("SALES");
+
+	APIViewerResetter vr = db.Core().GetViewerResetter();
+
+	std::string	userid = vr.View("USERID");
+	int 		maxbuf = vr.ViewAsInt("MAXBUF");
+
+	std::string	smaxbuf = vr.View("MAXBUF");		//OK - comes back as string
+
+	vr.Reset("USERID", "George");				//no good - not resettable
+	vr.Reset("FISTAT", "0");				//no good - file required
+	vr.Reset("FISTAT", "0", f);				//OK
+}
+</PRE>
+
+There are occasions when a <TT>Reset()</TT> call is accepted, but the actual resulting value is not exactly the same as the one given, for example if the parameter is a collection of bit settings and an invalid bit is given among otherwise valid bits.  In such cases the actual value used comes back as the return value of <TT>Reset()</TT>.  This slightly odd convention reflects the way Model 204 handles the <TT>RESET</TT> command under similar conditions.
+
+
+<A NAME = CoreStats></A>
+<H3>Statistics </H3>
+The statistics viewer is a similar concept as the parameter viewer/resetter.  It allows your code to call up the value of any statistic from wherever in the system it's being maintained.  Statistics are a little more complicated in that they are held at a variety of levels, for example the <TT>CPU</TT> stat is held for the system as a whole, for each user's session, and for each user since the last "activity" started.  You have to say which level you want when requesting a value (see <TT>apiconst.h</TT> for the appropriate symbolic constants).
+
+<PRE CLASS=code>
+void f(APIDatabaseServices& db)
+{
+	APIDatabaseFileContext f = db.OpenContext("SALES");
+
+	APIStatViewer sv = db.Core().GetStatViewer();
+
+	cout << "Sys DKRD = " << sv.View("DKRD", STATLEVEL_SYSTEM_FINAL);
+	cout << "User DKRD = " << sv.View("DKRD", STATLEVEL_USER_LOGOUT);
+	cout << "File DKRD = " << sv.View("DKRD", STATLEVEL_FILE_CLOSE);	//no good - file required
+	cout << "File DKRD = " << sv.View("DKRD", STATLEVEL_FILE_CLOSE, f);	//OK
+
+	sv.StartActivity("ACT1"); 
+//some long activity
+	int cpu1 = sv.View("CPU", STATLEVEL_USER_SL);
+	sv.StartActivity("ACT2"); 
+//Another long activity
+	int cpu2 = sv.View("CPU", STATLEVEL_USER_SL);
+
+//A very active stat - we want all possible bits
+	int hiword = 0;
+	unsigned int loword = sv.View("SEQOUT", STATLEVEL_USER_SL, &hiword);
+}
+</PRE>
+
+Statistics are by default returned as 32 bit unsigned integers to keep the API simple, but actually they're held as 64 bits.  The final example above shows how to use an optional parameter on <TT>View()</TT> to request the most-significant word as well when you're really clocking them up that high.
+
+<P>The string passed to <TT>StartActivity()</TT> can be anything you like - it just helps to distinguish in the audit trail the output which this call triggers.  This may be familiar to User Language programmers from e.g. the <TT>$SLSTATS</TT> function, or the <TT>"COMP"</TT> and <TT>"EVAL"</TT> groups studied when tuning a program.
+
+<A NAME = DYRWT></A>
+<H3>"Do you really want to ?" (DYRWT)</H3>
+At some points the infrastructure has a choice between two actions, and Model 204 users will be familiar with the prompt <TT>"Do you really want to xxxxxx?"</TT>.   A good example is the case where a <A HREF = #Table_B_Search>table B search</A> is in the offing and the DBMS doesn't want to take responsibility itself.  
+
+<P>On Model 204 each such situation has a default response which is assumed for example if the user is in a subsystem, or is running on a non-interactive thread type like a daemon.  When using the database API these sitiations invoke an optional user-installed callback function.  By default no callback is installed and the default action is taken.  To install your own you need a function with the correct prototype, like in the following example:
+
+<PRE CLASS=code>
+bool MyFunc(const std::string& prompt, bool default_response, void* obj)
+{
+	//ask the user - display a dialog box - whatever.
+	//maybe show them what the default response will be.
+	//return true=yes or false=no.
+}
+
+APIDatabaseServices db;
+db.Core().RegisterInteractiveYesNoFunc(MyFunc);
+</PRE>
+
+After this, the DYRWT prompts will invoke <TT>MyFunc()</TT> with the appropriate parameters.  In an object-oriented environment you might have an particular object instance which you want to handle the interaction, and that is what the third parameter of the callback is for.  By default <TT>MyFunc()</TT> above will be called with a null third parameter, but we might also invoke the following when starting up a user thread:
+
+<PRE CLASS=code>
+...
+
+class SessionHandler {
+	bool YesNo(const std::string&, bool);
+	
+};
+
+SessionHandler my_session_handler;
+
+db.Core().RegisterInteractiveYesNoObject(&my_session_handler);
+</PRE>
+
+The registered object can be of any type - your callback function then has to cast it.  The earlier example would then look like this:
+
+<PRE CLASS=code>
+bool MyFunc(const std::string& p, bool d, void* obj)
+{
+	return reinterpret_cast&ltSessionHandler*&gt(obj)->YesNo(p,d);
+}
+</PRE>
+
+This is how the main DPT host system implements the callback.  Each thread registers its terminal handler, which then performs DYRWT interactions using regular terminal line I/O where the user has to enter Y/N.
+
+
+<A NAME = Progress></A>
+<H3>Progress reporting for lengthy activities</H3>
+DPT core services has some more callbacks, or "exits" in mainframe terminology, like the above, which allow your code to keep track of potentially-lengthy operations like rollback, certain field-maintenance functions and reorgs.  In some cases the user can interactively cancel these activities if desired.   At the time of writing these callbacks have not been incorporated into the user API, but it would be easy to do so if you get in touch with DPT HQ and say you need them.
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Multi><H2>Appendix 2. Multi-user API programs</H2></A>
+
+<UL>
+	<LI> <A HREF = #MultiStarting> Starting threads </A>
+	<LI> <A HREF = #MultiStopping> Closing down the system </A>
+	<LI> <A HREF = #MultiMonitor> Monitoring </A>
+	<LI> <A HREF = #MultiBump> Bumping </A>
+	<LI> <A HREF = #MultiResources> API-managed resources etc.</A>
+</UL>
+
+<A NAME = MultiStarting></A>
+<H3>Starting threads</H3>
+<P>Only one of each service object can be created on a single thread, because the OS thread ID is used to implement most low-level resource locking.  Therefore a multi-user application is by definition multi-threaded, with all the enjoyable sharing issues that entails.  DPT takes care of safe sharing of all the information under its control, and we'll assume for the sake of this discussion you're happy with your responsibilities for the thread-safety of the logic you build on top. 
+
+<P>In the sketched-out example below, user 0 runs on the main thread and this makes sense, since when <TT>main()</TT> terminates, the application as a whole is closed down by Windows.
+
+<PRE CLASS=code>
+void usermain(void* username) 
+{
+	APIDatabaseServices api(/* user specific output etc */);
+
+	for (;;) {
+		//accept user input, perform work
+		//check for bump
+	}
+}
+
+void listenermain(void* portnumber) 
+{
+	for (;;) {
+		accept(....);
+		//get user name etc.
+		beginthread(usermain, /* etc */);
+	}
+}
+
+int main() {
+	//Run user 0 on the main thread
+	APIDatabaseServices api;
+
+	//Kick off other threads as required
+	//e.g. listen for socket connections...
+	beginthread(litenerthread /* etc */);
+    
+	//...or just spawn user threads directly
+	beginthread(usermain, /* etc */);
+	beginthread(usermain, /* etc */);
+	//etc.
+
+	//Do any required work with user 0's API
+	//Somehow decide when to shut down
+	//Close and/or bump other threads
+
+	return api.Core().GetRouter().GetJobCode(); 
+}
+</PRE>
+
+Unless user 0 is held up in some way, this application will not stay running long enough for the other threads to do any work.  This is the point at which the main DPT host system, like Model 204, can be told to wait with the <TT>HALT</TT> command, but in an API program you must devise some similar mechanism yourself. This could be done based on shared resources (see later), some kind of messaging, or simply user 0 keeping watch until other threads "seem" to have finished. 
+
+
+<A NAME = MultiStopping></A>
+<H3>Closing down the system</H3>
+
+<P>In any case, when the time comes to shut down there are a couple of things you should do to make sure everything works smoothly, although in the above example simply alowing user 0's service object to de-scope should be OK, since the end of <TT>main()</TT> implies application closedown, including all subthreads.  However if user 0 were running on a separate thread to <TT>main()</TT>, the de-scope of its service object would not close down other threads, since the DPT infrastructure as a whole releases shared resources during closedown of the last thread, which need not be the first one started.  
+
+<P>Therefore to make a clean job of it when the time comes, one thread should tell DPT not to accept any new users, and then maybe even bump off existing users (see later).  The former ("quiesce") is achieved on the main DPT host using the <TT>EOD</TT> command, and equivalently in an API program with e.g.
+
+<PRE CLASS=code>
+	...
+	APICoreServices c = api.Core();
+
+	core.Quiesce();
+	while (core.NumThreads() > 1)
+		//wait or use bump if impatient
+}
+</PRE>
+
+<A NAME = MultiMonitor></A>
+<H3>Monitoring</H3>
+
+Probably the first thing you'll want to do to monitor overall activity within DPT is list the users currently logged on, as follows.
+
+<PRE CLASS=code>
+void Monitor(APIDatabaseServices& db)
+{
+	std::vector&ltint&gt v;
+	db.Core().GetUsernos(v);
+
+	for (int x = 0; x < v.size(); x++) {
+		//monitor user...
+
+</PRE>
+
+Any DPT API thread can get information about what other threads are doing.  This is achieved by for example thread A requesting a handle to thread B's <TT>APIDatabaseServices</TT> object and then using it somewhat as normal.  Typically thread A would only want to view statistics or parameters, but things like getting a list of open files are also OK - that's what the <TT>LOGWHO</TT> command does in fact.  More proactive stuff like trying to open files on behalf of thread B would often fail because of the previously-mentioned thread ID/locking issues.
+
+<P>The big problem with this simple scheme is how can we be sure that thread B doesn't log off and therefore invalidate all their service objects while we're using them?  The answer is that we have to lock them in, which is achieved as follows.  This is somewhere that the API forces you to use a privileged <A HREF = #Sentries>sentry object</A> to avoid the risk of leaving a user locked in, which might put DPT into a deadly embrace situation.
+
+<PRE CLASS=code>
+	...
+	APIUserLockInSentry s(v[x]);
+
+	if (s.other == NULL)
+		//User logged off since we got the list
+		continue;
+	else {
+		//User is now locked in
+		printf("User %d %s\n", x, s.other->Core().GetUserID().c_str());
+		printf("%s\n", s.other->Core()->GetStatViewer().UnformattedLine(STATLEVEL_USER_SL).c_str());
+		printf("WT = %d\n", s.other->Core()->GetWT());
+		printf("Open files: ");
+		std::vector&ltAPIDatabaseFileContext&gt of = s.other->ListOpenContexts();
+		...
+		etc.
+	}
+}
+</PRE>
+
+
+<A NAME = MultiBump></A>
+<H3>Bumping</H3>
+When thread A "bumps" thread B, it is really nothing more than politely asking thread B to log off at the next convenient opportunity.  If thread B never gets such an opportunity it will not heed the request, and this is really what determines whether activities are regarded as "bumpable" or "non-bumpable" on the main DPT host, and affects the <A HREF="m204xref.html#Misc">wait states and flags</A> shown by the <A HREF = "language.html#MONITOR">MONITOR command</A>.  
+
+<P>When thread B is in a "non-bumpable" state, it will take no notice of thread A until it comes out of the non-bumpable state of its own accord.  A good example is when thread B is waiting for disk IO.  On the other hand, if thread B is doing some kind of CPU-intensive work it will usually be periodically checking to see if anyone's bumped it.  You can also explicitly check for bump if your code is doing some intensive processing of its own outside the DPT API, by calling the <TT>Tick()</TT> function.  In all cases the result if the user has been bumped is that an exception is thrown.
+
+<PRE CLASS=code>
+//User 5:
+	core.ScheduleForBump(20);
+</PRE>
+<PRE CLASS=code>
+//User 20:
+	try {
+		for ( /* something lengthy */ ) {
+			//perform a slice of work
+			core.Tick("in loop to simulate earth weather");
+		}
+	}
+	catch (Exception& e) {
+		//e.What() contains the text given to Tick()
+	}
+</PRE>
+
+
+<A NAME = MultiResources></A>
+<H3>API-managed resources etc.</H3>
+The DPT infrastructure has several types of custom sharable/lockable resources, which the main host uses to emulate Model 204 concepts such as <TT>CFR</TT>s and <TT>ECB</TT>s.  These however fall into that set of features not currently included in the user API for clarity's sake.  As usual, if you have a multi-user application which could make use of things like this, just say so.
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = Miscellaneous><H2>Appendix 3. Miscellaneous Tips and Ideas </H2></A>
+
+<A NAME = MiscLeak></A>
+<H4>Lingering temporary results</H4>
+
+<PRE CLASS=code>
+int Counter(APIDatabaseFileContext* f, const char* fname, const char* fval) 
+{
+    return f->FindRecords(fname, FD_EQ, fval).Count();
+}
+</PRE>
+
+The above syntax looks neat but in many cases is not a good idea.  It creates a found set and then discards all references to it without destroying it, which means the chunk of memory representing the found set is left lingering around till the context gets closed.  If the file was big and this function was called repeatedly before closing it, you might very well run out of memory.
+
+<A NAME = ScrollingGUI></A>
+<H4>Scrolling GUIs on large record sets (random access pseudo-cursors)</H4>
+This is something that came up in V3.0 while building the File Wizard application.  Record set cursors only allow forwards and backwards iteration through a set, whereas a scrolling GUI may allow random access to single display-window-worths of records all over the set in any order.  If the sets were always small it would be reasonable to design the GUI to load all record data at the start via a regular set cursor, then scroll around it completely in client space.  A more complex approach for larger sets with enough record data to tax client-local memory and/or response time if they were to be entirely loaded up front is still to use a cursor, but retrieve data "lazily" as required, discarding older cached information if necessary, and opening fresh cursors when required.  
+
+<P>That's very complex though, so a third simpler approach, supported by two new API functions, is to let <TT>RecordSet</TT>s act like random-access cursors for themselves, so long as you know the internal database record numbers.  These can be retrieved in an efficient integer array operation even for very large sets, and then used to access records as required by the scrollbar without needing to reverse and/or reopen regular directional cursors.  This lets the client cache and de-cache as much or as little record data as it wishes with minimal worries about code complexity or efficiency.  Further notes:
+
+<UL>
+<LI>These functions are more efficient and convenient ways of doing, in a single calls, what you could do in the same logical way before with many calls.  The pre-V3.0 way would have been first to iterate the whole set once with a cursor to retrieve the record numbers, then as required use a <TT>FindRecords(FD_SINGLEREC, recnum)</TT> operation to create a single-record found set for each record, and then opening a record set cursor on each of those single-record sets.
+<LI>The random-access function is performed via the set rather than directly on the context so as to ensure (as much as is ever possible) that an appropriate record lock is in place.
+<LI>Only one of these random-access <TT>Record</TT> MROs is maintained per record set, as is the case when using cursors.  When retrieving the next one, or destroying the set, the previously-accessed <TT>Record</TT> MRO is destroyed.
+<LI>If you supply a nonexistent record number be prepared for a "nonexistent record" exception!
+<LI>These functions are invalid in group context.
+<LI>The integer array buffer can be supplied already-allocated by the caller, or created by DPT.  In both cases the array pointer is returned by <TT>GetRecordNumberArray()</TT> and is the caller's responsibility to delete from then on.
+<LI>On a related subject you can also do the a similar thing with <TT>ValueSet</TT>s, using the set index rather than record number.  First count the value set and then any index from 0 to count-1 is valid.  (Using the set index in this way is not possible with the complex internal data structures used for record sets - bitmaps etc. - hence the requirement to call <TT>GetRecordNumberArray</TT> first).
+</UL>
+
+<P>Example:
+
+<PRE CLASS=code>
+void Scroller(APIRecordSet* set) 
+{
+    int* recarray = set.GetRecordNumberArray(NULL);
+    ....
+    //populate GUI control structures
+    ...
+    //Fill page
+    for (recnum...) {
+        APIRecord rec = set.accessRandomRecord(recnum);
+        ...
+    }
+
+    //later, if stack array not supplied above
+    delete[] recarray;
+}
+</PRE>
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = CAPI><H2>Appendix 4. The C API</H2></A>
+
+This chapter gives some background on how the C API layer (<A HREF = #Compilation>blue</A> in the diagram) relates to the base C++ code, as well as details on how to use it and some example code.  The DLL download package contains some practical notes on setting up linkage and include paths etc., as well as C code samples for most of the functions.
+
+<UL>
+<LI><A HREF = #CAPI_Background> Background</A>
+<LI><A HREF = #CAPI_Mechanism > Summary of wrapper mechanism</A>
+<LI><A HREF = #CAPI_Example   > Usage example</A>
+<LI><A HREF = #CAPI_Results   > More on results retrieval</A>
+<LI><A HREF = #CAPI_Misc      > Other miscellaneous notes</A>
+</UL>
+
+
+<A NAME = CAPI_Background></A>
+<H3>Background</H3>
+
+<P><U>Why C wrappers are necessary</U>
+
+<OL>
+<LI>C++ Exceptions
+<BR>The C++ API throws out exceptions to indicate unexpected error conditions, but only C++ calling code can catch C++ exceptions.  Some other languages do have exceptions, but still cannot catch C++ ones because of the particular conventions for stack unwinding, register handling and so on.  Therefore to use the DPT API in any other language requires a layer which catches all C++ exceptions and translates them into testable return values, and/or rethrows them in a suitable way for the calling language.  The C API described in this chapter does the former.
+
+<LI>Object orientation
+<BR>Many DPT API input parameters and return values are in the form of C++ objects.  As above, some languages do not even have an object-handling feature, and with those that do the details of accessing objects cannot be relied upon to be the same.  The C API layer flattens out the API into a set of functions taking basic types of parameter (<TT>int</TT>s, <TT>char*</TT>s etc.) and occasionally simple C <TT>struct</TT>s, and returns the results in the same forms.  Object manipulation where required is done using handles in a way familiar to any Windows programmer. 
+</OL>
+
+<P>The above factors unavoidably make user code less elegant, but some effort has been taken to ensure the C API is as clear and easy to use as possible.
+
+<P><U>Why C wrappers are good</U>
+
+
+<OL>
+<LI>C function linkage
+<BR>Expressing the entire API as functions with C linkage makes it callable from a wide range of languages.  C linkage is simple and commonly supported.
+
+<LI>Precompiled DLL
+<BR>Perhaps the greatest benefit from an ease-of-use point of view is that a whole stage is removed from the process, namely the compilation of the DPT source.  This is huge because no matter how much work gets put in, it seems certain to remain the case that different C++ compilers and runtime environments have different capabilities.  Achieving a successful and working build of open source source code is rarely a trivial process!
+</OL>
+
+<A NAME = CProsCons></A>
+<P><U>Some of the good things that are lost by dropping from C++ to C</U> 
+
+<P>This is not really the place to list all the reasons why C++ was an improvement over C, and why it makes interfaces like the DPT database API much more elegant.  However, here are a few specific things that seem worth mentioning.
+
+<OL>
+<LI>C's inability to overload same-named functions means we have to switch to a convention where there are often several functions to do the same job, each with a slightly different name. In many cases DPT provides a simple function which assumes mostly default parameters, plus a more complex one which allows all the other parameters to be given.  The same naming convention is used there as in the Windows API, e.g. <TT>CreateFile</TT>(<I>common parameters</I>) and <TT>CreateFileEx</TT>(<I>extended parameters</I>).
+<LI>In C++ classes are inherently extendable with custom user versions.  This feature is largely lost, although we can make an effort to reclaim a little of it. There is one case with DPT (LineOutput/LineInput) where a hook has been made for custom functionality to be inserted via callback functions.
+<LI>Without C++ namespaces, most DPT identifiers (typedefs, constants, etc.) are qualified with a "DPT" prefix, making them longer.  This is in addition to the fact that the C API function names are a lot longer than the C++ ones because of being prefixed by the class name (see later).
+</OL>
+
+<P><U>...and some good things that are retained</U> 
+
+<OL>
+<LI>All the internal behaviour of DPT, and all the important API functionality is exposed one way or another.
+<LI>The overall structure of API-using code remains the same, so the C++ examples throughout this guide still adequately illustrate usage.
+<LI>The C wrappers detract little from performance in most situations (see notes below about the mechanism).  
+</OL>
+
+
+
+
+<A NAME = CAPI_Mechanism></A>
+<H3>Summary of wrapper mechanism</H3>
+
+Each C++ class is "flattened out" into a set of wrapper functions, mostly corresponding to the class member functions.  In total there are currently around 350 C-linkage functions, wrapping the methods of around 30 C++ classes.
+
+<UL>
+<LI>To take care of the exceptions, the wrappers enclose every regular API call with a try/catch block, and populate error information variables accordingly based on whether an exception got thrown or not. The calling code should test all function return codes rather than catching exceptions.
+
+<LI>To make up for the fact that most function return values are just the error code as above, actual return values as they were in the C++ API (assorted different data types, pointers etc.) are now placed in a general "results" area owned by each thread.  They must be retrieved by an extra call after the initial call to populate them, as shown in the example later. 
+
+<LI>When the C++ API would require manipulation of objects, the C API presents the same functionality in several different ways, according to which would be more convenient in each case.  Sometimes calling code is given an object handle to use like a pointer with a set of functions echoing the class's member functions (e.g. <tt>FindSpecification</tt>).  Other times small classes are removed entirely and the functionality they gave merged into parent or other class functions (e.g. <tt>FieldValue</tt>).  Yet other times when a class contains only simple member variables, the C API presents a C struct which can be manipulated directly by the C code (e.g.<tt>FieldAttributes</tt>).
+
+<LI>Objects in C++ are often of types derived from several other base types, with each derivation adding functionality to that inherited from its base types.  For example in DPT: <BR><B><TT>CursorTarget->RecordSet->BitMappedRecordSet->FoundSet.</TT></B>  In C++ an object at one level in such a type hierarchy inherits all the functions from all the lower levels too, for example a <TT>FoundSet</TT> object <TT>"f"</TT> can be manipulated using <TT>f.Sort()</TT> where the <TT>Sort()</TT> function actually comes from the <TT>BitMappedRecordSet</TT> level.  To make this possible in C we are faced with the choice of propagating up all base class functions to each "top" level object, or forcing the user to know which base level each function comes from.  The latter is less desirable because it requires knowledge of the underlying class hierarchy, although it is assumed if you're using DPT in the first place you know about bitmaps etc., so the solution adopted is a compromise.  The header files ("<TT>foundset_capi.h</TT>" here) contain declarations for all applicable functions, so you can use that as a reference, but the functions are named reflecting their base class (e.g. "<TT>RecordSetCount()</TT>") to allow generic code to be written with interchangeability of objects (e.g. a sorted set can be slotted in to replace a found set).
+</UL>
+
+<U>Note on performance</U>
+
+<BR>For the curious here is an example of something like the C++ wrapper code used to wrap every function:
+
+<PRE CLASS=code>
+DPTErrNum BitMappedRecordSetCount(DPTUser u, BitMappedRecordSetHandle hset)
+{
+    try {
+        DatabaseServices* dbapi = (DatabaseServices*) u;        //locate area to
+        CAPICommArea* commarea = dbapi->GetCAPICommArea();      //put results in
+
+        BitMappedRecordSet* set = (BitMappedRecordSet*) hset;
+        commarea->int_result = 0;
+
+        <B><FONT COLOR="#FF0000">/* The actual function call: */</FONT></B>
+        commarea->int_result = <B><FONT COLOR="#FF0000">set->Count()</FONT></B>;                    //place result there
+
+        return DPT_OK;
+    }
+    catch(Exception& e) {
+        commarea->error_code = e.Code();                        //place error info
+        commarea->error_message = e.What();
+        return e.Code();
+    }
+    catch(...) {
+        etc.
+    }
+}
+</PRE>
+
+So the overhead per call is an extra call to this C wrapper function, a couple of indirect memory accesses to initialise control data, and a couple of instructions for the C++ "try".  The casts are dealt with at compile time so they add no overhead.  On top of this there is any overhead added by parameter conversion that would have not been required in C++ - perhaps some cases where STL <TT>&ltstring&gt</TT> variables would be used several times rather than incurring multiple strlen() etc. calls when using <TT>const char*</TT> in C.  But in general this is a minor overhead since most parameters are basic types like ints and pointers, and with strings the lengths can by supplied to some functions.
+
+<P>This contrasts with the situation when <A HREF = #Compilation>another language layer</A> like Java is added on top, communicating via the C layer.  Experience from the similar Python/SWIG situation has shown that the process of deconstructing parameter variables from their "managed" form in the calling language to fundamental data, and then reconstructing "managed" results objects after the function call, can add a significant overhead in situations where a lot of calls are made to API functions which individually do very little.  For example building the <TT>StoreRecordTemplate</TT> before storing a large record.  On the other hand compared to the cost of performing a database search or something all of the API overhead, including parameter passing, is trivial.
+
+
+
+
+
+<A NAME = CAPI_Example></A>
+<H3>Usage example</H3>
+
+The following short C program example illustrates these points.
+
+<PRE CLASS=code>
+#include "stdio.h"
+#include "dptcapi.h"
+
+int Error(DPTUser user)
+{
+    const char* msg = DPTErrorMessage(user);
+    int code = DPTErrorNumber(user);
+
+    printf("DPT error code %d, message: %s\n", code, msg);
+    if (user)
+        DPTLogoff(user, NULL);
+    return code;
+}
+
+int main() 
+{
+    char msg[256];
+    DPTUser user = NULL;
+    DPTDatabaseFileContextHandle hfile = NULL;
+    DPTFoundSetHandle hset = NULL;
+    DPTRecordSetCursorHandle hcursor = NULL;
+    DPTReadableRecordHandle hrec = NULL;
+
+
+		<U>/*== Start user thread ==*/</U>
+
+    if (DPTLogon("CONSOLE", NULL, NULL, NULL, NULL, &user, msg)) {
+        printf("Logon error: %s\n", msg);
+        exit(999);
+    }
+
+		<U>/*== Open a file ==*/</U>
+
+    if (DatabaseServicesOpenContext(user, "SALES"))
+        return Error(user);
+    hfile = DPTMRO_Context(user);
+
+
+		<U>/*== Perform database search ==*/</U>
+
+    if (DatabaseFileContextFindRecordsAll(user, hfile))
+        return Error(user);
+    hset = DPTResultFoundSet(user);
+
+
+		<U>/*== Loop on records ==*/</U>
+
+    RecordSetCount(user, hset);
+    printf("%d records in found set\n", DPTResult_Int(user));
+
+    if (RecordSetOpenCursor(user, hset))
+        return Error(user);
+    hcursor = DPTMRO_RecordSetCursor(user);
+
+    for (CursorAccessible(user, hcursor); 
+        DPTResult_Bool(user);
+        CursorAdvance(u, hcursor), CursorAccessible(u, hcursor)) 
+    {
+        RecordSetCursorAccessCurrentRecordForRead(user, hcursor);
+        hrec = DPTMRO_ReadableRecord(user);
+        
+
+		<U>/*== Print each F=V pair ==*/</U>
+
+        for (RecordAdvanceToNextFVPair(user, hrec); 
+            DPTResult_Bool(user);
+            RecordAdvanceToNextFVPair(user, hrec)) 
+	{
+            printf("  %s = ", DPTResult_String(user));
+            if (DPTResult_FieldValueIsNum(user))
+                printf("%f\n", DPTResult_FieldValueN(user));
+            else
+                printf("%s\n", DPTResult_FieldValueA(user));
+	}
+    }
+		<U>/*== Release all resources etc. ==*/</U>
+
+    RecordSetCloseCursor(user, hset, hcursor);
+    DatabaseFileContextDestroyAllRecordSets(user, hfile);
+    DatabaseServicesCloseAllContexts(user);
+
+    DatabaseServicesFree(user, "SALES");
+
+    if (DPTLogoff(user, msg))
+        printf("Logoff error: %s\n", msg);
+}
+</PRE>
+
+<U>Notes on the above example (in no particular order)</U>
+
+<UL>
+<LI>The <tt>DPTLogon()</tt> function performs creation of the top level database services object.  Note that this operation also creates the "results area" for each user, so for this call only (and <tt>Logoff</tt>) a buffer should be given to receive any error message. 
+<LI>A zero (<tt>DPT_OK</tt>) return code from any function means success.  Otherwise the code is the same as the standard DPT message codes.
+<LI>There are cases where a function can't realistically fail and there is no need to test the return code.  It's up to you just how loosely you interpret "can't realistically fail", but certainly the ones retrieving service object pointers will only fail if an invalid <tt>DPTUser</tt> is passed in, since the service objects are always present.
+<LI>All object pointers passed back to the user code are of type <tt>void*</tt>.  However, the API headers <tt>typedef</tt> this to a variety of pseudo-types (<tt>DPTUser</tt>, <tt>DPTFoundSetHandle</tt> etc.) to improve readability, and also make it clearer what the required parameters in the header files are.  This is similar of course to the WinAPI's <tt>HANDLE, HWND</tt> etc. which are also just <tt>void*</tt> underneath.
+<LI>Function names for the most part correspond to the C++ class methods they call: &lt<i>class name</i>&gt&lt<i>method</i>&gt.  Occasionally an abbreviation is used where the result was a riduculously long function name.  &lt<i>class name</i>&gt<tt>Create()</tt> and &lt<i>class name</i>&gt<tt>Destroy()</tt> are used when the option is given to explicitly create objects (see below).
+<LI>This example is a single-user run, but because the user handle is passed into every API function it could easily be reworked to be multi-user.  It's up to you how you manage the passing of the user handle around from function to function in your code, but note that the decision was made specifically not to do automatic thread-detection within the API (which would save calling code from always having to supply the user handle).  Asking the OS for the thread ID as part of every call would have added a terrible overhead to what is currently a nice lean wrapper layer.
+</UL>
+
+
+
+
+
+<A NAME = CAPI_Results></A>
+<H3>More on results retrieval</H3>
+
+The results area contains a single variable of each type that can be a result, including basic types like <tt>int</tt> and <tt>string</tt>, and one each of the various pointer types the API can return such as <tt>FoundSet</tt> and <tt>ValueSet</tt>.  See the header file <tt>"capi_commarea.h"</tt> for a complete list of the result-retrieval functions.
+
+<P>Before making internal DPT calls, the wrapper code sets the expected result variable for the current function to some default value, namely zero, NULL or an empty string as appropriate.  
+
+<P>
+<U>Multi-result functions</U>
+<BR>Some functions populate more than one result variable - there are comments indicating such cases in the header files.  An important group are the functions retrieving field values, where not only is the value placed in the results area, but also a flag saying whether the value was string or numeric.  In some of these functions three or even four result values are cached.  For example the <tt>RecordAdvanceFVPair</tt>(...) function shown here for reading a single record's contents sets a flag saying whether the last field was reached (bool), a string containing the field name, the field value, and the flag saying whether the field value was numeric. 
+
+<PRE CLASS=code>
+void RecordLoop(DPTUser u, ReadableRecordHandle rec) 
+{
+    while (RecordAdvanceFVPair(u, r) == DPT_OK 
+    && !DPTResult_Bool(u))                                //end of set?
+    {
+        printf("%s = ", DPTResult_String(u));             //field name 
+
+        if (DPTResult_FieldValueIsNum(u))                 //numeric flag
+            printf("%f \n", DPTResult_FieldValueN(u));    //field value
+        else
+            printf("%s \n", DPTResult_FieldValueA(u));
+	}
+}
+</PRE>
+
+<U>Array results</U>
+<BR>When a function generates a result which is an array of values (actually a C++ standard library &lt<tt>vector</tt>&gt is created) there is some special syntax for getting at the &lt<tt>vector</tt>&gt members, as shown below.  Note that this is not the same as with things like record and value sets, which are complex objects, not just simple arrays of values.  Note also that accessing an array like this is in theory terribly inefficient, but the DPT API only uses array results for convenience in situations that are not performance sensitive, and where the array size will usually be very small.
+
+<PRE CLASS=code>
+void ListUsersConnected(DPTUser u) 
+{
+    int x, n;
+
+    CoreServicesGetUsernos(u, "ALL");
+    n = DPTResult_ArraySize(u);
+
+    for (x = 0; x < n; x++) {
+        DPTResult_FocusArrayItem(u, x);
+        printf("User # %d:\n", DPTResult_Int(u));
+
+        //See samples for more complex LOGWHO-style output.
+    }
+}
+</PRE>
+
+<U>Utility classes overlaid with C structs</U>
+<BR>There are one or two places where C++ utility classes are very small and contain only simple member variables, and user code is allowed to manipulate them as C structs.  The most important one of these is <tt>FieldAttributes</tt>, which is just a <tt>uint</tt> and a <tt>uchar</tt>, used for example as below to redefine a field from <tt>NON-ORDERED</tt> to <tt>ORD NUM INVISIBLE</tt>.  Obviously since the struct is being moved around as a stack item there is no need to worry about destroying it.  
+
+<PRE CLASS=code>
+void RedefineField(DPTUser u, DatabaseContextHandle hfile) 
+{
+    const char* fname = "SALES_2010";
+    DPTErrNum e = DPT_OK;
+
+    if (e = DatabaseFileContextGetFieldAtts(u, hfile, fname)) 
+        exit(e);
+
+    //Here we have a stack struct
+    DPTFieldAttributes att = DPTResult_FieldAtts(u);
+    att.flags = (DPT_FATT_INVISIBLE | DPT_FATT_ORDERED | DPT_FATT_ORD_NUM);
+
+    if (e = DatabaseFileContextRedefineField(u, hfile, fname, &att)) 
+        exit(e);
+}
+</PRE>
+
+<P><U>Utility objects managed via handles</U>
+<BR>Following on from the above, there are other utility classes which C++ calling code would normally own and manipulate directly but which aren't simple enough to just be overlaid and manipulated via their member variables by C code.  Examples are <TT>FindSpecification</TT> and <TT>SortRecordsSpecification</TT>.  In these cases DPT returns a handle from one or more <TT>Create(...)</TT> functions, plus there is a <TT>Destroy()</TT> and other manipulating functions.  After <TT>Create()</TT> the handle is retrieved via a <TT>DPTStruct_...()</TT> function, to differentiate these objects from the usual MROs where it is <TT>DPTMRO_...()</TT>.
+
+<PRE CLASS=code>
+void FindAndPrintCount(DPTUser u, DatabaseContextHandle hfile) 
+{
+    DPTFindSpecificationHandle hspec = NULL;
+
+    FindSpecificationCreateA1(u, "SURNAME", DPT_FD_LIKE, "A*");
+    hspec = <B><FONT COLOR="#FF0000">DPTStruct_FindSpec(u)</FONT></B>;
+
+    if (DatabaseFileContextFindRecords(u, hfile, hspec) == DPT_OK)
+    {        
+        int x,n;
+        DPTFoundSetHandle hset = <B><FONT COLOR="#FF0000">DPTMRO_FoundSet(u)</FONT></B>;
+
+        RecordSetCount(u, hset);
+        n = DPTResult_Int(u);
+        FoundSetLockType(u, hset);
+        x = DPTResult_UInt(u);
+
+        printf("%d records in %s found set\n", n, 
+                     (x == DPT_FD_LOCK_NONE) ? "UNLOCKED" : 
+                     (x == DPT_FD_LOCK_SHR) ? "SHR" : "EXCL");
+    }
+
+    if (hspec)
+        FindSpecificationDestroy(u, hspec);	
+}
+</PRE>
+
+
+
+
+<A NAME = CAPI_Misc></A>
+<H3>Other miscellaneous notes</H3>
+
+<LI>Most data update functions allow string lengths to be supplied, so values containing hex zeros can be stored.  This is most likely to be required with BLOB fields but can apply to regular strings as well.
+
+<LI>The header files supplied are all <TT>xxxxxx_capi.h</TT> where <TT>xxxxxx.h</TT> would be the normal C++ API header.  Most of the function declarations in the C API headers say what the result type of the function is.
+
+<LI>The <TT>capi_globopts.h</TT> header contains functions which apply an effect across the API as a whole.
+
+<LI>When obtaining another user's handle in order to perform monitoring (viewing their statistics for example), both the results-generating and the results-retrieving function must be called specifying the other user handle.
+
+<LI>Record locking conflicts, if suspected, can be detected with e.g.
+<PRE class=code>
+if (DPTErrNum(u) == DPT_DML_RECORD_LOCK_FAILED) {
+    int rlcuser = DPTRLC_User(u);
+    //DPTRLC_File(), DPTRLC_Recnum() etc.
+    ...
+}
+</PRE>
+
+
+
+
+
+
+
+<P><HR>
+<!************************************************************************************>
+<A NAME = JAPI><H2>Appendix 5. The Java API</H2></A>
+
+<UL>
+<LI><A HREF = #JAPI_Intro>      Introduction </A>
+<LI><A HREF = #JAPI_Language>   Java language issues </A>
+<LI><A HREF = #JAPI_How>        Overview of how it works </A>
+<LI><A HREF = #JAPI_Parms>      Function parameter object issues </A>
+<LI><A HREF = #JAPI_MiscUsage>  Usage notes </A>
+<LI><A HREF = #JAPI_Misc>       Miscellaneous final notes and tips </A>
+</UL>
+
+<A NAME = JAPI_Intro></A>
+<H3>Introduction</H3>
+
+<P>This chapter gives some background on how the Java API layer (<A HREF = #Compilation>brown in the diagram</A>) relates to the base C++ code and intermediate C layer, as well as details on how to use it, and some code examples.
+
+<P>The Java API is presented as a set of interfaces, each corresponding to one of the base C++ classes (<A HREF = #Compilation>green</A>), and each Java method corresponding to one of the C++ class member functions and having identical ultimate effects on the underlying DBMS, because ultimately passing through to the same C++ function.  Therefore if you've never used the DPT API at all before and are starting with Java, the walkthroughs and programming notes which make up the bulk of the document above should be your main reference, even though they are in C++.  (First try the Java "Hello World!" example in the download <TT>readme</TT>). 
+
+<P>This scheme of presenting the documentation is obviously the result of it starting out as a purely C++ API, and will make certain things harder to understand for the reader who only knows Java.  This may be remedied in the future with a complete stand-alone Java API document which does not assume familiarity with both C++ and Java, but for now we will have to make do with this brief appendix.
+
+
+<!************************************************************************************>
+<A NAME = JAPI_Language></A>
+<H3>Java language issues</H3>
+
+Before delving into how it works let's just take a look at a few aspects of the Java language which necessarily impose differences in usage of the DPT Java and C++ APIs.
+
+<!****************************************>
+<A NAME = JavaStringFormat></A>
+<P><U>Java string representation</U>
+
+<BR>DPT's underlying API layers (C and C++), and its database STRING field type, all work exclusively with one-byte-per-character string representations based on the default character set on the machine where the DBMS is running - typically ASCII.  Java on the other hand has a Unicode <TT>String</TT> variable type which uses two or more bytes per character.  This means we have to think about how and when conversion between the two formats will happen, and in what cases it is reasonable for Java client programs to work with String variables constructed from DPT database field values using the standard Java language conversions/constructors.
+
+<P>There are three main cases to consider.  Firstly text parameters like user names and field names.  There is no confusion here, and Java clients can comfortably use the String interfaces provided by the DPT API, since there will be no weird characters involved.  Calling code will look the same as the equivalent C++ if it were using C++ STL <TT>std::string</TT> or <TT>const char*</TT>.  E.g.
+
+<PRE class=code>
+int s = parmViewer.view("SYSOPT");
+String fName = "LASTNAME";
+FieldAttributes = context.getFieldAttributes(fName);
+</PRE>
+
+
+<P>Secondly there are field values for STRING or BLOB database fields, but where the values are just plain text.  So that's all the data-access functions for storing records, changing field values, performing searches etc.  If the data is just text, the same comments as above apply, as long as you're happy with the basic ASCII/Unicode conversions.
+
+<P>Finally there are the database fields where the actual binary content is important.  Obviously this means BLOB fields if they contain images/videos/etc., but it also includes plain STRING fields if the content of the field has meaning where you need to be in total control of the length and binary value stored.  In these cases calling code should use the functions which take and return Java <TT>byte[]</TT> variables, and/or use <TT>FieldValue</TT> parameter objects constructed from <TT>byte[]</TT>s.  Values will then get passed directly into/out of the underlying DPT system as single-byte-per-character "strings", without passing through a Unicode representation at all.  As an extra facility you can also load the DPT custom <TT>FieldValue</TT> object with a String value in hex format such as "X'F0123C'" and then call <TT>convertHexStringToByteArray()</TT> to get it converted to <TT>byte[]</TT> form, thus keeping total control.  That sequence facilitates the use of binary values typed in by end users.  For example:
+
+<PRE class=code>
+String userEntry = "414243";                     //ASCII "ABC"
+FieldValue fVal = new FieldValue(userEntry);
+fVal.convertHexStringToByteArray();
+record.addField("CODE", fVal);
+</PRE>
+
+<P>The reverse function <TT>ConvertToHexString()</TT> works on an object with any current internal type, but in particular if the object holds a <TT>byte[]</TT> fresh out of the database, will not go via Java/Unicode format but be directly converted into the hex representation of the bytes - "414243" in the above case if we were to re-retrieve the value just stored.
+
+
+<!****************************************>
+<A NAME = JavaNoRefParms></A>
+<P><U>No parameter modification</U>
+
+<BR>This issue affects the cases where DPT C++ API functions have parameters which are passed by reference and modified, for example in this piece of C++ code the function is effectively setting three return values at once:
+
+<PRE class=code>
+std::string fname;
+FieldValue fvalue;
+
+while (record->getNextFVPair(fname, fvalue))
+    cout << fname << " = " << fvalue << endl;
+</PRE>
+
+In some cases it would be possible to use the same kind of construction in Java, but not others.  In the above case <TT>FieldValue</TT> is a custom object which we could modify, but Java Strings  do not allow modification of the underlying object after creation, so that could not be done.  But anyway the common Java convention is for functions not to modify their parameter objects, and instead return all results via the actual return value, and this is what the DPT API does, while attempting to keep things broadly similar to the C++.  In the case of the above function, the three separate "return values" are collected into a special Java object, <TT>FieldValuePairIterator</TT>, which is used something like this:
+
+<PRE class=code>
+for (FieldValuePairIterator pair = record.getFirstFVPair();
+     pair.exists();
+     pair = record.getNextFVPair())
+{
+    System.out.println(pair.getName() + " = " + pair.getValue().extractString());
+}
+</PRE>
+
+<P>In other cases the C++ API uses pass-by-reference purely because potentially large structures are the "result" of the function.  In these cases the Java API's function signatures are rearranged so that the large object reference actually is the return value of the function.  For example:
+
+<PRE class=code>
+//C++
+RecordCopy snapshot;
+record.CopyAllInformation(snapshot);
+
+//Java 
+RecordCopy snapshot = record.copyAllInformation();
+</PRE>
+
+
+
+<A NAME = JavaCodeConventions></A>
+<P><U>No implied constructor calls</U>
+<BR>C++ code is often written using function parameter values which don't actually match those of the function, but which can be used by the compiler to quietly construct a suitable <TT>const</TT> temporary to pass indirectly to the function.  Java does not allow this.  Most common 
+with the DPT C++ API are functions which take a <TT>const std::string&</TT>, or a <TT>const FieldValue&</TT>, which can be called by giving a <TT>const char*</TT> such as "ABC" in either case, since both those classes have constructors which take <TT>const char*</TT>.  The implications of this for the DPT API are really a question of whether it wants to provide the ability to call it with the same convenience as the C++ code, or force the user to code things like:
+
+<PRE class=code>
+record.addField("LASTNAME", new FieldValue("SMITH"));
+</PRE>
+
+As it happens the Java language treats <tt>String</TT> as a special case, and we can actually use the literal above instead of <TT>new String("LASTNAME"</TT>), but the issue remains for the DPT custom <TT>FieldValue</TT> class.  The approach taken here is that all functions which in the C++ API take <TT>FieldValue</TT> have extra overloads in the Java API taking its different "subtypes".  This means that the calling code can use the same tidy syntax as the C++.  For example here's part of the Record interface:
+
+<PRE class=code>
+interface Record {
+    ...
+    int addField(String fName, String fVal);
+    int addField(String fName, double fVal);
+    int addField(String fName, byte[] fVal);          //see earlier point
+    int addField(String fName, FieldValue fVal);
+    ...
+}
+</PRE>
+
+<!****************************************>
+<A NAME = JavaLanguageMisc></A>
+<P><U>Other miscellaneous Java language issues</U>
+
+<UL>
+<LI>Java does not support operator overloading.  This is not something very widely used by the DPT C++ API but there are cases in the sample code throughout this document, for example combining find specifications using operators like <TT>|=</TT> which will not work (see also below). 
+<LI>The C++ API often relies on C++ <TT>enum</TT> items having specific numeric values.  This is something which cannot be enforced in Java, so all parameters which are <TT>enum</TT>s in the C++ API take <TT>int</TT>s, and all the named constants are members of the main control class <TT>DPTJAPI</TT>.
+<LI>Java interfaces may not have static functions, so in cases where the C++ uses static class functions, these are simply implemented as non-static functions.  In the few cases where you would not normally have such an object, the Java API provides a special singleton instance you can get a handle to purely for passing through static member function calls.  This is a common Java approach to this problem.
+<LI>Garbage collection.  This major language difference imposes different object usage patterns, which the DPT API supports by providing somewhat different constructors and member functions for some objects.  The most important cases are covered below.
+<LI>Global data and functions.  In Java everything must be a member of some class - there is no global scope.  Everything which exists in global scope, or the "nearly-global" C++ namespace <TT>"dpt"</TT> is in Java placed in the <TT>DPTJAPI</TT> class or more specific classes of the <TT>dptutil</TT> package.  Specific cases are covered below.
+<LI>Integer endianness.  Java integers are always big-endian, potentially causing subtle misunderstandings if you are used to relying on specific byte order of integers on a (little-endian) intel PC.  Generally this isn't an issue with the DPT API because the standard Java JNI mechanism takes care of all this for us, unless we work with "string" fields and try to cast them to numbers within client code (not recommended).
+</UL>
+
+<P>
+<P><HR WIDTH=50%>
+
+<A NAME = JAPI_How></A>
+<H3>Overview of how it works </H3>
+
+<P>The above preliminaries out of the way, let's get down to the business of starting a DBMS session.  The <TT>readme</TT> in the download contains a simple "Hello World!" example with instructions on how to get it working in Eclipse.  The following notes discuss what's going on there in more detail.
+
+<P>The syntax for starting and stopping sessions is probably the largest difference from the C++.  
+This complication comes from the fact that the Java classes have been designed with an eye towards future support for more than one "route" to the DBMS.  Specifically, 
+
+<UL>
+<LI>JNI mode
+<BR>In the first release this is the only mode present.  The java code dynamically links to functions in DPT's C API DLL (<A HREF = #Compilation>blue</A>), and if we ignore the extra layer of interface code this is how a C++ API application runs.  The first user thread starts a DPT host server in the same process, on the same machine, that the JVM is running on, and subsequent threads use that.
+
+<LI>Socket mode
+<BR>An alternative scheme, supported by some DBMSs but not currently the DPT Java API, is for the java code to connect via TCP/IP socket to a host system running in a different process, perhaps on a different machine, with database API calls being made via a command line interface.  The calling code could request the starting and stopping of a host if desired, or just connect to arbitrary hosts that were already running.  This would bring advantages in terms of e.g. portability of the client application.  No further mention will be made of this mode though (until one day it becomes available of course).  JNI mode is the only game in town for now.
+</UL>
+
+
+
+<A NAME = JAPI_StartStop></A>
+<P><U>Starting/stopping the DBMS host, and initiating user sessions</U>
+
+<BR>In the C++ API this was done via directly using the <TT>DatabaseServices</TT> class constructors.  In Java however there is an overall API-management class (the <TT>DPTJAPI</TT> class mentioned earlier) which amongst other things functions as a factory for <TT>DatabaseServices</TT>.  
+
+<P>At the same time the opportunity was taken to tidy up the function parameters for starting user sessions.  For example in the C++ API several of the parameters were only relevant for the first "user 0" session, and ignored otherwise.  This is clarified in the Java API by providing two separate function groups, namely <TT>startHost(...)</TT> and <TT>logon(...)</TT>, meaning that there are never irrelevant parameters as well as making it more obvious when a DBMS host might get started.  
+
+<P>For example, on the main thread:
+
+<PRE CLASS=code>
+import dptjapi.*;
+
+public class MainClass {
+    public static void main (String args[]) {
+
+        //Object returned is the "user 0" session				
+        DatabaseServices db = DPTJAPI.startHost();
+
+        //If we want a multi-user system
+        new Thread(new UserThread("User1")).start();
+        new Thread(new UserThread("User2")).start();
+
+        //Do some work or just wait for other users to log off
+        while (db.core().getUserNos("ALL").length > 1)
+            Thread.sleep(1000);
+				
+        DPTJAPI.logoff(db);
+    }
+}
+</PRE>
+
+
+<P>Secondary users started by Thread.start() above:
+
+<PRE CLASS=code>
+import dptjapi.*;
+
+public class UserThread implements Runnable {
+    String name;
+
+    UserThread(String name) {this.name = name;}
+
+    public void run() {
+        DatabaseServices db = DPTJAPI.logon(name);
+
+        /*
+        Do some work
+        */
+
+        DPTJAPI.logoff(db);
+    }
+}
+
+</PRE>
+
+
+<P>Note that an explicit "logoff" call is required in the Java API, in contrast to the C++ API where we allowed <TT>DatabaseServices</TT> objects to be destroyed as they went out of scope.  The difference is just because we really don't want to leave ourselves at the mercy of the JVM garbage collector for something as fundamental as the starting and stopping of sessions.  DPT maintains an internal reference to all <TT>DatabaseServices</TT> objects created and does not delete them till <TT>logoff()</TT> is called.  The <TT>logoff(...)</TT> triggers the calls to the underlying C++ <TT>DatabaseServices</TT> destructors, and after that the Java object becomes invalid as far as DPT is concerned, (although the reference still exists as far as the JVM is concerned).
+
+<P>Finally remember that as with the underlying C++ API, the Java API requires that (most) operations via a <TT>DatabaseServices</TT> object happen on the same thread on which the object was created.  This includes logoff, so in client applications which run several users within the same GUI (e.g. the sample file wizard), "closedown" buttons etc. should ensure that they indirectly <I>request</I> threads to terminate their sessions and then wait for them to do so, rather than trying to delete the <TT>DatabaseServices</TT> objects directly.
+
+
+<P><U>Supplying custom <TT>LineOutput</TT> destinations</U>
+<BR>(If required).
+
+<BR>The default <TT>DatabaseServices</TT> constructors send user messages to files local to the host, and in the case of the user 0 constructor, the audit trail also to a file and nowhere else.  However the option is there in all DPT API layers to supply custom output destinations for the user output streams, and a secondary "echo" destination for the audit trail.  For example the main <TT>dpthost.exe</TT> console display window is an echo destination for the audit trail, and the sample Java "file wizard" application uses the technique to display all users' output as well as the audit trail.  Each such output destination must be a DPT <TT>LineOutput</TT> object, handle, descendant object etc. depending on which API layer it is, with the (customizable) Java version residing in package <TT>dptutil</TT>.  A slight operational restriction when supplying an audit trail echo destination with the user 0 constructor is that it should then be ensured that user 0 is then the last one off (which would not normally be necessary).  The reason for this is that the user 0 thread's JNI environment is used as the C API callback interface for this output.  If user 0's stuff gets garbage-collected, the JNI callbacks when writing audit trail lines fail.
+
+
+
+
+<!****************************************>
+<!****************************************>
+<P>
+<P><HR WIDTH=50%>
+<H3><A NAME = JAPI_Parms> Function parameter object issues </H3>
+
+This section covers differences in syntax when using some of the custom DPT API object types.  Simple int, String etc. parameters pose no syntax problems.
+
+<P><U>Wrapped parameter objects</U>
+<LI><TT>FindRecordsSpecification</TT>
+<LI><TT>FindValuesSpecification</TT>
+<LI><TT>SortRecordsSpecification</TT>
+
+<P>These ones in C++ would all typically be used in the form of tidy and efficient stack objects.  In Java they must be explicitly created with new(), but more importantly we must consider their destruction point.  Leaving this to the JVM garbage collector is not perfect since the underlying C++ objects are owned by DPT user sessions and should be destroyed before their owning sessions.  Therefore these objects provide an explicit explicit <TT>destroy()</TT> call which it is recommended to call after using the object.  The class <TT>finalize()</TT> functions do make such a <TT>destroy()</TT> call, so it's possible, but in no way guaranteed, things will be OK if you don't do it.
+
+<PRE class=code>
+void find(DatabaseFileContext context) 
+{
+    * Recommended
+    FindRecordsSpecification spec = new FindRecordsSpecification("ID=1");
+    FoundSet allRecords1 = context.FindRecords(spec);
+    spec.destroy();
+
+    * Neater but with risk of sequence problems
+    FoundSet allRecords2 = context.FindRecords(new FindRecordsSpecification("ID=1"));
+}
+</PRE>
+
+
+<P><U>Java-local objects</U>
+<LI><TT>FieldValue</TT>
+<LI><TT>StoreRecordTemplate</TT>
+<LI><TT>FieldAttributes</TT>
+<LI><TT>MsgCtlOptions</TT>
+
+<P>These are different from the above because they are implemented fully as Java objects managing their own data, rather than wrappers managing underlying C++ objects.  <TT>FieldValue</TT> is implemented like this partly because it is so heavily used and benefits from avoiding extra JNI trips, and partly because it needs special Java string-handling abilities <A HREF = #JavaStringFormat>as covered earlier</A>.  In addition to the C++ object's string and numeric variants, the Java version has an internal <TT>byte[]</TT> variant as well.
+
+<P><TT>StoreRecordTemplate</TT> is implemented locally like this partly because it's a very simple data structure (just two arrays), and partly because in Version 3.0 with Fast Load now available, the performance benefit of implementing a special optimized "one-trip" record store function is less essential.  <TT>DatabaseFileContext.storeRecord(...)</TT> via the Java API makes separate DBMS calls to add each field one by one.  Note therefore that some statistics like MSTRADD and MSTRDEL will increase if there are errors during STORE, when they would not normally do so.
+
+<P><TT>FieldAttributes</TT> and <TT>MsgCtlOptions</TT> are trivial data structures.
+
+
+
+<P><U>Combination operators</U>
+<LI><TT>FindRecordsSpecification</TT>
+
+<P>As mentioned earlier, Java does not support overloading of operators such as <TT>&=</TT>.  Therefore combining find conditions by combining these objects is another thing which can't look quite the same as in C++.  So we can't say things like this.
+
+<PRE class=code>
+spec4 = spec1 & spec2 & spec3
+</PRE>
+
+The solution is either to use the explicit <TT>splice(...)</TT> function which remains from C++, or use one of a set of special Java functions which can be stacked.  The above example becomes the less elegant:
+
+<PRE class=code>
+spec4 = spec1.BoolAnd(spec2).boolAnd(spec3).  
+</PRE>
+
+Having said that, now the text-query feature is available, equally likely user code might be something like:
+
+<PRE class=code>
+spec4 = new FindRecordsSpecification( "(" + specText1 + ") AND (" + specText2 + ") AND (" + specText3 + ")" );
+</PRE>
+
+
+
+
+<P><U>Others</U>:
+
+<BR>Some more specific C++ data types like <TT>RoundedDouble</TT> are not used at all in the Java layer.  The internal API creates these on the fly as required.
+
+
+
+<!****************************************>
+<!****************************************>
+<P>
+<P><HR WIDTH=50%>
+<A NAME = JAPI_MiscUsage></A>
+<H3>Usage notes </H3>
+
+<P><U>Exceptions</U>
+<BR>DPT exceptions are thrown in all the same places, as Java class <TT>dptjapi.DPTException</TT>, instead of <TT>dpt::Exception</TT> in C++.  The Java class is derived from RuntimeException rather than plain Exception, to give the calling code the option not to use "throws" declarations if it wants to follow that convention.
+
+<P><U>MRO destruction</U>
+<BR>As with the C++ API it is technically safe, but not good style or use of memory, to leave MROs like found sets "hanging" and have them cleaned up later when their owning object is cleaned up (e.g. when the file owning a found set is closed).  The underlying MROs *DO NOT* get garbage collected, so there is no excuse to try and fall into the Java-y mindset of relying on the garbage collector and just letting e.g. <TT>FoundSet</TT> references go out of scope.  (It would not be possible for the DPT API to implement such an auto-destruction scheme anyway, because it would require a strict heirarchy in the order in which things were destroyed: cursors...sets...contexts... etc., and current garbage collectors can not offer such guarantees.)
+
+<P><U>"Sentry" objects</U>
+<BR>The C++ API provided a number of utility helper classes of the general type "sentry", making use of the C++ RAII convention.  Since RAII is not possible in Java the equivalent functionality is generally provided by <TT>"get()"</TT> and <TT>release()"</TT> style member functions in appropriate places.
+
+<P><U>LineOutput objects</U>
+<BR>These DPT utility <TT>LineOutput</TT> objects terminate print lines at hex zero.  The generalized underlying mechanism to allow strings containing hex zero exists, but is not currently used, for efficiency reasons in a class that is heavily used if it is used at all.  In JNI it is far more efficient to handle strings as character arrays if you're happy with the limitation, because you don't then need to make JVM calls to access Java String object information.
+
+<P><U>LineInput objects</U>
+
+<BR>These return null string to indicate EOF instead of a C++ false bool.
+
+<P><U>Volume Updates</U>
+<BR>As previously mentioned, the Java API record-store mechanism is not implemented with optimum efficiency in mind.  In a similar vein, the deferred-update APIs are not provided at all.  This omission is to encourage use of the much-superior fast load route for volume updates.
+
+
+<P>
+<P><HR WIDTH=50%>
+<A NAME = JAPI_Misc></A>
+<H3>Miscellaneous final notes and tips</H3>
+
+<P><U>API appearance</U>
+<LI>All member functions have the same names as the C++ equivalents, except with an initial lower case letter.  For example <TT>Record.addField(String, FieldValue)</TT> instead of <TT>Record::AddField(const std::string&, const FieldValue&)</TT>.
+
+<LI>Comments on the main interfaces are pretty much the same as in the C++ header files, and in the current release that's all there is.  In other words there are no JavaDoc-style comments that would pop up as you type in an IDE like Eclipse.  This is something for a later release if there is demand for it.
+
+<LI>The Java classes are named to match the lowest-level C++ API classes (<A HREF = #Compilation>green in the diagram</A>).  In other words they don't have the "API" name prefix of the orange layer classes which are used throughout most of this document.  We have finally come full-circle with names:
+<PRE>
+C++ base
+Record::AddField("Pi", 3.14)
+
+C++ wrapped
+APIRecord::AddField("e", 2.72)
+
+C via DLL
+RecordAddFieldN("R", 7.23)
+
+Java
+Record.addField("i", Double.NaN)
+
+</PRE>
+
+
+
+<P><U>API Completeness</U>
+<LI>The C++ API contains quite a lot of functions which are mainly there for DPT host facilities like the UL compiler and command processor to use, and some of these have been left out of the Java API just to keep things a bit more tidy.  If anybody wants things them they can easily be added in.
+
+
+<P><HR WIDTH=50%>
+
+</HTML>
+

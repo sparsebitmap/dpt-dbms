@@ -1,0 +1,1914 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top">
+<TITLE>DPT: IDE User Guide</TITLE>
+</A>
+
+<H1 ALIGN = "Center">Database Programmer's Toolkit</H1>
+<H1 ALIGN = "Center">IDE User Guide</H1>
+
+<P><HR><BR>
+
+<!****************************************************************************>
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.
+
+<P><HR>
+<H2>About This Document</H2>
+
+<P>It is assumed you've already used DPT client (otherwise known as the "Integrated Development Environment", or "IDE") once or twice, and/or gone through the <A HREF = "demoguide.html">demo</A>, and are now looking for more detailed information. 
+
+<P>All the client facilities are covered below, and in addition there are some notes on a few other programmer topics, such as the control of printed output, and the use of special characters in code.
+
+
+<H2>Contents</H2>
+
+<UL>
+	<LI><A HREF= #WhatIs           > About DPT Client </A>
+	<LI>Client Application Facilities
+	<UL>
+		<LI><A HREF= #Line_Mode        > The Command Line         </A>
+		<LI><A HREF= #Fullscreen_Mode  > Full Screen View         </A>
+		<LI><A HREF= #Editing          > Editing and Running Code </A>
+		<LI><A HREF= #Smart_Edit       > "Smart Edit"             </A>
+		<LI><A HREF= #Debugger         > Debugging                </A>
+		<LI><A HREF= #System_Navigator > The System Navigator     </A>
+	</UL>
+
+	<LI>Appendixes
+	<UL>
+		<LI><A HREF= #Overall_Options > Configuration Options on the Client</A>
+		<LI><A HREF= #Key_Mappings    > Client Key Mappings and Input Controls</A>
+		<LI><A HREF= #Display_Issues   > Windows Display Issues (colour, font etc.)</A>
+		<LI><A HREF= #Printed_Output   > Notes on Printing and Control of Printed Output</A>
+		<LI><A HREF= #Special_Characters > Handling of "Special Characters"</A>
+		<LI><A HREF= #Editor_More   > More About Client/Host Synchronization of Procedures</A>
+		<LI><A HREF= #Debugger_More   > More About the Debugger and the SPY Command</A>
+		<LI><A HREF= #More_Connection   > More About Managing the Host Connection</A>
+		<LI><A HREF = #BATCH2> Configuring the Client as a BATCH2 Robot</A>
+	</UL>
+</UL>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = WhatIs> <H2> About DPT Client</H2> </A>
+
+<UL>
+	<LI><A HREF= #Overview        > Overview </A>
+	<LI><A HREF= #Invoking        > Invocation      </A>
+	<LI><A HREF= #Statusbar        > Status bar information      </A>
+	<LI><A HREF= #Connecting       > Connecting to the host       </A>
+</UL>
+
+<A NAME = Overview>
+<H3>Overview</H3>
+</A>
+
+dptclient.exe is a Win32 program - that's all Windows versions back to W95.  Its main features are that it is:
+<UL>
+	<LI>A specially-built front end for the DPT host application
+	<LI>Completely separate from the host application, communicating via TCP/IP sockets
+	<LI>The only way to establish an <A HREF = "sysconfig.html#Setting_up_Thread_Types">IODev 7</A> thread on DPT
+	<LI>Several tools in one (as described in this document)
+	<LI>Usable stand-alone even without a host connection
+	<LI>Configurable to connect and perform work automatically 
+</UL>
+It is not:
+<UL>
+	<LI>A 3270 emulator
+	<LI>Intended to be used as a general-purpose telnet line-mode client
+</UL>
+
+<P><U>Window layout</U>
+<BR>The client is a fairly standard Windows dialog, with menus at the top and a status bar at the bottom.  The contents of the menus and status bar vary depending on what's currently happening, as per the following chapters.
+
+<P>The area between the menus and the status bar is totally taken up with a primary display pane and optionally a secondary pane (which is shown to the left of the primary pane).  The secondary pane may be shown or hidden, and the horizontal position of the border between the two panes can be moved if desired, but that's the limit of the layout options for the time being.  Put another way, the user is not offered the option to clutter up the window with lots of different views tiled in imaginitive ways.  You can however have a number of windows logically open, and you usually have the option of switching between them using an appropriate key (default = Ctrl+Tab).
+
+<P>In addition to the primary and secondary display panes, there may occasionally be "floating" panes.  These are discussed as they come up in the appropriate sections below.
+
+
+<A NAME = Invoking>
+<H3>Invocation </H3>
+</A>
+
+The program takes some optional command line parameters, mostly concerned with <A HREF = #BATCH2>running in BATCH2 mode</A>.  It also sets a return code, and again this would usually only be relevant in that mode.
+
+
+<A NAME = Multiple> 
+<P><U>Invoking multiple parallel clients</U>
+</A>
+
+<BR>If you want to do two or more things at the same time which are more or less unrelated, or test multi-user M204 User Language behaviour such as record locking, several instances of the client can be started at the same time.  This is completely OK, although it raises the question of where the application stores the various files it creates (for example saved option values, workspace layout and assorted log files, as described in later sections).  The usual convention in situations like this is to use the Windows "current working directory" - i.e. where dptclient.exe was invoked from - i.e. what you put in the "start in" box of a Windows shortcut.  Several instances of the application can be started so long as they have different working directories.  Otherwise you'll get a message like "Could not open workspace - the file is in use".
+
+<P>Quickly switching between several copies of the client can become disorienting, so as a visual aid the icon and window border can be changed from their default grey to <A HREF = #General_Options>another colour</A>.
+
+<A NAME = Statusbar>
+<H3>Status bar information</H3>
+</A>
+The status bar might be thought of as fulfilling a similar function to the status line on a 3270, although it's somewhat different in that the range of information shown varies depending on what you're currently doing.
+
+<P>Probably the most important piece of information is visible at all times, and that is the "host status" icon.  This shows whether there's a host connection currently active and, equally important, what "mode" the host connection is in.  For example if the host command line is available this shows as an icon looking something like [>_] and the widest range of client functionality is active.  On the other hand if the host is expecting a full screen response or is "thinking", these show differently, and less client functionality is active.  No top icon designers were available for this project, so you may need to hover the mouse over the icon to get a verbal description of what each squiggle means.
+
+<P>To the right of the host status icon there is usually a range of information relevant to the current view, and you should have no difficulty working out what it means.  In some cases, as described later, the information shown can be changed with an option.
+
+<A NAME = Connecting>
+<H3> Connecting to the host </H3>
+</A>
+
+The DPT client can be used as a text file editor, without connecting to a host - this is referred to  as offline mode.   However it is only possible to compile and run code when connected to the DPT  host, so that's probably what you'll be doing most of the time.  To connect, use the "connection" menu or click on the connection status icon at the left of the status bar.  
+
+<P>You can specify any IP address and the client will attempt to connect to a host running on that machine.  The port number of the host machine is the value specified on the host for the SYSPORT parameter.  If you only ever connect to to the same host (i.e. most likely on your "local machine", default address 127.0.0.1) you can set an option to <A HREF = #General_Options>make connection automatic on start-up</A>, or even just not bother disconnecting before you close the client down, which has much the same effect.
+
+<P>The host associates each user with a name for easier identification in the audit trail, MONITOR displays etc. Depending on the host system options active, the user name may also be authenticated, and a password required. By default, no password is required, and any user name can be given. Or even no user name at all.
+
+<P>The appendix at the end of this document contains some <A HREF = #More_Connection>more information about managing the host connection</A>, for example the use of attention keys.
+
+
+<P><A HREF= #Top>Top</A>
+
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = Line_Mode> 
+<H2> The Command Line</H2> 
+</A>
+
+<P>This is always the view you're presented with when starting the client application.  Once you're connected to a host it's where you enter M204 commands and receive output from the host.  
+
+<P>The command line view also functions as a kind of control console for the client application.  For example there will usually be some start-up messages shown initially, and you can also issue various commands to perform operations locally to the client (currently undocumented).
+
+<UL>
+	<LI> <A HREF = #LAT_Entering> Entering commands</A>
+	<LI> <A HREF = #LAT_Paging> Page handling </A>
+	<LI> <A HREF = #LAT_Options> ... Appendix: Command line options </A>
+</UL>
+
+
+<A NAME = LAT_Entering> 
+<H3> Entering commands </H3>
+</A>
+
+DPT has various facilities to save you having to type the same or similar commands over and over.  Most familiarly (similar to Model 204's RETRVKEY) is the command history, which can be recalled quickly using combinations of <A HREF = #KM_Lat>ALT/SHIFT and up/down arrow</A>.
+
+<P>In addition to this the <A HREF = #System_Navigator>navigator</A> issues lots of different commands in response to mouse clicks, and <A HREF = #Smart_Edit>smart edit</A>, can also be invoked in various ways and is usually the quickest way to issue EDIT commands.
+
+
+
+<A NAME = LAT_Paging> 
+<H3> Page handling </H3>
+</A>
+
+The most noticeable difference from the M204 command line environment is that output is shown in a scrolling window, which means you can scroll using the PC's PgUp/PgDn/Home etc. keys, and also with a more mainframe-style F7/8/10/11 if you prefer.  M204-style backpaging is not supported (with e.g. "P -1" and the NBKPG parameter).  
+
+<P>Unfortunately we can't do away with page breaks altogether, since they control the output of User Language headers and trailers, and what's more they provide the user with a good opportunity to cancel large reports before they finish.   As on M204, the host prompts at the end of a page, although given the resizable nature of the client window, what constitutes a "page" is not always relevant at the client end.  If it sounds confusing don't worry - in general the client's command line view is set up to make the experience similar to Model 204, but nicer!  See the appendix for <A HREF = #Print_OUTLPP>some more detailed notes on page control</A>.
+
+<P><A HREF= #Top>Top</A>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Fullscreen_Mode> 
+<H2> Full Screen View</H2> 
+</A>
+
+<UL>
+	<LI> <A HREF= #FS_General     > General notes</A>
+	<LI> <A HREF= #FS_Attributes  > 3270 display attributes</A>
+	<LI> <A HREF= #FS_Paging      > Page handling </A>
+	<UL>
+	<LI> <A HREF= #FS_Panelsize   > Panel size</A>
+	</UL>
+	<LI> <A HREF = #Fullscreen_Options> ... Appendix: Fullscreen options </A>
+</UL>
+
+<A NAME = FS_General>
+<H3>General notes</H3>
+</A>
+
+<P>The full screen view is automatically displayed whenever a User Language request on the host executes a READ/REREAD/PRINT SCREEN statement.  But remember, DPT Client is <I>not</I> a 3270 emulator.  It renders the User Language SCREEN in more or less recognizable form, and takes various steps to make the experience familiar to a 3270 user, but it simulates rather than emulates.  In other words it does not try to be exactly the same in every respect (indeed it is deliberately different in one or two ways), plus there is not the bewildering range of whistles and bells present on your typical 3270 emulator.
+
+<P>The fullscreen view is the part of the application that makes most use of colour, so the <A HREF = #Display_Colours>section on display colours in DPT Client</A> is particularly relevant.  See also the <A HREF = #Fullscreen_Options>fullscreen options section</A>.  
+
+<H3>3270 keyboard operations</H3>
+<P>The section on <A HREF = #KM_FULLSCREEN>input controls in the fullscreen view</A> contains information about how the various familiar 3270 controls are implemented.
+
+
+<A NAME = FS_Attributes>
+<H3>3270 display attributes</H3>
+</A>
+
+All colour and highlighting attributes are supported, although note that if you turn off the black background, any items which would normally be white display as black.  This includes both explicit WHITE items and also e.g. BRIGHT PROTECTED items.
+
+<P>The switch to 3270 extended colour mode (green and white) happens under pretty much the same circumstances as on M204.
+
+<A NAME = FS_Paging>
+<H3>Page handling</H3>
+</A>
+
+Interaction between the command line and the full screen view poses some interesting questions.  Consider that when a fullscreen view is visible on a 3270, the command line cannot be, so displaying a fullscreen view necessarily implies a NEW PAGE.  This convention is followed on DPT, so that the command line view behaves similarly during processing which involves a mixture of line-mode and fullscreen user I/O.
+
+<A NAME = FS_Flicker>
+<P>In between successive screens in a fullscreen application you may see some "flicker" as the command line is temporarily reactivated for a fraction of a second.  It is most noticeable on slow machines, but it also depends how sensitive you are to this kind of thing.  Matters can be significantly improved by, with most effective first: (1) using the same background colour (black or white in the look-and feel options) for all view types; (2) Hiding the navigator or debug watch pane (Alt+2); (3) Hiding all horizontal and vertical scroll bars (look-and-feel options); (4) Dragging the window border inwards to reduce the window size so there is no empty space around the fullscreen view, making Windows repaint activity faster; (5) Issuing a host "<TT>MSGCTL DPT.4119 NOTERM</TT>" command; (6) Turning off the client control messages option (Tools/Options/Command line).
+
+<P><U>Multi-panel screens</U>
+<BR>Multi-panel screens are handled differently to how they are on 3270.  On DPT all panels of the screen are sent at once and the user moves around them using the page up/down keys or the tab key.   This is basically the same concept as when the editor downloads a complete procedure for editing, and is a more natural way of working on the PC.  The title on a multi-panel screen is only displayed on the very top line, with a separator line taking its place after that.  The value of %SCREEN:ROW returned to User Language after a multi-panel screen IO is as described in the M204 manuals.
+
+<A NAME = FS_Panelsize>
+<P><U>Panel size (lines, columns)</U>
+</A>
+
+<BR>As of version 2.0 the <A HREF = "m204xref.html#PARM_MODEL">MODEL parameter</A> is supported, which allows the number of lines on a "page" to be altered.  You might often use this in conjunction with a font change.
+
+<P><A HREF= #Top>Top</A>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Editing> 
+<H2> Editing and Running Code</H2> 
+</A>
+
+<UL>
+	<LI><A HREF= #Editor_Intro     > Introduction</A>
+	<LI><A HREF= #Editor_Local     > More about offline and online editing modes </A>
+	<LI><A HREF= #Editor_Multiple    > Editing multiple procedures at the same time</A>
+	<LI><A HREF= #Editor_Invoking  > Ways to invoke the editor </A>
+	<LI><A HREF= #Editor_Saving  > Saving and running code </A>
+	<LI><A HREF= #Editor_Integrity > Procedure integrity, synchronization, timestamps etc.</A>
+	<LI> <A HREF = #Editor_Options> ... Appendix: Editor options </A>
+</UL>
+
+<A NAME = Editor_Intro>
+<H3>Introduction </H3>
+</A>
+
+The client application incorporates an editor similar to that found in GUI development environments like VB etc.  You can use this to open and edit any text file on your PC, much as you would with notepad, wordpad, or any other text editor.  Most often however the editor is used as a front end to the DPT host system, and in this configuration the files ("procedures") you edit are served from the host, which controls issues like sharing between different connected users.  Editing files local to the client is known as offline mode, and editing files served by the host is, naturally, online mode.
+
+<P><U>Editing conventions</U>
+<BR>PC instead of mainframe conventions apply for most keys and operations.  For example 'Tab' inserts a spacer rather than moving to the next line, and 'Return' inserts a line-end character sequence, which is CRLF on Windows.  Use the arrow and paging keys, and scroll bar(s) to move around code.  Using 'Ctrl', 'Shift' and/or 'Alt' with these keys will often make something different happen.  The <A HREF = #KM_EDITOR>Appendix lists the key mappings</A> and has some extra discussion in some more complex cases such as 'Tab' and 'Home'.
+
+<P>PC editors don't typically uppercase everything you type, although code written in all uppercase is the usual M204 convention.  The CASE parameter (i.e. as set by the *UPPER and *LOWER commands) behaves the same on the DPT host as it does on Model 204, but the editor itself has various other <A HREF = #Case_Handling>options governing case translation</A>, with the default being to uppercase lines when you press Return, similar to the M204 editor.
+
+
+<!****************************************************************************>
+<A NAME = Editor_Local>
+<H3>More about offline and online editing modes</H3>
+</A>
+
+<P><U>Local file editing</U>
+<BR>The client application functions fine as a simple text file editing tool, even with no host connection.  When you work like this the files edited are known to the client by their local OS file names, and it reads and writes them directly to and from there. 
+
+<P>Operations relating to local file editing, such as New, Open, and Save, can be seen on the File menu as normal.  This could be called "Notepad compatibility mode".
+
+<P><U>Editing files via the host ("procedures")</U>
+<BR>As discussed in the DBA guide, <A HREF = "dbaguide.html#Procedures">procedures on DPT</A> are simply text files which live in a directory local to the DPT host application - that is, potentially a remote machine but perhaps often not.  When you're connected to the host, issuing the E[DIT] command causes the entire text of the specified procedure to be downloaded into the client for editing.  Changes are uploaded back to the host when you SAVE the procedure.  Notice that this is different to the situation on the M204 3270 editor which sends you a page at a time, requiring constant communication with the host, even just to scroll up and down.  This is a good difference - it's easy to forget what a great innovation scroll bars were now we've been using them for a few years.
+
+<P>When a procedure is opened for edit, the host enqueues the procedure, and the client *also* creates a local file copy.  This local file is given a auto-generated name, and is used primarily by auto-save.  
+
+<P>The currently-displayed procedure's name is added to the title bar, where you will see it additionally suffixed with an asterisk if the proc has been changed since it was last saved back to the host.  There will be two asterisks if the proc has been changed since it was last local-saved/auto-saved.
+
+
+<P><U>The procedure menu</U>
+<BR>The operations for working with host procedures are located in the Procedure menu on the client, to distinguish them from the operations on local files, mentioned above.  The words "local" and "host" are used to distinguish between the two sets of operations - for example "local save" is different to "host save".  The host operations in the Procedure menu largely correspond to the the Model 204 editor commands such as SAVE, QUIT (stop editing, no save), END (SAVE+QUIT), GO (END+INCLUDE) etc.
+
+<P>When working in online mode, the local commands are still available, so that you can for example do a local save, or manually create a local copy of a procedure if you wish.  Generally speaking however this is not necessary.  Perhaps the only ones worth considering might be Ctrl+Shift+S (local save all, to pre-empt autosave) and Ctrl+P (get a local-machine hardcopy).  
+
+<P>Host save always implies local save too, unless the edit is being closed (e.g. END or hard GO), in which case the local copy is deleted.
+
+<P>The local save feature makes it possible to do a lot of work on the same procedure or set of procedures without ever connecting to a host, if you are working in a situation where your usual host is a remote machine.  You can't run and debug the code when you're not connected though, and if that is the way you work DPT might not be as good a choice as "Xtend" or "UL Notepad" or something with more specialized editing facilities, but no compiler. 
+
+
+<!****************************************************************************>
+<A NAME = #Editor_Multiple>
+<H3>Editing multiple procedures at the same time</H3>
+</A>
+
+Looks aside, the main difference to the editing experience on DPT is the fact that you can edit several procedures at the same time, as well as still having the command line available (and therefore navigator functions, etc. too).  Once you get the hang of it this feature means you'll usually do a lot less quitting and re-entering the editor to do things like checking field attributes and cribbing code from other procedures.
+
+<P>The implication of this is that an EDIT operation on the host is (<A HREF = #SYNCHEDIT>by default</A>) asynchronous, in other words once the host has served the procedure to the client the command line becomes available again.
+
+<P>If you invoke the editor for a procedure you already have open, a second editor window is *not* opened on the same proc.  The view simply switches to that procedure.  
+
+<P>The list of currently-open procedures is shown in the Window menu, and can be cycled through using Ctrl+Tab.  The cycle moves backwards through the most recently-edited procedures, with the command line window featuring in the cycle too.  Whenever you stop on a window and do some editing, that window becomes the new top of the cycle.  Windows passed through but not stopped on retain their current place in the cycle.  In other words the procedures most actively being edited "bubble" to the top of the cycle and are always the first to appear.
+
+
+<!****************************************************************************>
+<A NAME = Editor_Invoking>
+<H3> Ways to invoke the editor</H3>
+</A>
+
+<P>File/Open and File/New open a local text file for editing.
+
+<P>Procedure/Edit and Procedure/New correspondingly open a host procedure, as long as you have a host connection.  The former is the equivalent of typing an EDIT command at the host command line, as you would do on Model 204.  Indeed that is what happens under the covers if you choose this menu option - the client simply sends a "hidden" EDIT command for you.
+
+<P>Obviously to type in an EDIT command would require that you Ctrl+Tab round to the command line view, so it is more common to use one of the various shortcuts.  For example:
+
+<UL>
+	<LI>Double click or right click on a procedure in the <A HREF = #System_Navigator>navigator</A>
+	<LI>Use the <A HREF = #Smart_Edit>smart edit feature</A> in many situations
+</UL>
+
+<!****************************************************************************>
+<A NAME = Editor_Saving>
+<H3> Saving and running code</H3>
+</A>
+<P><U>Save/close/include variations</U>
+<BR>In addition to the M204-style editor operations there are some new variations on the same theme. SAVE ALL will save all changed procedures that you have open - useful if you make changes to several component procedures of the same application.  There is a hotkey to [SAVE + INCLUDE], which works similarly to GO, but keeps all the procedures open (i.e. saves you typing EDIT again later).  [SAVE ALL + INCLUDE] follows on from those and would usually be the most commonly-used, which is why it is allocated to the conventional "run" key, F5.
+
+<P>The inner [X] box at the top right hand corner invokes either "local close" or "host quit" depending on whether the currently-shown procedure is local or from the host.
+
+<P>All operations with an INCLUDE component assume you want to include the currently-displayed procedure.
+
+<P><U>Editor use of the host command line</U>
+<BR>As with many of the other client client features covered in this document, the editor is using the command line "under the covers" to save, include etc. to the host.  This means that these commands are only available when the host is expecting a command.  In other words if a 3270-full-screen is displayed, or the debugger is active, you can not save procedures (although you can still carry on editing the ones you've got open).  More subtly, if the command line view is active, but the host is expecting some other kind of input, like a £READ response, or a line of an ad-hoc UL request, you can not save then either.
+
+<A NAME = SAVEAS>
+<P><U>Differences between "Save Copy" and "Save As"</U>
+</A>
+
+<BR>The Model 204 editor's "SAVE xxx" command works differently to the way "save as xxx" does in most PC applications.  For example if we are editing procedure A on M204 and issue "SAVE B", it creates a copy of A, calling it B, but leaves us still editing A.  "Save As B" in, say, Notepad creates B, then discards any changes made to A since the last save and attaches the editor to B - that is to say we are left editing B.  
+
+<P>DPT, sitting between the two worlds, provides both options in an attempt to satisfy both preferences.  The "save copy" option works like the M204 editor save.  The "save as" option works like Notepad.
+
+
+<!****************************************************************************>
+<A NAME = Editor_Integrity>
+<H3>Procedure integrity, synchronization, timestamps etc.</H3>
+</A>
+
+<P>The client and host do their best to ensure that procedures are enqueued at reasonable times, that older copies of procedures don't overwrite newer copies, etc.  These issues are <A HREF = #Editor_More>covered in more detail in the appendix</A> for those interested.
+
+<P><A HREF= #Top>Top</A>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Smart_Edit> 
+<H2> "Smart Edit"</H2> 
+</A>
+
+Looked at simply, the smart edit feature is just a shortcut way of invoking the editor on procedures.  However it is a key component of the DPT programming experience and can cut out a great deal of code and directory searching.
+<UL>
+	<LI><A HREF= #Smart_Messages > Smart edit on messages and other output</A>
+	<LI><A HREF= #ED_SMART_INCLUDE > Smart edit via INCLUDE in the editor </A>
+	<LI><A HREF= #Smart_Context>A note on context specifications</A>
+	<LI><A HREF= #Smart_Generalized>Generalized use</A>
+</UL>
+
+
+<A NAME = Smart_Messages> 
+<H3> Smart edit on messages and other output </H3> 
+</A>
+
+<P>Various pieces of standard DPT output contain procedure names, and these can often be double clicked (or F2) to open the selected procedure in the editor.  Common examples are error messages and the output from DISPLAY LIST and DISPLAY SUBSYS.
+
+<P>Let's look at error messages in particular to see exactly how it works.  When messages are issued during User Language compilation or command processing inside a procedure, they are reported as follows (assuming appropriate MSGCTL settings):
+
+<PRE CLASS=code>
+    *** 1 DPT.1234 Something worth reporting happened
+    :DEMOFILE\MYPROCEDURE (10) text of line
+</PRE>
+
+Cursoring up to either of the above two lines and pressing F2, or double clicking, will open the editor on MYPROCEDURE and go to line 10.  More usually you would save on hand movements by just pressing F2 immediately after a failed compilation.  In that common case it scans upwards and locates the most recent counting error number 1 (*** 1).
+
+<P>However you invoke smart edit it works much as the same as if you had typed an EDIT command manually, and is indeed implemented under the covers using an EDIT command.  But smart edit is slightly different to a manual command in that to streamline the feature the appropriate procedure directory is opened if required (a hidden OPENC command is issued).  As usual, if the procedure is already being edited, the client just switches focus to it.
+
+<P>Error messages from requests entered in ad-hoc mode are reported as coming from temporary procedure zero, since the ad-hoc request will become proc 0 when it's finished.  However, you can't select them and/or edit proc zero until you enter the END statement, and thus return your session to command mode.  This is for the same reason that you can't save procedures, as mentioned earlier - all these operations require the command line to work.  If you get an error message because of a command issued at the command line, the message contains no procedure details, and is therefore not "smart".  However, in this case you can just recall the previous command, amend it, and press enter again.
+
+<P>If the procedure has been edited between the point where the message was issued and when you F2/doubleclick on it, the erroneous line may have moved, in which case the system will try and locate the line a small distance either side of where it was last seen, but this may fail (e.g. the line has been deleted).  This behaviour is likely to come into play if you try to fix a lot of errors in the same request in one go, rather than fixing one or two, then GO-ing again to review the new error situation.
+
+
+<A NAME = ED_SMART_INCLUDE>
+<H3>Smart edit via "INCLUDE" in the editor</H3>
+</A>
+
+<P>Position the cursor on a line in the current procedure containing an INCLUDE directive (or abbreviation "I") and press F2, or double click the line.  The way the system handles any context specification before the INCLUDE is discussed below.
+
+<P><A NAME = Smart_Context>
+<H3>Context specifications used in smart edit</H3>
+</A>
+
+The system is presented with a slight problem when there is no host connection, since many contexts only have meaning on the host.  Groups are an obvious case, but the same issue applies when no context at all is given (the current default file would be used).  The convention is that if there is a host connection, <I>and</I> the command line is available at the moment of pressing F2, the "hidden" EDIT and OPENC commands described earlier are issued using a context exactly as it's specified on the line.  This gives the host a chance to select the correct procedure (e.g. using TEMP groups in preference to PERM groups and taking the first copy of a procedure in a group concatenation)  In these cases if the specified context could not be opened for any reason, the smart edit operation simply fails.
+
+<P>On the other hand if there is no host command line available, such as when the user is editing without bothering to connect to a host, or during a debug session, smart edits can still be performed in most situations.  If the context is specified as "FILE somefile", there is clearly no ambiguity and the proc can successfully be located if it's open, since procedures are known by their "true" directory on the client.  If the context is expressed as just "somefile" it is assumed that it's probably a single file rather than a group and the proc is located in the same way - this obviously has scope for misunderstandings if you have files with the same names as groups.  If no context is specified at all, any procedure with a name that matches the text of the line, regardless of context, is considered a valid match, and the most-recently-edited such procedure is selected.  
+
+<P>A slight variation on the above is that  ":somefile" (note the preceding colon) means exactly the same as "FILE somefile".  This feature is there purely and simply to make error messages shorter by not having to precede all the contexts with "FILE", since error messages are always issued in "true" directory context.  
+
+<P>Most of this also applies to the editor/include behaviour mentioned above.  In that case everything between "IN" and "I" or "INCLUDE" is taken as the context specification, and everything between "I" or "INCLUDE" and the end of the line or the first comma is the procedure name.  There however, since the intention is to process valid INCLUDE directives, the colon abbreviation for FILE is not allowed, and neither is the line number or text.
+
+
+
+<A NAME = Smart_Generalized> 
+<H3>Generalized use</H3>
+</A>
+
+Here's a little bit more about how this smart edit behaviour works.  This is of interest because you can use it in conjunction with your own programs, such as procedure file searchers (an example is in the demo directory somewhere).  So long as you make the output from the program conform to the correct format it will act as an interface to EDIT.  For example, a user searching for all procedures containing 'YYMMDD' might get a list of 10 procedures, and they could then go directly to the line(s) of interest using F2/double click.
+
+<P>See the output from the DISPLAY SUBSYS command (e.g. as issued by the navigator) for an example of this feature in action.
+
+<P>Basically the line should be of the following format - note that everything but the procedure name is optional.
+
+<PRE CLASS=code>
+[<I>context-specification {/|\} </I>] <I>procedure-name</I> [(<I>line-number</I>) [<I>text</I>]]
+</PRE>
+
+The context speficication is taken to be everything up to the final slash or backslash on the line, or nothing if there is no slash or backslash.  The line number has to be in brackets. If no line number is given the procedure is opened and either positioned at the top, or if it was already open, at the line where we last saw it.  If no line text is given along with the line number, no attempt is made to look around for lines which may have moved slightly, as mentioned above.
+
+For example:
+
+<PRE CLASS=code>
+DEMOPRC\DEMO_SCREEN_A (22) READ SCREAM DEMOA    //position at L22 and locate text nearby
+PERM GROUP DEMO\DEMO_SCREEN_A (22)              //position at L22
+-4                                              //just open proc -4
+</PRE>
+
+
+<P><A HREF= #Top>Top</A>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Debugger> 
+<H2> Debugging</H2> 
+</A>
+
+<UL>
+	<LI><A HREF= #Debug_Intro     > Introduction</A>
+	<LI><A HREF= #Debug_Presentation  > Source code presentation</A>
+	<LI><A HREF= #Debug_Runtime     > Run-time information </A>
+	<LI><A HREF= #Debug_StepBreak   > Stepping and breaking </A>
+	<LI><A HREF= #Debug_Interaction   > Debugger interaction with other client features </A>
+	<LI> <A HREF = #Debug_Options> ... Appendix: Debugger options </A>
+</UL>
+
+
+<A NAME = Debug_Intro> 
+<H3> Introduction </H3>
+</A>
+
+Anyone who's used SoftSpy on Model 204 or a modern PC development environment should be comfortable with the debugger.  The <A HREF = "language.html#BBSPY">SPY command</A> tells the host that from now on all User Language requests will be executed a line at a time, under user control.
+
+<P>Progress of execution through a request is shown with an arrow marker in the left margin, which by default indicates the statement about to be executed.  Breakpoints are shown with a red blob.
+
+<P>Several of the available operations (e.g. set breakpoint), work on a specific line, which is taken to be the line containing the cursor.  The cursor normally moves along with the execution arrow, but can be placed anywhere else with the arrow keys or the mouse to perform actions on other lines.  Right clicking on a line brings up a menu of operations to choose from.
+
+
+<A NAME = Debug_Presentation> 
+<H3>Source code presentation </H3>
+</A>
+
+Unlike SoftSpy but like say VB, the full screen debugger does not show the executing source code as an expanded version (i.e. all INCLUDEd procedures incorporated into a single source program).  Instead, the code is stepped through in the editor view, so that when control passes to a line in a different procedure, the view switches to that procedure.
+
+<P>The main reason for doing things like this is that usually there will be no need to step into all the obscure subroutines etc., so loading and colourising their source code would be unnecessary and might introduce a noticeable delay.  In addition, it's likely that the points at which the user wishes to break and step through code are located in procedures which are already open for edit, since the code of interest might recently have been changed.  If you want to browse through the code during a debug, for example to see what's coming up and set some breakpoints in it, remember you can <A HREF = #ED_SMART_INCLUDE>double-click or use F2 on INCLUDE statements</A>.
+
+<P>If a procedure isn't currently being edited when it's stepped into, a new edit is initiated for it, which is then closed again when request execution ends.  Procedures are closed again in this situation because the application might often want to delete them later on, especially if they're temp procs that have been created a short time ago by the same application.
+
+<P>While a request is running in the debugger, procedures can not be changed, since that would mean the code seen would not match the code that was compiled.  See also the related issue of automatic saves during INCLUDE, discussed elsewhere.
+
+<P>If you really want to see a fully-expanded version of the source code, <A HREF = #Debugger_More>you can obtain one</A>, although it is just printed to the command line pane and not used for stepping through. 
+
+<P>Also on this subject a note about the common practice of using of dummy strings in code.  This is clearly somewhere that the original source (as stepped through) will not look exactly like the compiled source (as delivered by the expanded source listing), and where the latter might usually be more helpful.  One solution to this is to set the option to <A HREF = #Debug_Options>show the expanded line in the status bar</A>.  Alternatively you can set up a watch on $LINETEXT, or if it's a ?&-type dummy string use the mouse-hover feature (both covered below).
+
+
+
+
+<A NAME = Debug_Runtime> 
+<H3>Run-time information </H3>
+</A>
+
+
+<P><U>Cursor hover</U>
+<BR>In many cases you don't want to watch something continuously but just take a quick look at it's value.  With simple items you can do this by hovering the mouse pointer over a watchable object name (see below), whereupon a little box should come up saying, for instance, "%X = 0", or "?&FILENAME = SALES01".
+
+<P>With some object types (e.g. field names and arrays), or when special display options are required, it is necessary to go to a little extra trouble, and set up a watch.  
+
+<P><U>Watches</U>
+<BR>When the debugger is active, the area on the left normally occupied by the System Navigator is used to display a list of currently-watched items and their values.  If this pane is not visible, Ctrl+2 opens it up.  
+
+<P>Various object types are watchable.
+
+<UL>
+	<LI>%variables, screen and image items
+	<LI>globals, by specifying G.xxx or ?&xxx
+	<LI>field values, by specifying F.xxx
+	<LI>A small set of un-parameterised "regular" $functions ($ERRMSG, $STATUS, $STATUSD, $CURFILE, $CURREC).  
+	<LI>Special debugger-only $functions:
+	<UL>
+		<LI>$PROCNAME = of the procedure containing the execution break
+		<LI>$PROCFILE = the specific file, even in group context
+		<LI>$PROCLINE = line number where the program is paused
+		<LI>$LINETEXT = text *as compiled* (see earlier note re. dummy strings)
+	</UL>
+</UL>
+
+<P><U>Expressions</U>
+<BR>Expressions can not in the current release be dynamically evaluated and watched like you can do in some debuggers.  For example:
+
+<PRE CLASS=code>
+WATCH %A + £SQRT(%C+1)
+</PRE>
+
+The term "expression" here means anything that isn't one of the simple operands listed above, and includes field name variables (%%), screen item variables (:%) and most $functions.
+
+<P><U>Initiating a watch</U>
+<BR>There are several ways of initiating a watch on an object value:
+
+<UL>
+	<LI>Autowatch (hotkey F12)
+	<BR>This will watch all objects on the current source line if they're not already being watched, or un-watch them if they are.  So two F12 presses should cumulatively have no effect - making that a quick way of checking an object's value without cluttering the watch table.
+	<LI>Manual watch (hotkey Ctrl+F12, but right-click is also handy) 
+	<BR>This brings up a box where you can type in the name of the object by hand.  
+	<BR>Manual watch is a necessary step for field values, which would not be expressed as F.xxx in the source code, and also arrays, where autowatch and cursor hover take the view that the code would not normally feature literal subscripts (see below).  
+	<BR>You can enter a number of object names at once here (separate with '/'), and also use special syntax to watch multiple array items.
+	<LI>Watch pane double click
+	<BR>On an empty line, invokes the same dialog as manual watch.  On an existing item value, invokes the "set value" dialog (see below).
+</UL>
+
+<P>Clear watched items by selecting them and pressing delete.  
+
+
+<P><U>Arrays and field occurrences</U>
+<BR>The debugger allows array items to be specified using literal subscripts, but not expressions or other item types:
+
+<PRE CLASS=code>
+WATCH %A(3)                 //OK
+WATCH %IMG:ITEM(5,10)       //OK as long as %IMG:ITEM is a 2-D array
+WATCH %A(%X)                //not allowed - only literal subscripts
+WATCH F.TXNDATE(2)          //OK - second occurrence
+WATCH F.TXNDATE(3+1)        //not allowed - no expressions
+</PRE>
+
+<P>When you use the manual watch dialog, you can quickly set a watch on multiple occurrences of an array or field by using special syntax.  Instead of a literal subscript, specify *x:y where x is the number of occurrences to watch and y is the first occurrence.  The defaults are 10 and 1 respectively.  This syntax was devised to be more flexible than simply requesting "all occurrences" with an asterisk.  There is no all occurrences option.  For example:
+
+<PRE CLASS=code>    
+WATCH %A(*)                 //Items 1 to 10 - a common simple case
+WATCH F.TXNDATE(*1000)      //Most likely all occurrences!
+WATCH %IMG:ITEM(5,*20:50)   //Items 5,50 to 5,69
+WATCH %IMG:ITEM(*2,*)       //1,1 to 1,10 and 2,1 to 2,10
+WATCH F.TXNDATE(*:10)       //Field occurrences 10 to 19
+</PRE>
+
+
+<A NAME = DebugLongVals>
+<P><U>Displaying long values</U>
+</A>
+
+<BR>When variables or other objects contain very long string values, the watch pane and the cursor-hover feature can sometimes be too narrow to see them all.  As of version 2 the old debugger line command "DISPLAY" has been given its own menu option and hot-key.  You can use this to do a one-off examination of a variable, global etc.
+
+<P>As with "SET" (see below), the system suggests an object name when you invoke the command, based on the cursor position.
+
+
+<P><U>Invalid run-time values</U>
+<BR>Whichever of the available routes is used to display a run-time object value, fields that are missing from records and globals that are not present in the global table are shown as '&ltnot present&gt' and '&ltundefined&gt' respectively, as opposed to a null string which, as we all know, is assumed by the User Language evaluator.  The idea behind this difference is that generally in the debugger you want as much information as possible.  There are lots of other cases where a value might not be available, and appropriate pseudovalues are returned, for example '&ltnot in scope&gt', '&ltsubscript count&gt', '&ltsubscript range&gt', '&ltno record&gt', '&ltrec deleted&gt', '&ltno such field&gt', '&ltinactive image&gt',  etc.
+</UL>
+
+<P><U>Amending object values</U>
+<BR>You can set a new value for %variables, screen and image items, database fields and globals.  They can be set to any of the values that can be watched, with format conversion taking place as required, as if the variable assignment, CHANGE statement or $SETG had taken place in User Language.  
+
+<P>If the operation within UL would have caused a run time error (or $SETG return non-zero), the debugger simply reports the problem and the object remains unchanged.  If the item is currently being watched (e.g. you double clicked on the value in the watch table to change it) the new value is shown immediately.
+
+<P>Asterisks can be used as a shortcut, just like in User Language, to affect all occurrences in a particular dimension of an array.  Note that the special "display" syntax mentioned earlier is not used.
+
+<P>With database fields, the CHANGE database API is used, so you should remember that this adds the field to a record if it doesn't exist already.
+
+<A NAME = DEBUGPAI>
+<P><U>PAI</U>
+</A>
+<BR>It was decided not to provide a "WATCH F.*" command to watch all the fields that exist on the current record.  There would be confusion about whether it was just shorthand for a number of individual "WATCH F.xxx" commands for all the fields on the current record, or the same for all the fields defined to the file, or (probably what was really wanted) a kind of "rolling PAI" showing whatever fields existed on each record as it was processed.
+
+<P>The latter, most likely, scenario is supported by the check box at the bottom of the table of watched values.  Checking this means that at every step or break point the table gets cleared of all F.xxx entries and refreshed with the set of fields/values on the current record.  
+
+<P>Depending on user feedback the way this works could easily be changed - for example with nested record loops it might be useful to show all the fields in open records, perhaps prefixed with their file name.  Or various other possibilities - perhaps multiple watch tables.
+
+<A NAME = DEBUGGLOBS>
+<P><U>Globals</U>
+</A>
+<BR>Exactly the same issues apply to globals as with "PAI" - see above.  In other words unlike SoftSpy you don't watch all globals using G.*, but by checking the box at the bottom of the watch table.  In the same way to the PAI check box, this one means all G.xxx entries are removed and refreshed at every step or break point.  There is no facility to watch globals matching a certain pattern.
+
+<P><U>Other general notes about run-time values</U>
+<BR>The set of watched objects is preserved on the client, regardless of which procedures are edited, and whether debug mode is activated and deactivated.  See the debug menu for total or individual clear-down options.
+
+<P>It is currently not possible to see how much resource (CPU etc.) each statement is eating up.  This would probably a good idea for a future version though.
+
+<A NAME = Debug_StepBreak> 
+<H3>Stepping and breaking</H3>
+</A>
+
+When executing a request one step at a time, the debugger will stop on each line that contains an executable statement.  Additionally in the case of some nested constructs it may or may not stop on the purely "structural" statements, such as END IF.  You have a certain amount of control over this, via the debug options menu, and in more detail if required using the <A HREF = "language.html#BBSPY">SPYFLAGS bit settings specified on the SPY command</A>.
+
+<P>F9 toggles a line on and off as a breakpoint, with such a line being indicated by the red blob in the margin.  Actually the debugger will only allow a breakpoint to be set on a line that might actually be hit (see above point).  If you use F9 on a line containing no executable statements (or set a breakpoint on such a line in the editor before the request is compiled) the breakpoint gets set/moved to the next line that does contain an executable statement.  Continued lines are treated as follows:
+<PRE CLASS=code>
+PRINT %X WITH -              //F9 here will set a breakpoint
+      %Y                     //here
+</PRE>
+
+<P>Breakpoints remain in place whilst a procedure is kept open for edit, so if they are set in one run of a request, they persist until the next run <I>so long as the procedure is kept open for edit</I>.  In other words this is another good reason to use the "soft" GO editor option [SAVE ALL + INCLUDE] instead of "hard" [END + INCLUDE] which would close the edit on the procedure.  Because of this, and to avoid repeated unnecessary rereading and recolouring of procedures, soft GO is the default on F5, and you have to Ctrl+F5 to do a hard GO.  Remember you can keep many procedures open for edit at the same time.
+
+<P>In a nod to SoftSpy, breakpoints can also be hard-coded by putting "*BREAK" on its own on a line in the source program, which will set a breakpoint at compile time on the next executable statement.  If you adopt the habit of using soft GO (plain F5) most of the time this feature will probably be of minimal use.
+
+<P><U>Go until...</U>
+<BR>A couple of notes about the GO debugger command.  A vanilla "GO" will cause execution to proceed to the next breakpoint or the end of the request.  "GO UNTIL" on the other hand will not break in the absence of breakpoints until the condition is found to be true in this request, OR some future request - in other words the condition persists across requests.  This means that if the condition of interest features in a request buried deep inside an APSY, for example, the following debugger commands can be issued at the start of execution of the login procedure, and the APSY will then behave normally until the appropriate time.
+
+<PRE CLASS=code>
+GO UNTIL $PROCNAME = P.CUST.CHANGE    //first line executed from this proc
+GO UNTIL $LINETEXT ~ '*SALARY*'       //whenever a line accessing SALARY is encountered
+GO UNTIL %SALARY > 1000               //condition is false if %SALARY is not in scope
+GO UNTIL F.RECTYPE ¬= CUST            //condition false if no RECTYPE on current record
+</PRE>
+
+If you mistype the condition and there are no breakpoints set anywhere it may therefore be necessary to deactivate and reactivate the debugger.  
+
+<P>The "Run to cursor" option (usually invoked by a right click on a line of code) is also implemented as a hidden GO UNTIL command, so the same principle applies - be sure to choose lines that actually will get executed!
+
+<P>The operator in "GO UNTIL" can be =, ¬=, &lt, &lt=, &gt, &gt=, ~ or ¬~, where ~ means LIKE and ¬ means NOT.  (Not can also be supplied as ^).   As with UL, the comparison is numeric unless both operands are strings, in which case it's alphabetic.  The like operator always converts both operands to strings.  String and numeric literals can be specified on either side (the former don't need quotes but can have them), as well as any value that can be WATCHed, as described above.
+
+<P>The same expression-evaluation limitation exists as with WATCH, and applies to both sides of the condition. This shouldn't cause too many problems, although the following will be accepted but won't work as the user perhaps hoped.
+
+<PRE CLASS=code>
+GO UNTIL $PROCNAME = MYPROC AND $LINETEXT ~ *CALL*
+  equates to:
+GO UNTIL $PROCNAME = 'MYPROC AND $LINETEXT ~ *CALL*'
+</PRE>
+
+<P><U>Other stepping/breaking notes</U>
+<BR>In the current release it is not possible to use the debugger to move control immediately to another part of the program, for example to exit a loop prematurely.  Note that "Run to cursor" (see above comment) does not "jump to cursor".
+
+<P>The "step" function always goes into subroutines that are called.  One way to avoid this is when you get to a CALL statement, down arrow and then CtrlShiftF5 (run to cursor).  An idea for future versions would be a "run to subroutine exit" function.
+
+<A NAME = Debug_Interaction> 
+<H3>Debugger interaction with other client features</H3>
+</A>
+
+It should come as no surprise, if you've been paying attention this far, that the debugger requires a certain amount of exclusive control of your connection to the host, and other operations are limited while it's active.
+
+<P>You can still switch views to look at other procedures (e.g. using F2), but as described above they will be both read-only and not saveable to the host.
+
+<P>You can also switch to the command line view - indeed if the request being debugged produces output, it is activated automatically.  However, any F key press reverts the view back to the procedure and line of the last breakpoint.  This is much like SoftSpy - so you can continue stepping through after seeing output lines without taking your finger from the F4 key.  The command line is also obviously required if the request hits a $READ.
+
+<P>It is also possible to bypass the GUI to issue debugger commands if for example you're unhappy with the way the GUI issues them, (see the <A HREF = #Debugger_More>miscellaneous debugger notes</A> later).  However if you find yourself neeeding to do that regularly we should probably improve the GUI!
+
+<P><A HREF= #Top>Top</A>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = System_Navigator> 
+<H2> The System Navigator</H2> 
+</A>
+
+Pressing Alt+2 when in any mode except debug opens up (or switches focus to) a secondary area to the left of the main window.  Escape returns focus to the main pane without hiding the navigator. You can also Backtab and Tab in and out of the navigator from the command line view.
+
+<P>The navigator is really just an alternative name for a "Windows Explorer" style tree structure representing the DPT host system and various entities within it.  Opening nodes in the tree reveals more details, and can make many programming tasks much quicker.  If you have a large screen it is usually ideal just to leave the navigator pane open at all times.  The range of operations available via the navigator is ever-growing, and can be seen by opening the popup menus on each node.  
+
+<P>Expanding nodes by double clicking them or left clicking on the [+] brings up a list of sub-entities such as procedures in a directory etc.  You can also move around the navigator with the keyboard, in which case [Return] invokes the double click action, and the left and right arrows can also be used to expand and contract nodes.  
+
+<P>The popup menu for the current item can be displayed by right-clicking on it, or via the Windows Menu key (or Shift+F10).  In the case of "leaf" items on the right hand side of the tree, right-arrow does the same thing too.
+
+<P>Double clicking or hitting [Return] on an item in the tree usually has some default action, such as editing a procedure, and the default is always the first option on the popup menu.  In the case of expandable nodes double clicking usually has the same effect as clicking the [+] icon, but the exception is with files and procedure directories, where double clicking not only expands the node but sets CURFILE/CURDIR too.  That is, it does an OPEN instead of OPENC prior to listing the contents.  Clicking on the [+] issues an OPENC, and does not set CURDIR/CURFILE.
+
+<P>Since the system navigator is really just issuing line commands, the same restrictions apply on when the navigator is active and can be used as with some other previously-mentioned activities such as editor SAVE.
+
+<P>Commands such as COPY PROC, DELETE GROUP, DEFINE FIELD etc. which have an effect on the navigator contents also cause the navigator tree to update itself.  [NB: In the current release, updates made by one user do not not refresh the navigators of any other users.  In such cases the other users would have to close and re-expand nodes to see the new information.}
+
+<H3>Procedure-handling notes</H3>
+
+<P><U>Directories with an ALTNAME</U>
+<BR>When this option is in effect for a directory (see <A HREF = "dbaguide.html#Alloc_ProcDir">allocating proc directories</A>) the directory is listed in the navigator under its alternate name, which means you might see a procedure directory and a data file with the same name.  
+
+<P>As discussed in the DBA guide, the OPEN command in such cases affects both, and this is what happens for example when you double click on one of them in the navigator.  Using the "Free" option will also attempt to free both.
+
+<A NAME = GUIProcNames>
+<P><U>New procedures created via the GUI</U>
+</A>
+
+<BR>When you use the DPT client GUI to create a new procedure, either via the navigator or using the menus (including "Save As"), it is achieved with a hidden PROCEDURE command sent to the host.  The uppercase/lowercase nature of the name is sent exactly as you type it, but depending on the host CASE parameter setting it may or may not get forced to uppercase.  When working with a directory of files you would aesthetically prefer to be named all in lower case (the system does not care) you can create new ones in lower case by issuing a *LOWER command at the chevron before creating them.
+
+
+
+
+
+<P><A HREF= #Top>Top</A>
+
+
+<P><HR><HR>
+<H1> Appendixes </H1>
+<P><HR><HR>
+<!****************************************************************************>
+<A NAME = Overall_Options> 
+<H2> Configuration Options on the Client </H2> 
+</A>
+
+Some options are changed on the fly as you select them in the options screens, but others are not applied till you click 'OK'.  The former group are those which have a visual effect, where you would want to see the effect without repeated trips to the options screen.  Changes to these options are not backed out when you click 'Cancel'.
+
+<UL>
+	<LI><A HREF= #General_Options  > Client general and application-wide options  </A>
+	<LI><A HREF = #LAT_Options> Command line options</A>
+	<LI><A HREF= #Editor_Options   > Editor-related options </A>
+	<LI><A HREF= #Debug_Options  > Debugger-related options </A>
+	<LI><A HREF= #Fullscreen_Options  > Full screen options  </A>
+	<LI><A HREF= #Script_Options  > Script options  </A>
+</UL>
+
+<!****************************************************************************>
+<A NAME = General_Options> 
+<H3> Client general and application-wide options</H3>
+</A>
+
+<A NAME = Options_AutoConnect>
+
+<P><U>Connection: Auto user name</U>
+</A>
+
+<BR>This option mainly just saves you having to enter a user name when prompted for one during the host connection conversation.  But it can also be taken as the user name during <A HREF = #BATCH2>a BATCH2 style run</A>.
+
+<P>Note that if you didn't disconnect before closing down the previous time, or if the client didn't close down cleanly for some reason (e.g. laptop batteries ran out) while it was connected to a host, this option is irrelevant, since the user name under which the last connection was made is used to restore the connection on restart.  In other words you are put back in a position to continue exactly where you left off, with as little fuss as possible.
+
+<P><U>Connection: No disconnect confirm</U>
+<BR>Applies when the client is in the middle of a User Language debug session or a fullscreen read, and a disconnect from DPT host is initiated.  This happens in several situations, such as explicitly selecting "disconnect" from the connection menu, or closing DPT client with alt-F4, or with the window [X] box, or during Windows overall shutdown.  If the option is unchecked (default), there is a prompt to make sure you want to abandon the operation and disconnect.  Checking the option just does it without prompting.  Note that this does not override the editor disconnect/save option (see below), which may still cause a prompt if there are unsaved procedures.
+
+
+<P><U>Look-and-feel: black backgrounds</U>
+<BR>Most displays on the DPT client have a default white background, and "uncoloured" text is shown black.  For an authentic 3270 look <A HREF = #Fullscreen_Options>fullscreen displays</A> default to black backgrounds, but can be changed to white.  See also the <A HREF = #Display_Colours>general note on display colours</A>.
+
+<P><U>Look-and-feel: skin colour</U>
+<BR>This visual option controls whether the main dialog has a coloured border round it and also installs special coloured task-bar icons.  This is most useful when running several copies of the client to do multi-user testing, as it can otherwise become difficult to remember which session you are typing into at any given time.  The auto user name option can also help in these situations (e.g. "BlueUser" could be the thread from the blue terminal).
+
+
+<A NAME = Options_Installation>
+
+<P><U>Installation options:</U>
+</A>
+
+<BR>Uniquely among the options, the ones here apply for all instances of the client that are invoked using the same copy of the .exe file.  That is, if you have several shortcuts set up to invoke the client from different working directories, most options are set specifically to each instance and stored in the ini file in that working directory.  The installation options on the other hand are stored in a .in2 file in the directory where the .exe file lives.
+
+<P>"Documentation location":  This option is in case you have site standards dictating where you should keep application documentation, in which case move it there, and then make this point to the new location. DPT opens your default browser on the appropriate document chapter whenever you hit F1 or the various help buttons and menu items scattered around, so it needs to know where the doc HTML files are.
+
+<P>"Use browser redirect":  This controls how DPT navigates to relevant help topics within the HTML docs.  It's a configurable option (as of V2.24) because different browsers currently support different methods.  Whatever browser you have though, it should be at worst an extra click or two to find the help you need.  The default setting ("use redirect") uses the HTTP header <TT>"&ltMETA http-equiv="Refresh"</TT>....." technique.  Unchecking the option causes DPT to revert to its old method, namely to try and navigate directly to <TT>"&ltA name=...."</TT> tags in the help.  This is more likely to work on older browsers, the default with more current browsers.
+
+
+<BR>
+<P><HR>
+<!****************************************************************************>
+<A NAME = LAT_Options> 
+<H3>Command line options </H3>
+</A>
+
+
+<P><U> Local echo</U>
+<BR>By default this is on, which gives the closest look to a 3270.  If you turn it off it doesn't affect the ability to use the up and down arrow keys to retrieve previous commands.  This echo isn't the same as the host's echoing in response to the setting of CECHO/LECHO etc.  If you turn them on too you get more than one echo of each input line.
+
+<A NAME = OPT_LAT_ARNP>
+<P><U> Auto reply to new page prompt</U>
+</A>
+
+<BR>Pretty self-explanatory: the client automatically presses return for you.  This option can be used when configuring a <A HREF = #BATCH2>BATCH2 robot</A>, and can also be useful with repeating MONITOR commands.  It can also be used with full screen applications, although coding a $FAKEENT in the application is the usual way of doing that.
+
+<P><U>Wrap long lines</U>
+<BR>*WARNING* - this option is not the default for the good reason that it significantly slows down the operation of the command line view.  In addition there is a known cosmetic bug which causes DPT Client's paging to work slightly wrong if wrap is turned on.  If you really like this option, the lag can be reduced by setting the "number of lines retained" option (see above) to a very low number - say less than a hundred.  We just have to live with the bug for the time being.
+  
+<P>Remember, even if you are generating lots of unusually long error messages, you can always scroll right (F11/scroll bar etc) to see the ends of them.
+
+<P>One time this option is useful is when studying MONITOR STATS displays, which are often several hundred characters wide.  A good approach is only to activate the line wrap option occasionally for activities such as this, and then turn it off again.  Alternatively maintain a separately-configured dptclient shortcut with these special-purpose settings.
+
+<P><U>Show client control messages</U>
+<BR>At certain times the application sends messages to the output pane, for example during start-up, when connecting to and disconnecting from a host, and when certain serious errors occur.  They are also written to the log file, if active.  
+
+<P>Also counted in this category, and turned off by this option, is the separator line printed when a new page is thrown by the host.  This line (the length of which can also be controlled by the option on this screen) makes paginated output much easier to review in the output pane, but you might want sometimes to disable it if you plan to send a report to the output log.  However, spooling long reports at the host end is usually a better idea, because of comms and display overheads.
+
+
+<A NAME = OPT_LAT_OPROUTE>
+<P><U>Input/output history</U>
+</A>
+
+<BR>If there is a file name here it means that all lines you see on the screen are also sent to the file.  The number of old lines kept in the screen display can also be controlled here (that is, how far you can look back using the scroll bar). 
+
+<A NAME = OPT_LAT_GUI> 
+<P><U>GUI Prompts</U>
+</A>
+
+<BR>If you check these boxes the client responds to the various types of host command-line prompts with Windows dialog boxes.  For example, a "Do you really want to" prompt would cause a dialog box with "Yes" and "No" buttons to appear.  These options are largely but not entirely frivolous, and there are situations where they can streamline certain sequences of all-mouse operations.
+
+
+<P><U>Font</U>
+<BR>See the <A HREF = #Display_Fonts>general application note about fonts</A>.  
+
+<P>The command line view is probably the one where there would be least reason to change from the default font.
+
+<P><U>Colour coding</U>
+<BR>This is an option which just brightens things up a bit.  Checking this box means the input area is blue, host error messages are red, local error and information messages are orange and green respectively.
+
+
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Editor_Options>
+<H3>Editor-related options </H3>
+</A>
+
+<P><U>Line numbers</U>
+<BR>Activating this widens the left margin and numbers each line in a procedure from 1 upwards.   Turning it off gives you space to see longer lines.
+
+<P><U>Column guide </U>
+<BR>The DPT editor never wraps lines, and to see the complete text of lines that extend off the right hand side of the window you have to either scroll right or look at the status bar, which shows the line containing the cursor in a smaller font.  By default a thin vertical line is drawn at column 72, since this is where the 3270 editor on M204 would require you to continue a line or use the editor's line-extend command.  The position of this column guide can be changed to any positive value, or it can be turned off by setting it to column 0.  Only one column guide can be shown.
+
+
+<P><U>Autosave </U>
+<BR>When autosave is turned on, the client application periodically saves the current state of all currently-open procedures <I>locally</I>.  In other words procedures will only get saved back to their permanent location on the host when you explicitly ask for that to happen, but if there is a PC problem (e.g. laptop batteries run out, or something locks up and you have to do reboot of some kind), the client can be restarted later and it will automatically pick up from the last local saves.  
+
+<P>In these cases in order to eventually save procedures back to the host the client will need to re-establish its host connection, and the default is for it to attempt this on restarting.  However, you can continue editing when restarting the client without a host connection, and it only becomes necessary at the point where you try to use SAVE/END/GO etc., or any of the other commands that require procedures to be synchronized with the host.
+
+<P>To summarise the autosave processing, procedures which have been created new on the client, or have been opened locally as text files without going through the host, are saved directly back to their local home files by autosave.  New procs that haven't even been given a name yet are ignored, to avoid the intrusion of the pop-up "save as" dialog.  Procedures that have been edited from the host are saved by autosave to a special local copy, but *not* to the host.
+
+<P><U>Tab length</U>
+<BR>See the <A HREF = #KM_EDITOR>note later about key functions in the editor</A>.
+
+
+<P><U>COMSTART/COMEND</U>
+<BR>These relate to the text-colouring option (see below), and mean you can still get nice green comment blocks even if you don't use the standard values for these parameters.  Note that they are not dynamically read from the host because you might often be editing offline.
+
+<P><U>Autotab</U>
+<BR>This facility can make typing code faster, and can also improve its appearance.  The way it works is quite simple, and given the nature of User Language (e.g. file contexts and labels) not totally foolproof, but it's usually quite helpful.  When you press enter at the end of a line with a "block start" statement such as IF or FIND, the cursor is automatically right-tabbed once relative to that statement, ready to enter the nested statements.  Then when you type END, it is left-tabbed to line up with the most recent block start.
+
+<P>IN <I>context</I> specifications and labels add a little variation and you will have to decide for yourself if you like the way they're handled (please suggest alternatives though).  Hint: Adopting the convention of keeping a label on the previous line to the labeled statement removes possible aesthetic stumbling blocks.
+
+<P>Autotab does not apply during the initial load of a procedure or at any other time apart from the manual keying in of a newline.  A possible future option would be to completely re-tab procedure in one go.
+
+<P><U>INCLUDE/BEGIN warning range </U>
+<BR>When you're doing a lot of work on procedures containing subroutines or other included code it's easy to get ahead of yourself and hit F5 (GO) with the wrong procedure showing.  This option can be used just to help save a bit of time.  If it's set to a non-zero value the editor will scan down the proc that's showing when you use GO.  If a line with BEGIN, B or MORE isn't found within the specified number of lines, the GO is aborted.  Clearly this is going to get in the way if you're working with procedures full of commands, or where UL is invoked in some way other than BEGIN, such as via APSY, or by including the procedure containing the BEGIN.  The default is zero, which means the feature is deactivated.
+
+
+
+
+<P><U>Closedown/disconnect procedure options</U>
+<BR>This group of options determines what DPTClient does if there are procedures still open when you disconnect or close down (disconnect is automatic at closedown).  If you set the "save all" option (the default), locally-edited procedures are saved locally and host-edited procedures are saved to the host.  The "close all" option (default off) comes into effect after any saving has been done.  If you leave procs open, they are automatically re-opened next time you start up or connect, which saves time if the system crashes etc.
+
+<P>By default any temporary procedures (i.e. 0, -1 etc.) that were open for edit are discarded on disconnection, but choosing "consider temporary procedures" means they are treated just like other procedures on disconnect (including applying the above options).  Temp procs left open on disconnect are recreated the client next time you make a connection, which while being totally unlike Model 204 can be nice if you're a big fan of working in temporary procedures.  One thing worth noticing though is that if you leave several temp procs open it can take a second or two to recreate them all on the host at connection time.  This is because the complete text has to be sent up to the host, unlike with permanent procedures, where a simple timestamp check is sufficient.
+
+<P>NB. If disconnection is invoked with the LOGOFF command, it is the same as M204, and completely closes the host session.  It is the same as if the close-all option were set here.
+
+
+<A NAME = Case_Handling>
+<P><U>Case translation options in the editor</U>
+</A>
+
+<BR>On DPT, the editor is unaffected if you enter the *LOWER command on the host, as you might on Model 204.  This is partly  because the DPT client will often be operating without a host connection, and partly because it has various more specific features, and requires its own set of options anyway, as follows.
+
+<P><B>M204 CASE parameter simulation: </B>The first case translation option in the DPT editor makes it behave like the Model 204 editor when CASE=UPPER.  In other words characters are shown as lower case as they're keyed in, but the whole line is uppercased when you press 'Return' (or at proc save time if you never press return on the line).    Procedures containing lowercase characters can be loaded into the editor and re-saved without disturbing the lowercase characters, unless the lines that contain them are specifically amended.  This will all be familiar editor behaviour to M204 programmers (also sounding somewhat ridiculous to M204 newcomers!)
+
+<P>You would turn the option off in the DPT editor in the same situations as you would do the equivalent on Model 204 (either with *LOWER or a Sirius editor command).  Since editing all happens at the client end, there is rarely any need to go through the awkward host *LOWER/*UPPER malarkey at all.  Example situations:
+
+<UL>
+<LI>Enter mixedcase string literals in an otherwise all-uppercase program
+<LI>Write fully mixedcase code using <A HREF = "language.html#SIRIUS_MIXCASE">Sirius compiler settings</A>
+<LI>Type in large quantities of help text into a procedure
+</UL>
+
+<P>When the amount of lowercase text is small, such as in the first example above, using the Ctrl+U and Ctrl+L keys on a range of characters does not count as a modification of the line, and will "stick" if the line is not otherwise modified, so you can avoid frequent trips into the options screen there.
+
+<P><B>Mixedcase keywords: </B>By default, the editor's colour-coding and other keyword-related features (e.g. $function parameter prompting) require uppercase for them to work.  This option allows them to work regardless of case.
+
+<P><B>Keyword uppercasing: </B>This option is only active if the above is active.  It uppercases recognized keywords immediately as they're typed, which saves your pinky a trip to the shift key, and also helps catch typos which might otherwise be hard to find.
+
+<P><B>Uppercase pasted text: </B>This is again only active if <I>mixedcase keywords</I> is inactive, and forces all pasted text to be uppercased.  (If it sounds strange it's there to handle a common scenario where a line is copied to the clipboard before the user has pressed enter and uppercased it).
+
+<P><B>Other notes: </B>
+<LI>When editing <A HREF = #Editor_NonUL>non-User-Language code</A> the all the above automatic case translation options are turned off.
+<LI>Selected text can in any case be uppercased or lowercased manually with Ctrl+U and Ctrl+L
+<LI><A HREF = #GUIProcNames>New procedures created via the GUI</A> have names dictated by the current host CASE setting.
+<LI>The CAPS LOCK key is obviously there if you want to uppercase absolutely everything typed.  
+
+<A NAME = Editor_Syntax> 
+<P><U>Syntax colouring</U>
+</A>
+
+<BR>These notes mainly concern User Language code syntax, but see later option about non-User language code support.
+
+<P>The UL syntax elements currently recognized are:
+<UL>
+	<LI>Blue = UL statements, abreviations, statement options and keywords, plus the BEGIN and MORE commands and INCLUDE
+	<LI>Blue = valid $function names (see comments below)
+	<LI>Red = Quoted strings
+	<LI>Green = Line comments and block comments (up to 5 nested levels only)
+	<LI>Pink = Dummy strings
+</UL>
+
+Commands and anything outside BEGIN/END are uncoloured.
+
+<P>The editor is *not* a full syntax checker, despite the fact that it has do to a certain amount of parsing to apply the colour coding.  The main reason for this is that there are some aspects of compiling a request that depend on the host session state.  To find out if a program will really run you have to hit F5, at which point it's passed over to the much more thorough compiler on the host.  A few examples where the syntax highlighting may give a misleading impression:
+
+<UL>
+	<LI>You set the client to assume different COMSTART and COMEND sequences as are currently set on the host.
+	<LI>You turn off case translation in the editor - keywords may not then be recognized
+	<LI>Any time a procedure contains dummy strings
+	<LI>You use a valid $function name but give an incorrect number of parameters.
+	<LI>When fields and files are accessed - no validation of field names, attributes etc. is performed until compile time
+	<LI>Code contains Model 204 statements/keywords that aren't supported by the compiler on the host - they may show blue in the editor but may not compile as expected
+	<LI>Lines are continued with split points in weird places
+	<LI>Statements and options are used in nonsensical orders or arrangements (e.g. WITHOUT FIND LOCKS or IF=THEN+ELSE) will be highlighted by the editor but needless to say will not compile
+	<LI>Where quoted strings extend across more than one line - the client only colours them to the end of the line where they start, but the host compiler will handle them as it should.
+</UL>
+
+<P>Depending on the case translation options set, colour coding of keywords happens immediately they're typed or a line at a time when 'Return' is pressed.   The complete procedure is also colour coded when it is initially loaded, and whenever any editor option is changed.
+
+<P><U>Font</U>
+<BR>See the <A HREF = #Display_Fonts>general application note about fonts</A>.  
+
+<P>The editor view is one where the font might most often be changed to a smaller one so that lots of code is visible at once.  It is often quicker to use the <A HREF = #KM_ALLVIEWS>zoom keys</A> if the requirement is only occasional, although admittedly the default font sometimes does not zoom particularly well.
+
+
+<A NAME = Editor_Functions>
+<P><U>$function assistance</U>
+</A>
+
+<BR>From version 2.0, the editor has some special features relating to $functions, and they are enabled by this option.  Firstly it recognizes valid $function names and treats them similarly to language keywords. This reflects the general trend in the evolution of User Language (largely by Sirius) which has seen lots of new functionality added in the form of $functions, and has also led to the necessity to allow <A HREF = "language.html#COMP_CALLFUNC">$functions to be CALLed</A> to make code readable.  There has also been a trend for increasing $function name length, especially with web server related $functions, so having them validated by the editor is a useful guard against typing errors. 
+
+<P>Even more helpfully, the editor gives you a drop-down list of installed $function names when you type a "$".  This lets you select and auto-complete the name you were going to type, which is particularly handy with long or awkwardly-spelled $function names.  Press [return] to use the currently-selected item in the list, or [escape] to dismiss the list.
+
+<P>A third piece of $function assistance is to show you what parameters a $function is expecting when you type the left bracket.  This is obviously ideal when a $function has several parameters and you can't remember their required order ($WORD and $DATEDIF spring to mind).  The prompt includes a short description of each parameter, and when there are useful default values they are indicated in square brackets.  Note that this prompt is for information only, and has no ability to auto-complete the typing of the parameters for you.
+
+<P>The reference information used for the above features originally comes from the host, and by default a fresh copy is downloaded from the host at connection time.  This caters for the fact that each run of the host might have different $functions installed.  When working offline the editor uses a locally-held copy from the last connection made, held in a file called "funcinfo.txt".  In fact you can set a flag to always use this offline copy and skip the download of a new copy at connection time.  This might be useful if for example you wanted to customize the parameter prompting text with things more helpful/meaningful to you.
+
+<A NAME = Editor_NonUL>
+<P><U>Editing non-User Language code</U>
+</A>
+
+<BR>This option lets you specify a list of file extensions (separated by commas, and not case-sensitive) for which the editor's User Language related functionality is turned off.  By default extensions like ".html" and ".css" are set, reflecting the fact that this is part of the set of enhancements introduced to support web application development.  You don't have to do all your editing in DPT client, but if you want to the option is there to access various types of file via the same interface, and this can be a convenient way to work.
+
+<P>Special handling of non-UL files:
+<UL>
+	<LI>All the options grouped under "User Language" on the options screen are disabled, for example auto-indent and keyword uppercasing.
+	<LI>If the "syntax highlighting" option is turned on, a certain amount of simple colour-coding takes place.  HTML tags &lt...&gt are blue, except &lt!... which are HTML comments and are green, unless they go on to be &lt!--#... in which case they're SSI directives and return to blue.  Strings (red) must be delimited with double quote characters, unlike User language which must always be single.
+	<LI>Tab characters are not translated into spaces, since non-UL code is unlikely to ever find its way to the (tab-less) mainframe.
+	<LI>New local files are assumed to contain User Language until they are saved and given a permanent name.  With new host procedures it depends on the PRSUFFIX for the directory.
+</UL>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Debug_Options> 
+<H3>Debugger-related options</H3>
+</A>
+<P><U>SPYFLAGS parameter values </U>
+<BR>These are the values that go with the hidden <A HREF = "language.html#BBSPY">SPY command</A> that's issued when you use the "Start debugger" menu item.  Therefore if you change any of them whilst the debugger is started, for example during debugging of a request, they won't take effect until it is stopped and started again.
+
+<P><U> Status bar text information </U>
+<BR>By default the text area taking up most of the status bar shows the same information as in the editor, namely a reduced-size-font version of the line containing the cursor.  It therefore changes if you click on a diffent line, and can save you having to scroll right to read long lines.  An alternative in debug mode, activated by this option, is for this area of the status bar to always show $LINETEXT, that is the compiled source code for the line at which execution has stopped.  This can be useful when you're debugging requests that contain lots of dummy strings, where another alternative would be to put a permanent watch on $LINETEXT.  Also it's equally simple to use the cursor-hover feature on dummy strings.
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Fullscreen_Options> 
+<H3>Full screen options</H3>
+</A>
+<P><U>Always black backgrounds</U>
+<BR>By default the fullscreen view is shown against black, even if the command line and editor views are not (above).  This is partly to make it look like a 3270 screen, and partly because to show up against white, the yellow in particular has to be rather 'dirty'.
+
+<P><U>Mark right margin</U>
+<BR>This is just a visual reminder of where the right hand side of the fullscreen panels are.
+
+<P><U>Notify user</U>
+<BR>Turning this option off means that if the user types into an area of the screen which is protected, or into a full input field with overtype disabled, nothing happens, rather than an admonitory message box appearing.  In either case it has to be a distinct improvement over the familiar annoying 3270 "lock up".  The status bar shows whether or not the cursor is in a protected area.
+
+
+<P><U>Font</U>
+<BR>See the <A HREF = #Display_Fonts>general application note about fonts</A>.  
+
+<P>The fullscreen view is perhaps the one with the most reason to change the font, in this case usually to a larger one so that an 80x23 panel is as large and readable as possible.  Alternatively if you are using a non-default <A HREF="m204xref.html#PARM_MODEL">MODEL parameter</A> value, you might want to go down to a very small font to get lots of information on a single panel of, say, 132x56.
+
+<P>You will have to experiment with the fonts available on your system to find the one that most closely makes the display panel fit the size and shape of your monitor.  At DPT HQ the favourite is currently Lucida Console 14pt for default 80x23 displays.
+
+<P>If the fullscreen view does not fill the window, or overspills the window, it is purely a cosmetic issue.  There is no effect on functionality apart from meaning you are less or more likely to need to scroll.
+
+
+<A NAME = FS_PseudoPFKeys>
+<P><U>Mouse pseudo-PF keys</U>
+<BR>You can now configure the client to handle the mouse in a similar way to some 3270 emulators. DPT intercepts left single and double clicks, right and middle single clicks, and mouse wheel movements, and can generate PF key presses instead, as per the options.  
+
+<P>By default this option is inactive for all the mouse actions, but you can customise each one individually.  For example map double click to your application's conventional "select" key, (e.g. PF5), and mouse wheel up and down to your application's scroll keys (e.g. PF7/8). For simplicity of operation, only one out of left single click and left double click can be enabled at the same time.
+
+<P>One mapping choice in the drop-down lists may need explanation, namely "Parse item text".  If this one is chosen, DPT looks at the word on the screen at the cursor position, and parses it looking for distinct strings "F1", "F2" etc. in order to decide which key to simulate, if any.  Enter and attention presses are generated if the screen item contains distinct words "ENTER"/"ENT"/"RETURN"/"RET" (Enter) or "ATTN"/"ATTENTION"/"ESC"/"ESCAPE" (Attention).  The text comparison is case-insensitive.
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Script_Options> 
+<H3>Script options</H3>
+</A>
+This screen is a prototype for the options screen controlling the future client scripting facility.  The options here currently relate to the <A HREF = #BATCH2>command line "mini-script"</A>.
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Key_Mappings> 
+<H2>Client Key Mappings and Input Controls</H2> 
+</A>
+
+<UL>
+	<LI><A HREF = #KM_INTRO> General notes </A>
+	<LI><A HREF = #KM_ALLVIEWS> Keys/functions common to all view modes</A>
+	<LI><A HREF = #KM_EDITOR> Editor view </A>
+	<UL>
+		<LI><A HREF = #KM_DEBUGGER> Debug mode</A>
+	</UL>
+	<LI><A HREF = #KM_LAT> Command line view</A>
+	<LI><A HREF = #KM_FULLSCREEN> Full screen view </A>
+</UL>
+
+<!****************************************************************************>
+<A NAME = KM_INTRO> 
+<H3> General notes </H3> 
+</A>
+
+An important thing to bear in mind with some of the "hotkeys" is that most of the time they apply to the currently-displayed view.  This may seem obvious, but remember that you can switch views regardless of what the host is expecting, and when a hotkey has different meanings the problem becomes clear (e.g. F5=GO to the editor but PF5 to the full screen view).  To get round this problem hotkeys are disabled when they are inappropriate to the current combination of view and host expectations.  The corresponding menu items are grayed out under these circumstances.
+
+<P>The operation of a double left mouse click is usually the same as F2.  Other actions may also be possible in each view - the right mouse button and the Windows Menu key usually present a relevant popup menu.
+
+<P>The DPT client application is not directly emulating a 3270, so the behaviour of the PC keys is not mapped to 3270 equivalents in a customisable way like on, say, Rumba.  None of the key mappings is currently customizable.
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = KM_ALLVIEWS> 
+<H3>Keys/functions common to all view modes</H3>
+</A>
+
+<H4>Application and view control</H4>
+
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>F1   </TD><TD>Help:Doc   </TD><TD>Opens this document</TD></TR> 
+<TR><TD>F1+Ctrl</TD><TD>Debug:Spy on/off</TD><TD>Issues a SPY command using the <A HREF = #Debug_Options>SPYFLAGS options</A> for ON</TD></TR> 
+<TR><TD>F4+Alt   </TD><TD>File:Exit    </TD><TD>-</TD></TR> 
+<TR><TD>1+Alt    </TD><TD>Window:Focus on primary pane</TD><TD>NB. "1" not "F1"</TD></TR> 
+<TR><TD>2+Alt    </TD><TD>Window:Focus on secondary pane</TD><TD>Show if not visible  </TD></TR> 
+<TR><TD>3+Alt    </TD><TD>Window:Hide secondary pane</TD><TD>Implies 1+Alt too</TD></TR> 
+<TR><TD>4+Alt    </TD><TD>Window:Switch to command line</TD><TD>Disabled during <A HREF = #SYNCHEDIT>synchronous EDIT</A></TD></TR> 
+<TR><TD>1..9+Ctrl+Shift</TD><TD>Script:Run N</TD><TD> (reserved for future use)</TD></TR> 
+<TR><TD>Tab+Ctrl</TD><TD>Window:Next View  </TD><TD>-</TD></TR> 
+<TR><TD>Tab+Ctrl+Shift</TD><TD>Window:Previous View</TD><TD>-</TD></TR> 
+<TR><TD>Keypad plus+Ctrl</TD><TD>Zoom view bigger</TD><TD>Also Mousewheel+Ctrl</TD></TR>
+<TR><TD>Keypad minus+Ctrl</TD><TD>Zoom view smaller</TD><TD>Roll it the other way</TD></TR>
+</TABLE>
+
+
+
+<H4>Field editing</H4>
+The standard windows conventions apply to all views when entering simple text.  This includes such things as the End key meaning move to the end of the line or input field (not a 3270-style "Erase EOF"), and the shift key used with cursor movement keys meaning select the text as the cursor is moved.
+
+<P>Although these keys almost always do the same thing, some of them will not always be active.  For example anything which modifies the field containing the cursor will not be available when the cursor is in a protected input area.  Various things do not apply to the full screen view, although they're put here for simplicity (e.g. "select all").
+
+<P>The behaviour of the Tab and Carriage Return keys is so different in each mode that they are discussed in the separate sections later.
+
+<P>
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>A+Ctrl   </TD><TD>Edit:Select All</TD><TD>-</TD></TR> 
+<TR><TD>C+Ctrl   </TD><TD>Edit:Copy    </TD><TD>-</TD></TR> 
+<TR><TD>V+Ctrl   </TD><TD>Edit:Paste   </TD><TD>-</TD></TR> 
+<TR><TD>X+Ctrl   </TD><TD>Edit:Cut     </TD><TD>-</TD></TR> 
+<TR><TD>Z+Ctrl   </TD><TD>Edit:Undo    </TD><TD>-</TD></TR> 
+<TR><TD>Y+Ctrl   </TD><TD>Edit:Redo    </TD><TD>-</TD></TR>                 <TR><TD>Del      </TD><TD>Delete char to right</TD><TD>-</TD></TR>
+<TR><TD>Del+Shift</TD><TD>Edit:Cut     </TD><TD>-</TD></TR>
+<TR><TD>Del+Ctrl </TD><TD>Delete word to right</TD><TD>-</TD></TR>
+<TR><TD>Del+Ctrl+Shift</TD><TD>Delete line to right</TD><TD>Mainframe style "erase EOF"</TD></TR> 
+<TR><TD>Insert</TD><TD>Toggle insert/overtype</TD><TD>Mode in all views is kept in step</TD></TR>
+<TR><TD>Insert+Shift</TD><TD>Edit:Paste</TD><TD>-</TD></TR>
+<TR><TD>Insert+Ctrl</TD><TD>Edit:Copy</TD><TD>-</TD></TR>
+<TR><TD>Backspace</TD><TD>Delete char to left</TD><TD>-</TD></TR>
+<TR><TD>Backspace+Ctrl</TD><TD>Delete word to left</TD><TD>-</TD></TR>
+<TR><TD>Backspace+Ctrl_Shift</TD><TD>Delete line to left</TD><TD>-</TD></TR>
+<TR><TD>L+Ctrl</TD><TD>Lowercase selection</TD><TD>-</TD></TR>
+<TR><TD>L+Ctrl+Shift</TD><TD>Uppercase selection</TD><TD>same as U+Ctrl</TD></TR>
+<TR><TD>T+Ctrl+Shift</TD><TD>Copy current line to clipboard</TD><TD>-</TD></TR>
+<TR><TD>T+Ctrl</TD><TD>Transpose line with previous line</TD><TD>-</TD></TR>
+<TR><TD>D+Ctrl</TD><TD>Duplicate line</TD><TD>Like ditto in the M204 editor</TD></TR>
+<TR><TD>U+Ctrl</TD><TD>Uppercase selection</TD><TD>-</TD></TR>
+<TR><TD>U+Ctrl+Shift</TD><TD>Lowercase selection</TD><TD>same as L+Ctrl</TD></TR>
+</TABLE>
+
+<H4>Scrolling, cursor movement and selection range</H4>
+
+In all views if the viewport is not large enough for the data displayed, the mainframe-style keys (F7/F8/F10/F11) can be used as well as the arrows and PgUp/PgDown.  This is handy for scrolling left and right, where you would otherwise have to waste a few millimetres of screen space by setting the option to make the horizontal scroll bar visible.
+
+<P>As above, some of these things do not apply to full screen mode (e.g. F keys mean PF keys), but they are left in here for simplicity.  See later for special discussion of fullscreen mode controls.
+
+<P>
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>Up/Down</TD><TD>Move cursor 1 line</TD><TD>-                     </TD></TR> 
+<TR><TD>Up/Down+Ctrl</TD><TD>Move viewport 1 line</TD><TD>Cursor will not move until it would otherwise leave the viewport                     </TD></TR> 
+<TR><TD>Up/Down+Alt</TD><TD>Move cursor 1 paragraph</TD><TD>-</TD></TR> 
+<TR><TD>Left/Right</TD><TD>Move cursor 1 character</TD><TD>-                     </TD></TR> 
+<TR><TD>Left/Right+Ctrl</TD><TD>Move cursor 1 word</TD><TD>-                     </TD></TR> 
+<TR><TD>Left/Right+Alt</TD><TD>Move cursor 1 capitalized "word part"</TD><TD>e.g. in MarketPulse</TD></TR> 
+<TR><TD>Page Up  </TD><TD>Move cursor up 1 page</TD><TD>-                     </TD></TR> 
+<TR><TD>Page Down</TD><TD>Move cursor down 1 page </TD><TD>-                     </TD></TR> 
+<TR><TD>F7       </TD><TD>Page Up</TD><TD>-                     </TD></TR> 
+<TR><TD>F8       </TD><TD>Page Down</TD><TD>-                     </TD></TR> 
+<TR><TD>F10      </TD><TD>Move viewport left</TD><TD>No standard PC equivalent        </TD></TR> 
+<TR><TD>F11      </TD><TD>Move viewport right</TD><TD>No standard PC equivalent       </TD></TR> 
+<TR><TD>Home</TD><TD>Cursor to start of line or input field</TD><TD>See also editor note</TD></TR> 
+<TR><TD>Home+Ctrl</TD><TD>Page Up maximum</TD><TD>e.g. "go to start of procedure"</TD></TR> 
+<TR><TD>End</TD><TD>Cursor to end of line or input field</TD><TD>-   </TD></TR> 
+<TR><TD>End+Ctrl</TD><TD>Page Down maximum</TD><TD>-   </TD></TR> 
+<TR><TD>Any above+Shift</TD><TD>Extend selection</TD><TD>-   </TD></TR> 
+<TR><TD>G+Ctrl</TD><TD>Go to line number...</TD><TD>-   </TD></TR> 
+<TR><TD>Alt + Mouse drag</TD><TD>Make rectangular selection</TD><TD>See notes re. paste elsewhere</TD></TR>
+
+</TABLE>
+
+
+<H4>Local file editing</H4>
+
+These keys are available in all views at all times, and not only start a new editor view, but switch views from whatever else you were doing to the new editor view.
+
+<P><TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+<TR><TD>N+Ctrl      </TD><TD>File:Local New           </TD><TD>New unnamed file</TD></TR> 
+<TR><TD>O+Ctrl      </TD><TD>File:Local Open           </TD><TD>-</TD></TR> 
+
+</TABLE>
+
+
+<H4>Searching</H4>
+
+These are invalid in full screen mode.  To do repeated searches, uncheck the "auto close" box in the find/replace dialog.  The "cycle" check box says whether to start searching again at the top/bottom when the bottom/top is reached.
+
+<P>
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+<TR><TD>Ctrl+F    </TD><TD>Edit:Find         </TD><TD>-                            </TD></TR> 
+<TR><TD>Ctrl+R    </TD><TD>Edit:Replace  </TD><TD>See earlier comments about "unprotected" fields                            </TD></TR> 
+
+</TABLE>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = KM_EDITOR> 
+<H3>Key mappings and input controls in the editor view</H3> 
+</A>
+
+<H4>Set 1: applying both to host and locally-edited procedures</H4>
+
+<P>
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>Tab</TD><TD>various</TD><TD>See note below</TD></TR>
+<TR><TD>Home</TD><TD>two-stage process</TD><TD>See note below</TD></TR>
+<TR><TD>Esc           </TD><TD>Edit:Undo</TD><TD>Nearest thing to "clear" on the M204 editor</TR></TD>
+<TR><TD>F2          </TD><TD>Procedure:Smart Edit</TD><TD>See <A HREF= #Smart_Edit>smart edit notes</A></TD></TR> 
+
+<TR><TD>S+Ctrl      </TD><TD>File:Local Save           </TD><TD>Compare with host save below</TD></TR> 
+<TR><TD>S+Ctrl+Shift</TD><TD>File:Local Save All       </TD><TD>All open edits<TR><TD>??</TD><TD>File:Local Save As...   </TD><TD>See note on Host Save below</TD></TR> 
+
+<TR><TD>R+Ctrl      </TD><TD>Edit:Replace...           </TD><TD>-</TD></TR>
+
+<TR><TD>0+Ctrl+Shift</TD><TD>Script:Run current </TD><TD>(reserved for future use)</TD></TR> 
+
+<TR><TD>;          </TD><TD>CRLF</TD><TD>See note below</TD></TR> 
+
+</TD></TR> 
+
+</TABLE>
+
+<H4>Tabs in the editor</H4>
+Usually pressing the Tab key will insert a number of spaces, so as to position the cursor at the next "tab stop" (i.e. position MOD N) where the N is settable in the options menu.  This is different from the usual PC convention where a single ASCII tab character (09) is used for indenting.  It's done explicitly with spaces on DPT because of the possibility of code being copied back to the mainframe, where X'09' would have, at best, no meaning.
+
+<P>A very useful variation on the normal function of the Tab key is when a whole line is selected (click in the margin) or the selection includes text on more than one line. In this case, all those lines are indented by N spaces, or unindented again using Tab+Shift.
+
+
+<A NAME = SEMICOLON> 
+<H4>Semicolons in the editor</H4>
+</A>
+
+The editor treats the typing of a semicolon as if it were a Return.  This is somewhat less confusing than the behaviour on M204 where you see the semicolon, but it is transformed into a line break the next time you edit the procedure.  
+
+<P>DPT "prefers" not to have semicolons between logical lines in procedures,  because this can cause the line number given in an error message not to agree with the actual location of the error, and make <A HREF = #Smart_Edit>smart message</A> processing work incorrectly.
+
+<P>You can get semicolons to appear in the DPT editor, by opening procedures that they already contain them, or if you paste them in instead of typing them directly.  As with <A HREF = #Special_Characters>special characters</A> the editor does not act as a "cleanser" for code passing through it.  This can be useful.  If we want to print a semicolon, having it explicitly shown in the code instead of having it represented by a line break makes the code more readable than on Model 204:
+
+<PRE CLASS=code>
+PRINT ';'
+</PRE>
+
+instead of
+
+<PRE CLASS=code>
+PRINT '
+'
+</PRE>
+
+Both of which print a semicolon.  Of course, if you code the first line on DPT and then migrate the code up to M204, it will end up looking like the second anyway.
+
+<P>In the second case, as per the standard UL rules, the line is considered continued.  As with all continued lines on DPT, line numbers in error messages, debugger stops etc. refer to the final part of the continuation.
+
+<P>See also the <A HREF = "dbaguide.html#SEMICOLON">notes in the DBA guide about procedure storage</A>.
+
+<H4>The &ltHome&gt key in the editor</H4>
+This would usually take you to the start of a line.  When editing code it's often useful to just go to the start of the text on a line, since the text is often indented.  Therefore the first press of the 'Home' key goes to the start of the text, and the second press goes to the very start of the line.
+
+<H4>Set 2: Applying only to procedures edited from the host</H4>
+
+<P><TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>F3          </TD><TD>Procedure:Host Quit       </TD><TD>No save - may prompt</TD></TR> 
+<TR><TD>F3+Ctrl     </TD><TD>Procedure:Host End        </TD><TD>Automatic Host Save      </TD></TR> 
+<TR><TD>F3+Shift    </TD><TD>Procedure:Host Quit All   </TD><TD>Same for all open edits on host procedures</TD></TR> 
+<TR><TD>F3+Ctrl+Shift </TD><TD>Procedure:Host End All   </TD><TD>Same for all open edits on host procedures</TD></TR> 
+
+<TR><TD>F4/F5          </TD><TD>Procedure:Soft Go         </TD><TD>Automatic  Host Save All  </TD></TR> 
+<TR><TD>F4/F5+Ctrl     </TD><TD>Procedure:Hard Go         </TD><TD>Automatic  Host End All   </TD></TR> 
+
+<TR><TD>F6          </TD><TD>Procedure:Host Save       </TD><TD>Automatic  Local Save     </TD></TR> 
+<TR><TD>F6+Shift    </TD><TD>Procedure:Host Save All   </TD><TD>Same for all open edits on host procedures</TD></TR> 
+
+<TR><TD>F9          </TD><TD>Debug:Toggle breakpoint</TD><TD>NB. *not* "repeat last action" as on M204 </TD></TR> 
+
+</TD></TR> 
+
+</TABLE>
+
+<BR><HR>
+<!****************************************************************************>
+<A NAME = KM_DEBUGGER> 
+<H3>Editor view controls in debug mode</H3> 
+</A>
+
+In debug mode most of the editor key mappings covered above are disabled, as procedures are read-only and the normal host command line is unavailable. F2 and F9 importantly retain the same meanings.  
+
+<P>Some of the other mappings are replaced as follows: 
+
+<P><TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>Esc        </TD><TD>Debug:Cancel</TD><TD>Prompt/confirm then return directly to command level</TR></TD>
+
+<TR><TD>F3           </TD><TD>Debug:Cancel</TD><TD>Same as Esc</TD></TR>
+ 
+<TR><TD>F4           </TD><TD>Debug:Step        </TD><TD>1 line                           </TD></TR> 
+<TR><TD>F4+Ctrl      </TD><TD>Debug:Step N...   </TD><TD>N lines - enter N by hand        </TD></TR>
+ 
+<TR><TD>F5           </TD><TD>Debug:Go          </TD><TD>Vanilla - i.e. till next request or breakpoint</TD></TR> 
+<TR><TD>F5+Ctrl      </TD><TD>Debug:Go Until... </TD><TD>At least one operand must be typed by hand  </TD></TR>
+<TR><TD>F5+Ctrl+Shift </TD><TD>Debug:Run to cursor</TD><TD>NB not "jump" to cursor</TD></TR>
+ 
+<TR><TD>F6           </TD><TD>Debug:Set...      </TD><TD>Enter assignment by hand</TD></TR> 
+<TR><TD>F6+Shift     </TD><TD>Debug:Display...      </TD><TD>Examine object value once</TD></TR> 
+
+<TR><TD>F12          </TD><TD>Debug:Watch/Unwatch </TD><TD>All objects named on current line  </TD></TR> 
+<TR><TD>F12+Ctrl     </TD><TD>Debug:Watch...    </TD><TD>Enter object name(s) by hand        </TD></TR> 
+<TR><TD>F12+Ctrl+Shift</TD><TD>Debug:PAI    </TD><TD>See <A HREF = #DEBUGPAI>debugger notes</A> </TD></TR> 
+</TD></TR> 
+
+</TABLE>
+
+<P><HR>
+<!****************************************************************************>
+<BR><A NAME = KM_LAT> 
+<H3>Key mappings and input controls in the command line view</H3> 
+</A>
+
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>Esc      </TD><TD>Attention</TD><TD>See note below</TR></TD>
+<TR><TD>Up arrow+Alt</TD><TD>-  </TD><TD>Recall commands - like M204 RETRVKEY</TD></TR> 
+<TR><TD>Up arrow+Alt+Shift</TD><TD>-  </TD><TD>Show complete command history and allow selection</TD></TR> 
+<TR><TD>Down arrow+Alt</TD><TD>-  </TD><TD>As Up but cycle in the opposite direction</TD></TR> 
+<TR><TD>Down arrow+Alt+Shift</TD><TD>-  </TD><TD>Same as Up</TD></TR> 
+</TD></TR> 
+<TR><TD>Tab</TD><TD>- </TD><TD>Moves cursor to start of command line</TD></TR>
+
+<TR><TD>Return</TD><TD>Various</TD><TD>See note below</TD></TR> 
+<TR><TD>F2</TD><TD>Procedure:Smart Edit</TD><TD>See <A HREF= #Smart_Edit>smart edit notes</A> </TD></TR> 
+
+<TR><TD>All other F keys and CR</TD><TD>- </TD><TD>"Enter command" - see note below</TD></TR>
+<TR><TD>All F keys and CR</TD><TD>- </TD><TD>When debug mode is active: <A HREF = #Debug_Interaction>switch back to the debugger view</A></TD></TR>
+
+</TABLE>
+
+
+<H4>Esc/Attention in the command line view </H4>
+This key is equivalent to typing *CANCEL if the host command line is available.  In any case it can be used to clear the command line of anything currently in it.  
+
+<H4>Return in the command line view</H4>
+If the cursor is in the input (final) line, this key enters the current contents of the input line as a command.  Otherwise it copies the contents of the line containing the cursor down to the input line, ready for amendment and/or reissuing.
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = KM_FULLSCREEN> 
+<H3>Key mappings and input controls in the full screen view</H3> 
+</A>
+
+<P>
+<TABLE BORDER>
+
+<TR><TH>Key combo</TH> <TH>Operation/Menu option</TH><TH>Comments       </TH></TR>
+
+<TR><TD>Esc           </TD><TD>Attention</TD><TD>See note in command line view above (FSATTN parameter is unsupported)</TD></TR>
+<TR><TD>Esc+Shift    </TD><TD>Clear All</TD><TD>3270 "Clear" - reinstates input fields as initially received</TD></TR>
+
+<TR><TD>Tab           </TD><TD>Move to Next Input Field</TD><TD>Doesn't select whole field - i.e. mainframe convention is used</TD></TR> 
+<TR><TD>Tab+Shift     </TD><TD>Move to Prev Input Field</TD><TD>As above </TD></TR> 
+<TR><TD>F7/8/10/11+Ctrl+Shift</TD><TD>Scroll display</TD><TD>See note below</TD></TR> 
+
+<TR><TD>Home+Ctrl     </TD><TD>Fullscreen:Home</TD><TD>Move to top left input item, or [1,1] if no inputs</TD></TR> 
+
+<TR><TD>Arrow keys</TD><TD>-</TD><TD>See note below</TD></TR> 
+<TR><TD>Modified delete keys</TD><TD>-</TD><TD>See note below</TD></TR> 
+
+</TABLE>
+
+<H4>3270 'Reset' key</H4>
+Note that there is no key mapped to 3270 'reset' on DPT Client.  This is because situations which would lock up a 3270 instead generate a (disablable) Windows message box informing you what the problem was.  Typing when the cursor is not inside an input field, and typing with 'insert' on into a full input field, are two common examples.
+
+<P>The status bar contains information about whether the cursor is in an unprotected area or not.
+
+<H4>Cursor movement keys in fullscreen mode (arrows, home, end)</H4>
+As on a 3270, if you arrow to the edge of the screen the cursor reappears on the other side, like in a game of asteroids.
+
+<P>The 'modified' movement keys (Ctrl, shift etc.) sometimes have a slightly different action to the editor.  For example 'select line right' is less useful than 'select to end of input field'.
+
+
+<H4>Delete keys in fullscreen mode</H4>
+The operation of the delete and backspace keys when modified (Ctrl, Shift etc.) is slightly different from the editor, for the same reason as with the arrow keys above.  Generally speaking operations that would normally apply to the start or end of the line in the editor apply to the start or end of the input field in fullscreen view.  You should get the hang of this fairly easily.
+
+
+<H4>Page scrolling in fullscreen mode</H4>
+You can use the scroll bars if you like, but if you use the PgUp/PgDown/F7/8 or 'Tab' to move around a multi-panel screen, DPT Client maintains the flimsy fiction that it is a 3270 terminal by positioning the display with the title of the next panel at the top of the screen.  With single-panel screens, the scroll up and down keys have no effect. (See notes earlier about multi-panel screen handling).
+
+<H4>Rectangular selections</H4>
+The fullscreen view lets you make a rectangular selection with Alt+Mousedrag, which can be handy for copying columns of figures from a tabular display.  However, unlike some 3270 emulators you can't paste into such a selection.  (The editor does allow rectangular paste in code though).
+
+
+<H4>Leading pad characters</H4>
+DPT client does not allow leading pad characters to be entered into fields.  This results in slightly different behaviour from 3270, but in a good way.  For example if the user starts typing in the middle of an input field, the text is immediately moved over to the left, reflecting the fact that this is what will happen when enter is pressed anyway, and reduces the possibility that the user will think they have actually entered data with leading spaces/pad characters (a common issue on real 3270 terminals).  This applies whether or not the input item is defined in User Language as having a specific pad character or not.
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Display_Issues> 
+<H2> Windows Display Issues</H2> 
+</A>
+
+<UL>
+	<LI><A HREF = #Display_Colours> Colour </A>
+	<LI><A HREF = #Display_Fonts> Font </A>
+</UL>
+
+<A NAME = Display_Colours> 
+<H3>System Colours</H3>
+</A>
+
+The range of colours available to a PC application clearly depends on the capabilities of the PC's physical display devices, although these days most PCs have graphics cards and monitors that are happy with virtually any colour you want.
+
+<P>DPT uses coloured text in various situations, and while it works fine even in Windows base colour mode (20 colours), it can get a bit hard on the eye as the colour depth reduces.  16-bit colour or more is ideal, mainly because depending on whether the white or black background option has been chosen, DPT tries to adjust the intensity of some colours for visual comfort reasons.  With fewer system colours this toning down does not take effect.
+
+<P>Depending on user feedback, colour-related processing can be made more customizable in later releases.
+
+
+<A NAME = Display_Fonts>
+
+<H3>System Fonts</H3>
+</A>
+
+For consistency across the application, the default font is the same for all view types.  But they can be changed individually, perhaps most likely to a smaller font to make more lines of code visible at once in the editor, and to a larger font to make a User Language "full" screen view actually fill more of the screen.  There are some specific notes in the options sections for each view type.
+
+<P>Fixedsys 9pt was chosen as the default largely for reasons of personal preference.  It's available on everybody's PC, plus it's nice and chunky and was specifically designed for readability.  On the other hand being a bitmap font it does not zoom well on some systems.  Whatever your preference, DPT Client will only offer fixed-pitch fonts for the obvious reason that it's a programming platform (but if you wanted to be sly you could edit the ini file by hand ;-)
+
+<P>If you work with a Windows display size of 640x480 pixels, even fixedsys 9pt is too large to fit a default 80 character wide fullscreen display in.  In cases like this you could choose a smaller font, or become comfortable with the <A HREF = #KM_ALLVIEWS>scrolling and/or zoom functionality</A>.  The zoom keys are actually just selecting from the available font sizes on the fly without you making a permanent change.  With certain fonts (including the default) several zooms are required to make anything happen, because not all font sizes are available.
+
+<P>It's probably worth pointing out for the record that in no case does DPT shrink a display to fit the window size you set.  If that were the case font size issues would be much less relevant.  Changes to the window size, such as using a larger MODEL parameter value, or showing/hiding the navigator/watch pane, are always handled by adorning whatever is visible with scroll bar(s).  Note however that the default is not to show horizontal scroll bars (see the look-and-feel options).
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+<HR>
+<!****************************************************************************>
+<A NAME = Printed_Output> 
+<H2> Notes on Printing and Control of Printed Output</H2> 
+</A>
+
+<UL>
+	<LI><A HREF = #Print_Hardcopy> Hardcopy printing</A>
+	<LI><A HREF = #Print_OUTMRL> OUTMRL and line continuation</A>
+	<LI><A HREF = #Print_Large> Large printed reports</A> 
+	<LI><A HREF = #Print_Obscure> "Obscure" scenarios</A>
+</UL>
+
+
+<A NAME = Print_Hardcopy> 
+<H3>Hardcopy printing</H3>
+</A>
+
+DPT does not have sophisticated facilities for hardcopying source code, although this is definitely something to consider for future releases.  For example a WYSIWYG "print preview" dialog and standard printer control capabilities on the client might be desirable.  In the initial release there are 3 basic options as follows.
+
+<P>Users who have a procedure open for edit on the client can use the File/Print menu option.  This is about as basic as it comes, and simply sends the text of the  currently-visible procedure to the Windows print spooler.  The Windows default printer is assumed, which means there must be one set up.  No formatting of the text is performed.
+
+<P>Secondly, for example in situations where there is no local printer but there is one attached to the host, you can do things in a similar way to how it would be done on Model 204.  (Of course this is also valid in perhaps the most common case where the client and host ends are the same - e.g. a home PC).  
+
+<PRE CLASS=code>
+  USE $PRINT
+  DISPLAY MYPROC
+  Number of UDD lines output: 37
+</PRE>
+
+This uses the Windows default printer at the host end, which therefore must exist for it to work.  This method differs from the client editor print in that the procedure is printed line by line, respecting the host-end UDDLPP and OUTMRL parameters (see also <A HREF = "m204xref.html#OUTFLAGS">OUTFLAGS X'08' bit</A>).  It also offers a <A HREF = "language.html#USECMD">small amount of extra formatting</A>  so that for example wide reports, or wide programs, can be printed in landscape mode or with a smaller font.
+
+
+<P>A third potential option would be to use the DPT custom <A HREF = "language.html#BBSHELL">=SHELL command</A> to spawn a Windows process to do more sophisticated work if required, for example:
+
+<PRE CLASS=code>
+=SHELL (CMD) print myproc.txt                  //DOS PRINT command
+=SHELL (PRINT) myproc.txt                      //probably via notepad
+=SHELL (CMD) winword myproc.txt                //perhaps a nice Word macro 
+</PRE>
+
+In these cases it would be essential that the procedure was not in use on the host (e.g. open for edit), otherwise the shelled process would not be able to open the file and would fail.
+
+<A NAME = Print_OUTLPP> 
+<H3>Paging control</H3>
+</A>
+
+Page breaking is controlled on the DPT host, as on M204, by the OUTLPP and UDDLPP parameters, although unlike M204 OUTLPP is resettable, to accommodate the resizable nature of the client viewport.  All UL-generated output respects these parameters, but most commands do not.  For example commands like D FIELD ALL send no page breaks regardless of how much output there is.  Among the command exceptions are NEW PAGE and MONITOR when it's used with the EVERY option.  
+
+<P>By default DPT doesn't "pad out" partial pages with blank lines up to OUTLPP (although see <A HREF = "m204xref.html#OUTFLAGS">OUTFLAGS</A>).  With a scrolling client output window such padding would usually be pointless.  The client by default inserts a visible separator line, and the cursor is repositioned at the top of the viewport.  An exception to this when there are UL trailers set, in which case pages <I>are</I> padded out to OUTLPP.
+
+<P>These conventions mean that as it appears in the client command line view, a multi-page UL report will look much the same as it does on Model 204.  Also you can get yourself a "clean" screen at the command line with NP if you don't like working at the bottom.  
+
+<P>The cursor is also repositioned like this after a full screen read, for consistency with 3270 behaviour.
+
+<P>One case worth giving special mention to is the output from the UL compiler, where on Model 204 programmers often use the first page break to cancel the compilation.  On DPT compilation errors are issued, with no page breaks, up to the value of the <A HREF = "m204xref.html#ERMX">ERMX parameter</A>, which is by default set quite low.  At that point the user is automatically returned to command level.
+
+<P>The client application can be set to automatically respond to new page prompts, so that constantly-streaming output can be received without setting OUTLPP to 0 (which would remove all page headers/trailers).  This is useful when simulating a BATCH2 connection, and at other times such as when using the MONITOR EVERY N command.  
+
+<P>Line-on-page counting is not affected by prompts, text entered in response to £READ functions, dummy strings, DYRWT etc., and messages.
+
+
+<A NAME = Print_OUTMRL> 
+<H3>OUTMRL and line continuation</H3>
+</A>
+
+This is one area where things are fairly different to Model 204, hopefully in a good way.  The functions of parameters HTLEN, LOBUFF, OUTCCC and UDDCCC have been merged into the single parameter OUTMRL.  This reflects the fact that in the PC world "record lengths" expecially when it comes to user output devices, are much less of an issue than on the blocky old mainframe.  The value of OUTMRL is one more than the longest line of text than can be PRINTed or set into a header or trailer.  
+
+<P>Unfortunately, as it turns out, this simplification removed one important control mechanism, namely the one provided by the special value of OUTCCC=0.  On M204 this means that too-long PRINTed lines get truncated instead of "spilling" to the next line.  This behaviour can be activated on DPT using the 1 bit of the custom parameter, <A HREF = "m204xref.html#OUTFLAGS">OUTFLAGS</A>, which also has some other potentially useful settings.
+
+<P>In any case on DPT, when the print line is truncated in a SET HEADER or SET TRAILER statement, a message is issued, as this can be a tricky bug to find on Model 204.  The message by default is AUDIT NOTERM CLASS=I.
+
+<P>Another slight difference is that instead of always printing the continuation hyphen off to the right at the OUTMRLth column, DPT will print it imediately at the point the line was continued *IF* OUTMRL=32767.  In other words the maximum (and default) value of the parameter has this special meaning. This feature makes unintentional line spills easier to spot, but it's an M204 incompatibility and it can be removed if other people don't like it.  For example:
+
+<PRE CLASS=code>
+B
+    PRINT 'Baby' WITH '204' at 4
+END
+Baby-
+   204
+RESET OUTMRL 10
+I
+Baby     -
+   204
+</PRE>
+
+<P>Alternatively reset OUTMRL to 80 or something, and the hyphen will show in the familiar place.
+
+<P>When taken in conjunction with USE to a sequential file, the OUTMRL effect is applied before any truncation resulting from the file being allocated as "fixed length".  So if LRECL is less than OUTMRL, the hyphen will be lost.
+
+<P>Another thing worth noting here is that if you print newline characters (x'0A') and/or carriage returns (x'0D') the chances are that the tool you use to browse the output will interpret them as new lines.  However, DPT will not recognize internally that a new line has been thrown.  This means that the line counter will not be incremented (affecting printing of headers and trailers), the print position will not be reset to 0, (affecting OUTMRL handling and possible subsequent line throws and/or truncation), and no statistics will be increased.
+
+<A NAME = Print_Large> 
+<H3>Large printed reports</H3>
+</A>
+
+A large slice of execution time during the production of a UL-generated report to the "screen" of an IODev7 is usually comms overhead, since each line is sent and acknowledged across the socket in a fully-conversational manner (to allow cancellation at any point - see other discussions in this document).  Another large slice of time is front end overheads, such as displaying and scrolling the text in a GUI window.  Therefore large reports will usually run a lot quicker if you send them directly to a host-attached file, either with the USE command, or by running them on an IODev3 or daemon thread.  (Remember user 0's output file is also echoed to the host "console" window, which means user 0 has more overheads than an IODev3 in this respect, despite many similarities). 
+
+<A NAME = Print_Obscure> 
+<H3>"Obscure" scenarios</H3>
+</A>
+
+This is a general catch-all disclaimer that there are no guarantees that printed output will look 100% the same as the same program would generate on Model 204.  But it would be nice to think that any differences will be in obscure cases such as "PRINT n fieldname" and/or when lines are truncated as discussed above.  In some cases (e.g. the truncated header) the difference is by design.
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Special_Characters> 
+<H2>Handling of "Special Characters"</H2>
+</A>
+
+Most ASCII characters aren't useful from a readability point of view, and some (specifically codes 0-31) additionally have widely applicable "special" meanings in the PC world (9=tab, 10=linefeed, etc).  Any character from 32-256 can be used anywhere in code etc. and DPT (both host and client) will handle it without problems, although depending on the display device it may not always look as expected.  <A HREF = #SEMICOLON>Semicolons</A> have a similar meaning to DPT as they do to Model 204 when dealing with procedures.
+
+<P>Codes 0-31 are a different matter.  In some cases these are ignored, and in others they're accepted and may or may not cause the desired effect.  On the client they will usually appear in output as a reverse video "X".  On the host the general rule is that the line-input routines accept special characters inside quotes and comments, but translate them to spaces otherwise:
+
+<PRE CLASS=code>
+B
+    PRINT '>' WITH $X2C('09') WITH '<'
+    PRINT '>' WITH $C2X('	') WITH '<'        //i.e. a tab character
+END
+>	<
+09
+</PRE>
+
+<P>Also it's worth pointing out that while special characters can't be keyed directly into the DPT editor, they may be already present in a procedure, or may be pasted in from elsewhere (e.g. Notepad or another procedure), and the editor will not tamper with them.  The editor should not therefore be regarded as a code "cleanser" in this respect, nor we would not want it to be - existing UL requests may contain characters in this range that we would not want to be lost when copying back to Model 204 after our editing and debugging work on DPT is complete.
+
+<P>See also the  system config guide for more comments about transferring code and <A HREF = "sysconfig.html#Installation_Issues">lookup values for characters like "$" and "¬".</A>
+
+<P>Finally note that these issues with specific ASCII values do not apply to string values stored in database files, or manipulated within User Language %variables, $functions etc.  All such strings can contain any ASCII characters in any order, including zero.
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Editor_More> 
+<H2> More About Client/Host Synchronization of Procedures</H2> 
+</A>
+
+<UL>
+	<LI><A HREF = #CodeXfer>Code transfer mechanism</A>
+	<LI><A HREF = #HostEnqueue>Host enqueue during edit</A>
+	<LI><A HREF = #StartUpReOpen>Re-opening procedures at client start-up</A>
+	<LI><A HREF = #SYNCHEDIT>Forcing synchronous edit</A>
+
+</UL>
+
+<A NAME = CodeXfer> 
+<H3>Code transfer mechanism</H3>
+</A>
+
+It was previously mentioned that when a host procedure is edited, the complete text of the procedure is passed to the client.  Actually, in the common case where the client and host are on the same machine, the text file is simply read directly from disk.  If they are on different machines, the text of the procedure is trasferred a line at a time via the socket connection, which takes a little longer.  The same consideration applies in reverse at SAVE time.
+
+<A NAME = HostEnqueue> 
+<H3>Host enqueue during edit</H3>
+</A>
+
+<P>Edited procedures are enqueued on the host in exclusive mode.  However, the editing user can still issue read-only commands on them such as INCLUDE, DISPLAY and COPY PROC, even though to other users it appears as if they are exclusively locked.
+
+<P>When you use a read-only command on a procedure you are currently editing, the host automatically "sucks up" any newer updated version from the client before executing the command, to avoid confusion between versions.  In other words an automatic Host Save is performed.  This was thought to be simpler than the alternatives.  For example one option would have been to disallow these commands even though there could be no possible enqueueing conflict.  Another idea would be to use the old version of the procedure, which would be particularly confusing with INCLUDE if the procedure was going to be stepped through in debug mode.  The code compiled would not then match that shown during the step-through.  An informational message is issued to indicate when these automatic saves occur.
+
+
+<A NAME = StartUpReOpen> 
+<H3>Reopening procedures at client start-up</H3>
+</A>
+
+<P>If procedures are left open between host sessions, they are automatically re-enqueued when a connection is made again. The resynchronization routine ensures that (a) the same host is being accessed as last time, and (b) the procedure versions held locally to the client are the same as or newer than the corresponding version held on the host.  If there are any problems with this process a message is issued, the connection is abandoned and you should fix the problem manually. 
+
+<P>{Platform note - file last-saved times are saved with different accuracies depending on the operating system, and also in the case of Windows on the particluar underlying file system version.  For example on W2K FAT it is a minimum resolution of 2 seconds.}
+
+
+<P>Synchronizing procedures at connection time means opening the directories where they live, so in this case, unlike on Model 204, the user does not necessarily start with no directories open.
+
+<P>This feature is in fact extended slightly further for user-friendliness reasons.  Since we are often re-opening files at connect time to resynchronize open procedures, it seemed a small extra step to simply re-open all the files the user had open last time they disconnected, including the setting of CURFILE. This is what happens, so long as the previous session disconnected cleanly.  In the case of a BUMP or other unexpected thread termination, the set of open files is not saved.  Likewise, if the user disconnected using the M204 LOGOFF command, all procedures and files are closed, and the next connection provides a "clean" new session, as it would on M204.  Along with the <A HREF = #Editor_Options>preservation of temporary procedures</A> this feature can eliminate some of the tedious aspects of logging off and on again.  (In the current release the user's global table is deleted either way, although preserving it would be a potential future enhancement.)
+
+<P>It may be the case that you get into the habit of never closing procedures.  After a while you could then end up with a client-local copy of every procedure in your entire application, which may or may not be a good thing.  The main drawbacks would be the start-up delay of re-enqueueing them all on the host, or memory problems.  The other time you would really have to close a procedure would be to release the host enqueue, for example to delete/rename/etc. it.  This situation might most commonly arise with temporary procedures, where all of them must effectively be deleted when ad-hoc requests are entered.  For example if you type B;FPC;END the system has to rename all the existing temp procs ... -8 becomes -9, -7 becomes -8 etc.
+
+
+<A NAME = SYNCHEDIT>
+<H3>Forcing synchronous edit</H3>
+</A>
+
+<P>Allowing several procedures to be edited at once has an interesting consequence, in that it means an EDIT command entered from an included procedure would not halt the processing of the procedure.  A simple example from M204:
+
+<PRE CLASS=code>
+    DISPLAY PROCA
+    EDIT (TERM) PROCA         *TERM required for FSE on M204, invalid on DPT
+    DISPLAY PROCA
+</PRE>
+
+On M204, processing of the above sequence would halt until the user finished editing, then the second DISPLAY would pick up the post-edit procedure.  On DPT, if edit were always asynchronous, there would be a slight pause whilst the edit was initiated, then the second DISPLAY would just show the same text as the first DISPLAY.  Exclusive-access-requiring commands, such as DELETE, would even fail altogether in this situation.  The usefulness of EDIT as used programmatically (i.e. in many Workshop-style APSYs the world over) might therefore be significantly impaired unless a synchronous version were available.  So it is:
+
+<PRE CLASS=code>
+    D PROCA
+    EDIT (SYNCH) PROCA           //not strictly necessary - SYNCH is default from a proc
+    D PROCA
+</PRE>
+
+The effect of the <A HREF = "language.html#EDIT">EDIT command SYNCH option</A> is that the host will not accept any other input from the client except editing commands for PROCA such as SAVE or GO.  To make sure this happens, the client application will not even allow you to switch views, making it a bit more like the M204 editing experience in fact. This means various commands which would entail a view switch like smart edit and soft GO are disabled.  When the edit session is over (QUIT or END), input procesing resumes from wherever it left off, in this case the second DISPLAY command.
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = Debugger_More> 
+<H2> More About the Debugger and the SPY Command </H2> 
+</A>
+
+This section is a supplement to the discussion of the <A HREF = "language.html#BBSPY">SPY command</A> in the language reference document.
+
+<UL>
+	<LI><A HREF = #DB_LINE> Passive trace mode at the command line </A>
+	<LI><A HREF = #DB_SPYOPTIONS> More about the operation of SPY command options</A>
+	<LI><A HREF = #DB_OTHER> Other debugger topics</A>
+</UL>
+
+<A NAME = DB_LINE>
+<H3>Passive trace mode at the command line </H3>
+</A>
+After the compiled code for each statement has been run by the evaluator, it checks to see if debug mode is active, and if it is, perhaps whether to stop execution and ask the user what to do next.  Execution would stop for example if there was a breakpoint on the next line, or if the user was just stepping through one line at a time.
+
+<P>The most familiar form this user interaction takes is for the current execution point to be displayed on the client screen with a yellow arrow, and control to be returned to the user on the client.  However, the evaluator is happy to do things at two less-functional levels than this.  
+
+<P>The least-functional alternative is called "passive trace" mode, where the evaluator just says where it has reached in the current request, and continues with no user interaction at all.  This mode can sometimes be useful to quickly trace the events leading up to a UL run-time error without having to carefully step through manually line by line.  You can then activate one of the more interactive modes and perhaps set breakpoints close to the trouble spot straight away.
+
+<P>The middle-functionality alternative is called "interactive line" mode, in which the evaluator issues just textual prompts and expects textual commands back from the user.  Interactive line mode gives a fair amount of control, including break point setting, inspecting variables etc.  It hooks into the same functionality as the full GUI debugger - all the same considerations apply to string formats, comparisons etc.  Entering a '?' at the prompt gives a list of the available commands.  Perhaps the only time you would want to use this mode would be to debug a request on an IODev15.  However, it can also be useful to at least know the range of debugger line commands, since they are also accepted in full GUI mode, and it is sometimes possible to gain extra information and control over the GUI debugger using them.
+
+<P>More information is given below about how to invoke these modes and related options.
+
+<A NAME = DB_SPYOPTIONS>
+<H3>More about the operation of SPY command options</H3>
+</A>
+<H4>SPYMODE</H4>
+<UL>
+	<LI>1: Passive trace mode.  
+	<BR>Information is merely printed according to the settings of the other two parameters.  This is the only valid value on non-interactive thread types.  It can however be used on any interactive thread type too.
+
+	<LI>2: Interactive line mode.  
+	<BR>This setting is the default on an interactive line-at-a-time thread, but can be used on IODev7 too.
+	<BR>One thing worth pointing out is that in interactive line mode we step  through the full expanded source rather than individual included procedures as happens in full screen mode.  One or two minor differences in behaviour result from this.  When code contains dummy strings and when using the cosmetic SYFLAGS bits (see below), the original source may not exactly match the compiled version.  In interactive line mode we therefore see the compiled version.  Another minor difference appears when setting breakpoints in a request that includes the same procedure more than once.  In interactive line mode only one breakpoint is set by BREAK ON.  In full screen mode a single red blob could in this situation be thought of as setting several breakpoints.
+	
+	<LI>3: Full screen debugger mode.  
+	<BR>This requires an IODev7 client thread.  It is invalid with any non-zero RTTRACE setting.  It is the default on IODev7.
+</UL>
+
+<H4>RTTRACE (bit settings)</H4>
+
+<UL>
+	<LI>This parameter controls information echoed to the user's terminal as a request executes in SPYMODE 1 or 2.   Sum the bits you require to set multiple options.
+	<LI>The default for RTTRACE is zero when SPYMODE is 3, 9 when SPYMODE is 2, and 41 (X'29') when SPYMODE is 1.
+
+	<LI>X'01'
+	<BR>Source code lines are printed as control flows past them.  This bit is compulsory for SPYMODE = 1.
+	<LI>X'02', X'04'
+	<BR>Reserved
+	<LI>X'08'
+	<BR>The above trace information is sent to the user's terminal.
+	<LI>X'10'
+	<BR>The above trace information is sent to the audit trail (line type "RTT").  If RTTRACE is non-zero at least one bit must be set out of this and the previous one.
+	<LI>X'20'
+	<BR>A complete expanded source code listing is produced at the start of execution of a request.  Probably most useful when running in passive trace mode, spymode=1, where it is the default.  The listing always goes to the output device, not the audit trail.
+</UL>
+
+<H4>SPYFLAGS (bit settings)</H4>
+
+</UL>
+
+<UL>
+	<LI>Each bit of this parameter modifies some element of the debugger's behaviour in SPYMODE 2 or 3 away from the default option.
+	<LI>Sum the bits you require to set multiple options.
+	<LI>The default for this parameter is zero on all thread types, which is why it's last - just leave it off to get zero.  
+
+<P>
+	<LI>X'01'
+	<BR>Set this bit to make the debugger stop on a source code line *after* completing all the processing for the statement on that line.  (At this point it's too late to affect how the line gets executed, but some weird people like it this way).
+
+<P>
+	<LI><U>Flags controlling the cosmetic appearance of the source code in expanded listings and when stepping through in interactive line mode.  </U>
+	<LI>Note therefore that this bit *does not* make any difference to what is shown in the fullscreen debugger, since the original source is used for step-through there.
+	<LI>X'02'
+	<BR>Don't insert cosmetic lines into the expanded source code when FIND, STORE and multi-condition IF statements are terminated with a label or the END statement.   For example
+
+<PRE CLASS=code>
+A: FD COLOR = BLUE
+B: FR A
+</PRE>
+
+becomes
+
+<PRE CLASS=code>
+A: FD COLOR = BLUE
+>>> Following line inserted by DPT
+END FIND
+B: FR A
+</PRE>
+
+
+	<LI>X'04'
+	<BR>Don't insert cosmetic END XXX lines into the source code when nested blocks such as IFs and REPEATs are ended with the END BLOCK or END statements.  Whatever the setting of this bit, the debugger will stop on the END BLOCK statement if at all, and not the END XXX.  These lines are therefore totally cosmetic, and are there really to remind you not to use END BLOCK :-)
+	<LI>X'08'
+	<BR>This bit controls something which is semi-cosmetic and semi-functional.  The case in question is when the first controlled statement after THEN or ELSE is on the same line as those statements:
+
+<PRE CLASS=code>
+IF %A = %B THEN PRINT %C
+</PRE>
+
+	With this control bit on, the debugger will stop once before the test, and once after executing the PRINT statement, but not in between.  Leaving the bit off will mean the source code is tweaked to look as follows, allowing the debugger to break before the PRINT as well:
+
+<PRE CLASS=code>
+IF %A = %B THEN PRINT %C
+>>> Following line inserted by DPT
+PRINT %C
+</PRE>
+
+	Since the debugger uses the expanded source listing in interactive line mode, this is one place where the full screen debugger (which steps through the actual source code) might be thought of as offering less functionality.
+
+	<P>
+	<LI>X'10', X'20'
+	<BR>Reserved for future use
+
+<P>
+	<LI><U>Flags controlling step points around nested structures:</U>
+	<LI>X'40'
+	<BR>This switch affects the debugger's behaviour when loops are being executed.  Normal behaviour, assuming single-step execution, is to stop on the loop-control statement (e.g. REPEAT 10 TIMES) each time round the loop, but not on the block-ending statement (END or END FOR/REPEAT/BLOCK) unless it's labeled - i.e. jumpable-to - in which case the debugger does stop there.  The SPYFLAGS bit controls whether the debugger should make a concluding stop on END FOR when leaving the loop, either because the loop-control test failed, or because of LOOP END.  The default is yes, but setting the bit could slightly speed up a step-through of a large program.  
+	<BR>Leaving the loop in any other way (JUMP, RETURN, STOP) will never hit END FOR.
+	<BR>The case where the controlled statements are executed zero times (e.g. FOR %X FROM 4 TO 3, or FR MYSET when MYSET is empty) is no different in flow-of-control terms from any other loop.
+
+	<LI>X'80'
+	<BR>This switch affects the debugger's behaviour when IF blocks are being executed.  Normal behaviour, assuming single-step execution, is to stop on the IF test, each ELSEIF test and ELSE if none of the tests was successful.  In cases where there is no ELSE block the debugger will by default not bother stopping on END IF when all tests fail.  Setting the SPYFLAGS bit makes it do so - in this case slowing down the step-through of the program!
+
+	<LI>X'100'
+	<BR>This switch is also concerned with IF constructs, and controls what happens at the end of processing the statements in whichever sub-block is chosen.  As with loops above, the default is to pay a final visit to END IF at this point, but setting the SPYFLAGS bit makes it not so.  
+	<BR>One thing worth noting here is that in a multi-block IF construct, all statement blocks apart from the last are terminated by the following ELSEIF or ELSE statement.  For clarity, the debugger does not usually stop on these at the end of execution of the preceding block, although it will do so if you label the ELSEIF/ELSE, since that makes it jumpable-to.  For a similar reason therefore, if the END IF statement is labeled, the debugger will always stop on it after execution of the final block of statements if that block was chosen, regardless of this SPYFLAGS bit setting.
+
+<P>
+	<LI><U>Miscellaneous other flags:</U>
+	<LI>X'200'
+	<BR>When a User Language request is run, %variable INITIAL values are loaded at the start, before anything else happens.  Generally you would not want to step through the evaluation of these expressions, going instead to the main logic of the request, and the default for this flag is off.   Turning it on can however be useful if one of the INITIAL value expressions has an evaluation error, and/or the order of variable initialization is not clear (for example when there are a lot of subroutines, common variables etc).
+
+<P>
+	<LI><U>Future development ideas:</U>
+	<LI>X'400+'? 
+	<BR>There are currently no bits controlling whether the debugger stops on END SUBROUTINE, END ON and END.  It always stops on these statements if it hits them, but doesn't if you leave these structures some other way, for example with RETURN, RETRY/BYPASS or STOP respectively.
+	<BR>When calling a subroutine, single-step control passes from the CALL to the SUBROUTINE statement, then enters the subroutine (if it contains any executable statements), then on return passes back to the CALL again, before proceeding.
+</UL>
+
+
+<!****************************************************************************>
+<A NAME = DB_OTHER>
+<H3>Other debugger topics</H3>
+</A>
+
+<H4>Byte code and low-level run-time information</H4>
+Like Model 204, DPT compiles UL down to "byte code" which is then run on a "virtual machine".  The virtual machine is commonly called the evaluator on M204, and the byte code instructions are commonly referred to as "quads".  These terms are sometimes used throughout this document for familiarity.  
+
+<P>The DPT evaluator's pre- and post-statement exits were discussed in the above sections.  It also has an exit after each quad, so in certain situations it may be useful to step through the code one quad at a time.  It is also possible to get a quad listing of the current compiled request (issue the ?? debugger command for more info). This information would usually only be applicable to DPT internal fault diagnosis situations but it's possible that advanced UL programmers might be able to improve the efficiency of the code they write based on an understanding of how it gets compiled.  Of course there is no guarantee the Model 204 compiler would have generated quads in the same way, but the general principles will presumably be somewhat similar.
+
+<H4>Debugger future development</H4>
+The debugger is one of the areas of DPT with the most exciting possibilities for future development - there is scope for making available in a GUI fashion much more internal run-time information and more control options than currently.
+
+<P>Before anybody points it out, the current DPT compiler is sometimes quite sloppy with the amount of quads it uses in seemingly simple situations.  However most of the quads that look like filler are indeed so, and execute in negligible time.
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = More_Connection> 
+<H2> More About Managing the Host Connection</H2> 
+</A>
+
+
+<A NAME = LocalHost> 
+<H3>Local and remote hosts</H3> 
+</A>
+<P>If the client and host detect that they are respectively connected to address 127.0.0.1 (the default local loopback address), they assume they are on the same machine and enable one or two changes to the editing process.  Specifically the entire text does not need to be sent over the connection when opening and saving procedures - they are opened directly into the client from their host-local disc locations, which saves time.
+
+<P>If address 127.0.0.1 is not the loopback address on the machine(s) where you are running DPT, this tuning may be disabled or indeed things may not work properly at all.
+
+<A NAME = Waits> 
+<H3>Waiting for a host response</H3> 
+</A>
+<P>The DPT client application doesn't lock up in the same way that a 3270 does when the host is "thinking". For example if you run a request which does a lengthy calculation, the processing is kicked off but the client remains free for the user to perform other work such as editing whilst the request is running.  The same applies when commands are invoked.  The host command line only becomes available again after the operation has finished and all output received.   The client user can continue doing anything so long as it doesn't require interaction with the host command line.
+
+<H3>Disconnecting vs logging off</H3>
+<P>If you use the M204 LOGOFF command, your host session is closed down completely as it is on M204.  In other words all files are closed, all temporary procedures are lost etc., and when you reconnect it will be into a "fresh" session.  On the other hand, using the M204 DISCONNECT command, or the client's "disconnect" menu option, or simply closing the client application (which includes an automatic disconnect), invokes a less-complete session close-down.  Most importantly, if you are editing procedures they are all re-opened as soon as you reconnect.  This is often very useful, and is covered in more detail in the editor section later.
+
+<H3>The Connection Manager dialog</H3>
+<P>This window shows assorted information and statistics about the active host connection if there is one.  It may be left visible if desired during normal host I/O activity - this has no effect on how things work.
+
+<H3>Connection interrupts - "super attention"</H3>
+<P>In addition to showing detailed connection information, this window also offers a special operation, namely "Super Attention".  What this does is perhaps best explained by saying what the differences are from normal "attention".  As on a 3270 attached to the mainframe, normal attention can be issued any time the host is expecting input of any kind, and in this respect it's in the same family as PF keys and "Enter".  It often tells the host to interrupt the current operation in some way, but the exact action depends on the operation.  For example at a UL $READ the ON ATTENTION unit, if there is one, is activated.
+
+<P>Super attention is applicable in a slightly wider variety of situations, two of which are of key importance.  Firstly, when the host is sending a series of messages, such as in a long report, without any user prompts.  Issuing a super attention while this is going on tells the client comms routines not to to acknowledge these messages in the normal way but to "cut in" and tell the host to stop sending.  This allows reports to be terminated without waiting for a new page prompt to enter a normal attention like you would on the mainframe, and reflects the situation on DPT with its scrolling output windows where page breaking might be turned off. 
+
+<P>Another feature of super attention is that it always tells the host to return directly to command level.  This comes into play in the second main situation where super attention is used, namely during a debug session.  Regardless of the current include level or whether an APSY is active, using the "stop debugging" menu item or hotkey will return you directly to command level.  This is achieved by issuing a super attention under the covers.  In returning to command level the host bypasses as much "clean-up" processing of the current activity as possible - for example ON ATTENTION units and any APSY error procedures are not invoked - and in this respect it's a kind of halfway house between a normal attention and bumping the thread.  Any active USE device is closed by a super attention.
+
+<P>In situations where no IO is going on at all - e.g. if the thread is in a UL number-crunching loop - even super attention has no effect. 
+
+
+<BR><A HREF= #Top><BR>Top</A>
+<P>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A NAME = BATCH2> 
+<H2> Configuring the Client as a BATCH2 Robot</H2> 
+</A>
+
+<P>Some notes on setting up the host side of a BATCH2 configuration with DPT are given <A HREF = "sysconfig.html#BATCH2">in the system config guide</A>.  The following points obviously assume you are going to use dptclient.exe on the client side.
+
+<P>A sample DOS batch file is contained in the client directory of the default installation. (Assumes no password security on host).
+
+<H3>DPT Client Batch2 Mode</H3>
+There some key differences in operation when you run dptclient.exe in this way, both intended to minimize the need for human intervention.  The first difference comes from the fact that the whole point of a batch2-style run is to conduct a conversation with a host system, and terminate.  Normally, dptclient.exe does not terminate until the user explicitly closes the application - several host connections may be made and dropped during this time.  But in batch2 mode, the application closes automatically under various conditions (see below).  
+
+<P>Another difference is that in most cases where errors or other conditions would be displayed with a Windows message box, this does not happen.  In the case of errors, a return code is usually set and the client application closes.  This philosophy also extends to <A HREF = #OPT_LAT_GUI>GUI-style prompts</A>.  If you have any of those turned on, they are disabled.
+
+<P>A further thing to note is that in batch2 mode, the client application assumes that it will be making a fresh connection for every run.  This means that during closedown it will never save the current host "session state" for restoration during the next run, and that during connection it will not attempt to restore any such saved session state, even if one does exist (i.e. if the previous run was not batch2 mode).  The notion of saving and restoring host session states is discussed elsewhere in this document.
+
+
+<P>Apart from these differences, the DPT client works much as it would normally, and you can perform other work whilst the batch2 "robot" is running if you like.  For example interfering with the input command lines before they're sent to the host.
+
+<H3>Invoking Batch2 Mode</H3>
+The thing that puts dptclient.exe into this mode is the presence of the command line parameter BATCH2HOST=xxxxxxx.  For example
+
+<PRE CLASS=code>
+dptclient.exe batch2host=localhost:13204
+</PRE>
+
+Two other things are required to run in this mode, but it is the above parameter which determines the run mode.  The other two things are a user name to log on with, and the name of the input file of commands.  These can be given either on the command line:
+
+<PRE CLASS=code>
+dptclient.exe batch2host=localhost:13204 batch2user=Richard script=C:\testcmds.txt
+</PRE>
+
+Or failing that they will be taken from options previously entered into the options screens within the application for use at other times.  In the case of the user name, it comes from the <A HREF = #Options_AutoConnect>connection options screen</A>.  In the case of the input file, it comes from the script options screen.
+
+<H3>Password</H3>
+If logon security is active on the host you will also need a password parameter, for example:
+
+<PRE CLASS=code>
+dptclient.exe batch2host=localhost:13204 batch2user=Richard batch2password = ABC script=C:\testcmds.txt
+</PRE>
+
+The password can not be entered into the connection options screen however. 
+
+
+<H3>The "Mini-script"</H3>
+Ultimately the intention is for the DPT client to have a full scripting facility, so that all operations that can be performed by hand can be composed into scripts and executed automatically.  This is how editor and debugger macros would be implemented for example.  However, back in the real world of the current version, the scripting facility exists only in a rudimentary form, specifically for use in batch2 mode.  It is called the "mini-script" because of the partial similarity in processing to how the full scripting system is planned to work, and because you can only define one of them.
+
+<P>Lines from the mini-script file are taken whenever a command line prompt arrives from the host (e.g. $READ, new page, dummy string etc.).  The file lines are placed into the command line as if the user had typed them by hand, and after an optional delay the script playback "robot" simulates an enter press to send the line to the host.  With a non-zero delay, you can for example alter the input line before it gets sent to the host, or just keep the playback speed down so you can watch things as they happen.
+
+<P>The tools/script menu also offers a certain amount of coarse control over the playback of the mini-script.  For example you can start and stop playback whilst you are working in normal (non-batch2) mode - useful during the composition and testing of a batch2 input file.  The best way to invoke these functions is via their hotkeys (Ctrl+Shift+M/P/S) since the menus do not stay down during a playback "tick".
+
+<H3>Termination and return codes</H3>
+In batch2 mode, the client shuts down automatically under these conditions and with these return codes, which can be used to control later steps in a batch file.  The command line log file will contain more information.  
+
+<UL>
+	<LI>100: Missing user name or script
+	<LI>100: Open failure on script file or other application startup error
+	<LI>200: Miscellaneous OS errors (memory etc.)
+	<LI>300: Initial host connection failure
+	<LI>300: Abnormal connection termination during run (e.g. bump, restart, comms error)
+	<LI>0: Normal host connection termination (e.g. LOGOFF coded in input file)
+	<LI>0: EOF on the input file (logoff is assumed)
+</UL>
+
+Thus, rc=300 would occur in similar situations as to BATCH2 with Model 204 on the mainframe.  There is currently no way to get a specific return code passed back programmatically, as was added to M204 a few versions ago.  This is something for the next DPT version.
+
+<H3>Other ideas and points to consider</H3>
+<UL>
+	<LI>Try enabling or disabling <A HREF = #OPT_LAT_OPROUTE>Output routing</A> to minimize memory usage and comms traffic
+	<LI>If output is coming to the client (this would usually be the case - see sample) set <A HREF = #OPT_LAT_ARNP>auto-reply to newpage prompt</A> to compensate for the differences in page handling between interactive and file-based IODevs
+	<LI>You can reduce clutter in the output file if desired by disabling <A HREF = #LAT_Options>'local echo' and 'display client control messages'</A>.  These options can also be disabled on a per-run basis using the command line parameter 'QUIET=n' where n=1 and n=2 disable those two options respectively, and n=3 disables both.  Using the command line parameter can avoid excessive trips to the options menu to reconfigure between typical batch and interactive settings if the same copy of dptclient is being used for both.
+	<LI>For the least intrusive batch job of all, run minimized.  There is no command line switch for this, but if the application was last closed while minimized, it will start up again minimized.
+</UL>
+
+
+
+<P><HR>
+<!****************************************************************************>
+<A HREF= #Top><BR>Top</A>
+
+</HTML>

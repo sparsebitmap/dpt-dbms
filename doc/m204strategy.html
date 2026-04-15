@@ -1,0 +1,208 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>M204 Emulation Strategy</TITLE>
+
+<H1></H1>
+
+<H1 Align = "Center">Database Programmer's Toolkit</H1>
+<H1 Align = "Center">Model 204 Emulation Strategy</H1>
+
+<P><HR><BR>
+
+The terms "Model 204" and "204" are trademarks of Rocket Software Inc., and that fact is acknowledged wherever those terms are used in this document.
+
+<H2><A HREF NAME = SUMMARY></A>Summary</H2>
+
+This document describes the factors which were taken into account when deciding how to approach the emulation of Model 204.  It also covers how features were prioritized so that early releases could be useful without being 100% complete.  The partner <A HREF = "m204xref.html">"features cross reference"</A> document answers all the specific "does DPT currently have a XXXXX feature?" questions via a set of feature tables.
+
+<P>Actually the term "emulator" is not quite right for DPT.  That implies the replication of all system operation at all levels, whereas the DPT approach is more like <A HREF = "http://www.winehq.org">WINE (the windows "not an emulator" for linux)</A> which calls itself a "compatibility layer" rather than an emulator.  Like DPT it is concerned with providing a compatible API that allows user code to be written and executed, but is happy to do things differently under the covers if it seems appropriate, and is transparent to the user code.
+
+<P>As well as not supporting some Model 204 features, there are also a number of places where DPT offers somewhat different functionality, and still others where it has significant extra functionality of its own, for example the <A HREF = "webguide.html">web server</A>, and other local I/O facilities added in Version 2.  However, in the great majority of cases code written on DPT will run successfully and do the same thing when run on Model 204.  The opposite is true in a much smaller set of cases, since of course code written on Model 204 is likely to take advantage of the full range of available features.  With time, this will become less of a problem as more features are added to DPT.
+
+<P>The main issues involved in approaching the emulation were: 
+<UL>
+	<LI><A HREF= #TooMany  > Model 204 is extremely feature-rich</A>
+	<LI><A HREF= #PC       > The PC environment and operating systems</A>
+	<LI><A HREF= #Scratch  > DPT is written from scratch</A>
+</UL>
+
+<P><HR><BR>
+
+<!*******************************************************************************************>
+<A NAME = TooMany> <H3>Issue 1: Model 204 is extremely feature-rich</H3></A>
+
+This is the most obvious issue.  How is it possible to produce a useful emulation of a platform that has 30+ years of development behind it?  Put simply the answer is by leaving a lot out and simplifying most of the rest!  (Omitting and simplifying isn't always a bad thing...)
+
+<P>As time goes on the range of Model 204 features emulated will be increased based on what users say are the top priorities.  Ultimately in theory DPT could provide a completely "plug-compatible" alternative run-time platform for User Language applications, which can only be a good thing for everybody.  If that sounds ambitious, remember that DPT is written in C++, and takes advantage of a vast worldwide repository of standard code libraries.  This means it can be upgraded very quickly compared to the mainframe platform where code is painstakingly hand-crafted in assembler.
+
+<P>So down to business - let's see how we can trim some features away... 
+
+<UL>
+	<LI>1a. <A HREF = #MISSION>Things a programmer-focused platform can (perhaps) do without</A>
+	<LI>1b. <A HREF = #SIMPLIFIED>Simplified features</A>
+	<LI>1c. <A HREF = #PERFORMANCE>Purely performance-oriented features</A>
+</UL>
+
+
+<!*******************************************************************************************>
+<A NAME = #MISSION><H4>1a. Things a programmer-focused platform can (perhaps) do without</H4></A>
+
+At least in its early releases, DPT is positioned more as a code-development tool than a production platform.  This means there are a range of M204 features, namely those geared towards production operation, which seemed like the system would be more or less usable for writing, testing and debugging code without them.  In this context the goal to provide a development platform can be thought of as a sort of halfway house to full production capability, and  these features are ones which can be easily "bolted on" at a later stage.
+
+<DL>
+	<DT>1.1. Security
+	<DD>Initially none of Model 204's internal security features were emulated, working on the assumption that PC users typically deal with security at the OS level or with physical doors and locks. Within application code, calls to security-related functions returned default results.  From DPT Version 2.16 however a growing <A HREF = "sysconfig.html#ACCESSCONTROL">set of access-control features are available</A>.
+
+	<DT>1.2. Connectivity
+	<DD>Most connectivity options, such as CICS, Connect*, DB2, MQ etc.  Thread types supported are full-screen, interactive line at a time, file-based, and daemon.  Version 2.0 adds web server and native Windows sockets connectivity.
+
+	<DT>1.3. Data access
+	<DD>SQL and any data access options apart from those provided by the 4GL, which is to say commands and User Language. Open-source C, C++ and Java APIs into the underlying DBMS also exist.
+
+	<DT>1.4. Data Dictionary
+	<DD>All configuration is via the command line, including creation of subsystems (i.e. no subsystem management screens).
+
+	<DT>1.5. Language support
+	<DD>Any kind of non-English language support (e.g. none of the $functions have language-related options).
+
+	<DT>1.6. Character sets
+	<DD>String and character processing, comparisons etc. in virtually all situations are based on the ASCII collating sequence.  The exception is that DPT does have the ability to translate data to and from EBCDIC if necessary (e.g. $ASCII/$EBCDIC).  There is no support for DCBS or KANJI.  
+
+	<DT>1.7. Fancy configurations
+	<DD>This means MP, PQO, etc., although some aspects of DPT are similar to both those configurations as they work on the mainframe. The custom client can behave like an online batch user ("BATCH2").
+
+	<DT>1.8. Roll-forward recovery
+	<DD>There is no roll-forward, and no journal file, so none of the other stuff gets journaled either.  Roll-forward can be thought of as a nice-to-have, but is not strictly necessary to maintain database integrity in the event of a crash.  <A HREF = "sysconfig.html#System_Integrity">Checkpointing and roll-back</A> protection are provided.  There is no "extended quiesce" option.
+
+	<DT>1.10. Obsolete features
+	<DD>Some "obsolete" features mentioned in the manuals, such as line continuation within bracketed expressions, are not allowed on DPT.
+
+	<DT>1.11. Weird parameter settings
+	<DD>For example only the first 4 CUSTOM values are emulated.
+
+	<DT>1.12. Lesser-used features
+	<DD>Things like sorted and hashed files, and AT-MOST-ONE and UNIQUE fields.  "Lesser used" is a highly subjective term of course!
+</DL>
+
+<!*******************************************************************************************>
+<A NAME = #SIMPLIFIED></A><H4>1b. Simplified features</H4>
+These things for one reason or another have not been developed completely.  The main thing separating these from the above is that it didn't seem like it would be possible to go without them altogether.  They are therefore implemented, but in a more or less simplified way.  For example the database transaction and logical integrity strategy only has slight differences from M204, whereas statistics gathering is noticeably more straightforward.
+
+<DL>
+	<DT>1.21. Transaction back-out
+	<DD>On DPT, <A HREF = "sysconfig.html#Integrity_Logical">LPU and TBO always go together</A>.  What's more, they can only be turned on or off at the system level, not for individual files.  TBO is a little simpler.
+
+	<DT>1.22. Statistics
+	<DD>The <A HREF = "m204xref.html#Statistics">set of statistics</A> gathered is somewhat reduced and consolidated, and there are no partial, performance or MP statistics.  SMF is obviously not relevant.
+
+	<DT>1.24. Groups and subsystems
+	<DD>Both of these features are present, but there are is no permanent storage in the form of equivalents for CCASYS and CCAGRP.  <A HREF = "dbaguide.html#GROUPS">Groups</A> and <A HREF = "sysconfig.html#APSY">subsystems</A> must be defined in each run.  There are restrictions on the variation of field attributes</A> between members of a group.
+
+	<DT>1.25.  3270 full screen handling
+	<DD>Given the range of 3270 screen attributes and functions, or even the subset provided within Model 204, a full emulation here would be extremely challenging.  Nevertheless the DPT <A HREF = "ideuser.html#Fullscreen_Mode">custom client does its best</A> to provide a usable implementation, and should be OK for most applications.
+
+	<DT>1.26. User Language
+	<DD>There are only a few statements that are not supported at all, mostly to do with communication options (e.g. Horizon) that aren't emulated either.  This category is also a catch all for a few rarely-used and generally unpopular features.
+
+	<DT>1.27. $Functions
+	<DD>At the time of writing at least 90% of the <A HREF = "m204xref.html#Functions">standard and math $functions</A> work the same as on Model 204.  A small number are not present because they relate to unsupported features (and might therefore not be present in a similar installation of M204 either).  The rest return slightly different results usually reflecting platform differences.  A subset of the Sirius function repertoire is also emulated.  Users' existing custom $functions will not work initially, but a special document will appear soon describing the relatively straightforward process of adding them.
+
+	<DT>1.28. FLOD
+	<DD>The FLOD language is not supported.  However from Version 3.0 DPT does include its own <A HREF = "dbaguide.html#Loading_Fast">fast-load utility</A>.
+</DL>
+
+
+<!*******************************************************************************************>
+<A HREF NAME = PERFORMANCE></A><h4>1c. Purely performance-oriented features</h4>
+In many cases, Model 204 features are only there to improve performance, but do not offer any extra functionality over other available features.  KEY indexes are an example; pre-allocated fields are a less clear-cut example; and the whole notion of an internal scheduler, when many operating systems provide thread scheduling services, is yet another example.  Such features have been dropped more or less happily.  At the end of the day a PC-based system is unlikely to win any races against a mainframe one.
+
+<DL>
+	<DT>1.41 Database index options
+	<DD>Any apart from ordered character and ordered numeric fields.
+
+	<DT>1.42 Database data storage options
+	<DD>Any apart from string, float(len 8), invisible, and from V3.0 BLOBs.  This is somewhat related to the issue of field constraint options like at-most-one, none of which are emulated.  ON FLC units are accepted in UL requests with a warning message.
+
+	<DT>1.43. Parts of APSY
+	<DD>At least in the initial release, there are no pre-compiled requests. The <A HREF = "sysconfig.html#APSY">APSY</A> feature has one or two other small differences in operation.
+
+	<DT>1.44. Assorted buffer management features
+	<DD>Such as pre-emptive writes and delayed disk writes.  The <A HREF = "sysconfig.html#Memory_Management">buffer manager</A> is somewhere that DPT takes an approach tailored to the requirements of the PC user.
+
+	<DT>1.45. NO FS
+	<DD>The default, "YES FS" implements a run-time performance optimization that DPT does not do.  NO FS compiles but has no effect.
+</DL>
+
+<P><HR><BR>
+
+<!*******************************************************************************************>
+<A NAME = PC> <H3>Issue 2. The PC environment and operating systems</H3></A>
+The second main issue is that there are certain inescapable differences between the mainframe and PC environments.  DPT attempts to strike a balance between being a PC application, and at the same time behaving a bit like its mainframe counterpart so as to be familiar to Model 204 users.
+
+<DL>
+	<DT>2.1. DPT has no internal scheduler
+	<DD>Instead it relies on the <A HREF = "sysconfig.html#Thread_OSSched">thread-scheduling</A> capabilities of the operating system.
+
+	<DT>2.2. Memory Management
+	<DD>In most cases DPT leaves <A HREF = "sysconfig.html#Memory_Management">memory management</A> to the operating system, which removes the need for some	system-level parameters, while giving us a few new ones.
+
+	<DT>2.3. Database file IO
+	<DD>Low level disk IO has a distinct Windowsy flavour in many cases.  This should be transparent to the user.
+
+	<DT>2.4. No VTAM
+	<DD>This makes a fairly large set of parameters and commands redundant, but adds a much smaller number of custom commands and parameters for controlling the socket interface.  It also has implications for the parameters which control output line length and paging, particularly on interactive devices like IODev 7, since on the PC we can make much greater <A HREF = "ideuser.html#Line_Mode">use of scrolling windows</A> instead of sticking to the "page-based" nature of 3270.
+
+	<DT>2.5. Assorted general features
+	<DD>Including snaps, dumps, zaps, SMF parms and stats, anything to do with the operator console, anything to do with JCL (JOBNM, STEPNM, £JOB etc.)   In addition this is a kind of catch-all category for some other features that are inappropriate on the PC, or that it didn't seem worth re-inventing, such as the MSG command (use <A HREF = "language.html#BBEMAIL">email</A>), detailed printer control (use Windows) etc.
+
+	<DT>2.6. File enqueueing
+	<DD>Database files are always enqueued exclusively as far as the OS is concerned (i.e. you can't share between onlines).  This is not strictly an OS limitation, but does make things simpler internally.  FRCVOPT is always effectively X'10' - <A HREF = "sysconfig.html#FRCVOPT">no discontinuities allowed</A>.
+
+	<DT>2.7. Number handling
+	<DD>A complete emulation of the low level floating-point functionality used by Model 204 on the mainframe, whilst possible, and maybe even fun, would not bring very much to the party.  Therefore there will certainly be <A HREF = "language.html#Number_Handling">one or two differences in number handling</A>, particularly when dealing with very large or very small numbers, or when very fine precision is required.  Another minor potential issue is <A HREF = "sysconfig.html#Install_DataXfer">endianism</A>.
+
+	<DT>2.8. Sequential files
+	<DD>PC file systems are different, especially when it comes to <A HREF = "dbaguide.html#Alloc_RecLen">what constitutes a "record"</A>.  This has implications for file allocation, image reading and writing, and USE.
+</DL>
+
+<P><HR><BR>
+
+<!*******************************************************************************************>
+<A NAME = Scratch> <H3>Issue 3. DPT is written from scratch</H3></A>
+This is the most interesting category, and covers those features where DPT has taken the opportunity to do things differently for reasons not covered in the above two categories.
+
+<DL>
+	<DT>3.1. Procedure handling
+	<DD>This is <A HREF = "dbaguide.html#Procedures">significantly different</A> in implementation, but appears similar to the user. Procedures on DPT are text files, in file directories instead of in table D of a 204 file.  In many ways this makes procedure handling much easier than on M204, but does have some implications for parameters and commands.
+
+	<DT>3.2. Database file structure
+	<DD>The DPT DBMS is in many ways different to Model 204's, although since both are based on standard data structures such as b-trees and bitmaps, they are also <A HREF = "dbaguide.html#Structures">similar in many ways</A> too.  This means that many of the familiar file parameters and statistics have similar meanings, which is useful from a programmer point of view.
+
+	<DT>3.3. Assorted differences in messaging
+	<DD>Message numbers are different to M204's.  The messages themselves are also often more helpful than M204's.  Message control options are somewhat simplified.  Also, importantly, <A HREF = "ideuser.html#Smart_Edit">messages can be "smart"</A>.
+
+	<DT>3.4. The audit trail
+	<DD>The <A HREF = "sysconfig.html#AUDIT_TRAIL">DPT audit trail</A> is similar to the Model 204 equivalent but its layout can be customized.
+
+	<DT>3.5. Reserved words handling
+	<DD>Field names can contain quoted sections (i.e. to "hide" unwisely-used reserved words), but no other entities can.  For example procedures.
+
+	<DT>3.6. Front End facilities.
+	<DD>The provision of more functional and useful front ends is a key goal of DPT, and affects several areas.  An emulation of the M204 full screen editor as such is definitely superfluous, since the EDIT command invokes <A HREF = "ideuser.html#Editing">a different, better, editor</A>.  The line editor is also unsupported despite the fact that it is sometimes used for utilities.  The only debugging option is the <A HREF = "ideuser.html#Debugger">interactive step debugger</A>.  This should eliminate the need for features like DEBUG SUBSYS, TEST DEBUG and SSTEST.  From Version 3.0 database files (.dpt) can be opened directly by a GUI viewer utility, the <A HREF = wizard.html>File Wizard</A>.
+
+	<DT>3.65. Windows platform I/O
+	<DD>This is a set of facilities added in <A HREF = "relnotes_V2R0.html">Version 2</A> which, like the above, make DPT sit more comfortably as a PC development platform in its own right, rather than being something of a mainframe fish out of water. 
+	<DT>3.7. The inevitable final "catch-all" of miscellaneous differences
+	<DD>For example the output from a number of commands looks somewhat different to M204's output, for a variety of reasons covered in this section.  This catch-all category includes places where it proved irresistible to add new (i.e. DPT custom) commands, $functions etc.  Custom options like this can be disabled using the <A HREF = "m204xref.html#CSTFLAGS">CSTFLAGS parameter</A>.  
+</DL>
+
+<A HREF= #Top>Top</A>
+<HR>
+
+</HTML>

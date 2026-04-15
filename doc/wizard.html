@@ -1,0 +1,575 @@
+<HTML>
+
+<!****************************************************************************>
+<! Note:  This document contains no hyperlinks to other DPT documents, at    *>
+<! least not local-directory links.  This is so that this doc can be held    *>
+<! without changes on its own inside the wizard JAR package.                 *>
+<!****************************************************************************>
+
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Database Programmer's Toolkit</TITLE>
+
+<H1 ALIGN = CENTER> Database Programmer's Toolkit</H1>
+<H1 ALIGN = CENTER> File Wizard</H1>
+
+<HR>
+<H2 ALIGN = CENTER> <I>Data Browser/Editor and DBA Utility</I></H2>
+<HR>
+
+
+<H2>Contents</H2>
+
+<UL>
+<LI><A HREF = #Summary >1. Summary</A>
+<LI><A HREF = #DisplaySummary >2. Screen Areas</A>
+<UL>
+<LI><A HREF = #DisplayUsers >2.1. User Session Output</A>
+<LI><A HREF = #DisplayFiles >2.2. Files</A>
+<LI><A HREF = #DisplayData >2.3. Data Views</A>
+</UL>
+<LI><A HREF = #OperationsSummary >3. Data Functionality </A>
+<UL>
+<LI><A HREF = #FileOperations >3.1. File Operations (DBA)</A>
+<LI><A HREF = #FindOperations >3.2. Finds/Searches</A>
+<LI><A HREF = #SetOperations >3.3. Sets</A>
+<LI><A HREF = #RecordOperations >3.4. Records</A>
+<LI><A HREF = #DataOperations >3.5. Field Data (Editing etc.)</A>
+<LI><A HREF = #GeneralOperations >3.6. General Notes On Working With Data in the Wizard</A>
+</UL>
+<BR>
+<LI><A HREF = #Options >Appendix A. Options and User Preferences </A>
+<LI><A HREF = #Misc >Appendix B. Miscellaneous Usage and Configuration Notes</A>
+<LI><A HREF = #Shortcuts >Appendix C. List of Shortcut Keys and Meanings</A>
+</UL>
+
+
+<HR>
+<!****************************************************************************>
+<A NAME = Summary> </A> <H2>1. Summary </H2>
+
+The File Wizard lets you open and manipulate DPT database files just as if they were text files in notepad.  No more having to log onto a DPT host and issue line commands just to look at a few records of data.  Ideally you would associate <TT>dptwizard.exe</TT> with extension <TT>.DPT</TT>, which allows double-click on files in Windows Explorer to open them.
+
+<P>The application was written to test and to showcase the Java API, so it provides the ability to perform most database functions one way or another, but it won't be offended if all you do is use it to browse data and change the odd field here or there.
+
+<P>Since the File Wizard accesses database files directly via low level APIs, it is not necessary to have a DPT host system running anywhere to use it.  Files which are currently allocated to a running DPT host can not be opened by the Wizard for enqueue reasons.  A future version will support the option to work on files attached to remote hosts.
+
+<P>
+<HR>
+<!****************************************************************************>
+<A NAME = DisplaySummary> </A> 
+<H2>2. Screen Areas</H2>
+
+There are three areas of the screen, described below.  (1) User output; (2) File DBA area; (3) Data. 
+
+<P>Each area can be resized or hidden - often the data area (3) may be the only one of interest.
+
+<P><IMG SRC = "images/wizmain.gif"></IMG>
+
+<P><U>Controls</U>
+<BR>The tab and arrow keys move the keyboard focus around items on the screen, and there are <A HREF = #Shortcuts>shortcut keys</A> for fast access to some areas.
+
+<P>Right clicks on most things bring up relevant popup menus.
+
+<P>Hitting enter or double clicking usually activates the selected item in some way, such as (most commonly) initiating a field value edit.  
+
+<P>Standard Windows keys and key combinations like F2, F5, Ctrl+C, Ctrl+S, etc. have their usual meanings, or at least something close to them.
+
+<P>
+
+<!**************************************>
+<A NAME = DisplayUsers> </A> 
+<H3>2.1. User Session Output </H3>
+
+<P>When the wizard is launched, it starts an internal DPT DBMS instance and logs on the default user, "user zero".  This is sufficient for most operations, but you can start further session threads if you like.  Possible reasons for doing so might be to invoke record locking scenarios; to continue working if one or more sessions were locked during e.g. long record sorts; or just to make use of the colours to keep different tasks visually distinct.  It would usually make more sense to start separate instances of the wizard rather than separate user threads within the same one but it's up to you.
+
+<P>Just like a regular DPT system the first session initializes the DBMS and the last one to log off closes everything down.
+
+<P>Each session thread gets its own tab in the bottom area of the screen, where its error messages and other output are sent.  The system audit trail is shown down there too.  Tabs can be selected by clicking them, or Ctrl+Tab when in the output area cycles between tabs.  The user on top is the one to receive commands from the GUI.  The area as a whole can be focused with <A HREF = #Shortcuts>Alt+1</A> or shown/hidden with Ctrl+1 to make more screen space for data.
+
+
+<!**************************************>
+<A NAME = DisplayFiles> </A> 
+<H3>2.2. Files </H3>
+
+The area to the left of the screen shows information about files attached ("allocated") to the wizard and available to perform database operations on. Various DBA-type operations like defining fields can be performed using the controls in this area.  As with user sessions you can allocate as many files as you like, although in typical use there will be only one, i.e. the one that was double clicked in Windows.  
+
+<P>Files can be selected by clicking them, or Ctrl+Tab when the focus is in this area cycles between files.  The file area as a whole can be focused with <A HREF = #Shortcuts>Alt+2</A> or shown/hidden with Ctrl+2 to make more screen space for data.
+
+
+<A NAME = FileContexts> </A> 
+<P><U>Allocating, opening, closing, freeing files</U>
+
+<BR>Most database operations require that a file be open on the selected user session, in the same way you'd have to do that in a M204 command line session.  This is why the default operation of <A HREF = #Shortcuts>Ctrl+O</A> is to both allocate and open a file, and when double clicking a DPT file in Windows the default session is logged on and opens the selected file.
+
+<P>Similarly, any further user sessions automatically open whatever file, if any, is currently visible.  Each session can have many files open, but each session maintains its own current target file (like CURFILE on M204), so switching between sessions may bring different files to the fore.
+
+<P>Closing a file makes it unavailable for most database operations on that user session.  A file that is still allocated but closed to the current user session does not show its parameters or fields. Freeing a file removes it from the wizard altogether. 
+
+<!**************************************>
+<A NAME = DisplayData> </A> 
+<H3>2.3. Data Views </H3>
+
+
+The main area to the top right of the screen is used for displaying data, which usually means record sets but also includes value sets.  Performing either a record find or a value find creates a new tab here, belonging to the current target session and decorated with their colour.  A wide range of data manipulation operations can be performed using the controls in this area.  When a file is first opened the wizard issues an automatic find for "all records", which is assumed to be what you'd normally want to see.
+
+<P>Operations relating to data are targeted at the currently-visible set.  Other sets can be selected by clicking their tab or using Ctrl+Tab to cycle through all of them.
+
+
+<A NAME = DataLayout> </A> 
+<P><U>How data is displayed in this area</U>
+<BR>Database records and fields are displayed in a grid format.  With record sets the rows represent records and the columns represent fields. With value sets there is a single column containing the values, and an optional second column containing the counts of records with each value.  
+
+<P>The display consequences of our DPT/M204-style record format with its repeating and/or optional fields should be explained.  By default the order and width of columns is taken from the fields found on the first record in the set, and then more columns are added and sized for fields as they feature on later records as they come into view during scrolling.  For example the picture above shows that the <TT>NAME</TT> column was sized to fit the shortish value <TT>"ARSENAL"</TT>, thus clipping later ones like <TT>"BLACKBURN ROVERS"</TT>.  The <A HREF = #Shortcuts>Ctrl+Y</A> key (Data/Columns/Fit All) quickly makes all values visible.
+
+<P>Columns are not reserved for fields which are defined to the file but do not appear on any of the records.  This default scheme means that the column layout for any given set is not constantly shuffling around as the display is scrolled up and down, but it can be also customized if it is unsatisfactory in some way.  For example:
+
+<UL>
+<LI>The fields of most interest might be way off to the right, and/or interspersed with lots of uninteresting fields.  Multiple layouts can be created for various uses where different groups of fields are interesting.
+<LI>The appearance of fields on the screen does not necessarily reflect the order they appear on their physical records (except for the first record in each set).
+<LI>Multiply occurring fields do not necessarily appear together.
+<LI>The column layout may vary confusingly between different sets in the same file.  You can specify an automatic fixed layout for all sets in a given file (see below).
+</UL>
+
+<P><U>Custom column layouts</U>
+<BR>First arrange the columns by selecting and dragging them around, and/or moving the dividers to resize them, and/or using the "Column 
+Layout" menu commands.  Then when you're happy with how it looks, use "Save Column Layout".  If you take the default layout name, your custom layout will automatically be used whenever the same file is opened again by the wizard, and whenever sets of records from that file are created. If you give any other name, you'll have to explicitly use "Load Column Layout" in future.  Any time a custom layout is saved or loaded it is used for future sets created in the same file, until another layout is loaded or until you revert back to default operation.
+
+<P>Saved layouts preserve a list of selected columns, their positions, widths, and any non-default formatting applied such as right-alignment on a STRING field.  Note that if you add new data to records when a fixed column layout is in effect, the freshly-added fields may or may not appear in view.
+
+<A NAME = DataFormat> </A> 
+<P><U>Field value format</U>
+<BR>Values are shown in their cells as they would be printed by a User Language PRINT statement, except in the following cases.  Further information is available via cursor-hover and various other operations like cell-edit (see menus).
+
+<UL>
+<LI>Where a record doesn't contain a value for a field, it is shown in the grid as a tilde (<TT>~</TT>).  This distinguishes it from cases where a field contains a zero-length string value, which shows as a completely empty cell.
+<LI>By default numeric fields are displayed right-aligned and string fields left-aligned.
+<LI>If the display is configured to show hex values in a column, hexed strings show as e.g. x'4f4b' ('OK') and hexed numbers as e.g. 0xff (255).
+<LI>Field values longer than 255 characters (i.e. BLOBs) are truncated for the grid display, but can be seen in full in various ways like "display" (Ctrl+D).
+<LI>Where a set contains records that have been deleted since the set was made, the rows for the deleted records are grayed out, which is the equivalent to the "Nonexistent record referenced" you get in the same situation in User Language applications.  Use F5 ("refresh") to remove these rows.
+<LI>The display area is populated during scrolling by making background calls to the DBMS.  During very fast scroll operations like dragging the scroll bar around a huge set you may briefly glimpse values of "?" in cells, which indicates that the GUI has requested a field value or count but it has yet to arrive at the client end.
+</UL>
+
+<A NAME = DataSelection> </A> 
+<P><U>Selecting data</U>
+<BR>Cells are selected by moving the cursor around with the arrow/tab keys or clicking on them.  Rows are selected by clicking on the (gray) record number on the left side, or by using left-arrow when in the first data cell column.  Columns are selected in the same way, by clicking the field name at the top, or using up-arrow when in the first row.  Different menu operations are available depending on what's selected.  It is not currently possible to select multiple rows or columns at the same time.
+
+<P>
+<HR>
+<!****************************************************************************>
+<A NAME = OperationsSummary> </A> 
+<H2>3. Data Functionality </H2>
+
+<UL>
+<LI><A HREF = #FileOperations>3.1 File Operations (DBA)</A>
+<LI><A HREF = #FindOperations>3.2 Finds/Searches</A>
+<LI><A HREF = #SetOperations>3.3 Sets</A>
+<LI><A HREF = #RecordOperations>3.4 Records</A>
+<LI><A HREF = #DataOperations>3.5 Field Data (Editing etc.)</A>
+<LI><A HREF = #GeneralOperations >3.6. General Notes On Working With Data in the Wizard</A>
+</UL>
+
+<!**************************************>
+<A NAME = FileOperations> </A> 
+<H3>3.1. File Operations (DBA)</H3>
+
+<P>The commands for file and field maintenance are all accessible via the "DBA" menu at the top, and mostly also via right click popup menus.  
+
+<P>The default action initiated (F2/Enter/Double click) on a file parameter is "reset", on a field name is "rename", and on field attributes is "redefine".
+
+<P>Fast unloads, loads and reorgs can be invoked from this area.  The File Wizard is quite a nice interface for these functions if you don't otherwise have any command line or batch procedures set up.
+
+
+<!**************************************>
+<A NAME = FindOperations> </A> 
+<H3>3.2. Finds/Searches</H3>
+
+<P>Find operations are used to create the record/value views which get displayed on the right of the screen.  To create a new view you can either use one of the right-click popup menus, for example when a column or cell is selected perform a "drill down" find on that value, or enter a complete, more specific query.  In the latter case <A HREF = #Shortcuts>Ctrl+F</A> quickly brings up the "Find Records" dialog, or Ctrl+Alt+F the "Find Values" dialog.  The find values version is self-explanatory and is not discussed any further.  The find records one has a few more controls to play with, as follows.
+
+<P><U>Find specification query</U>
+
+<BR>Record find specifications must be given the text query format accepted by the DPT database API.  The syntax of this is a lot like a User Language FIND statement, but slightly stricter and not supporting the same range of quirks.  The most important differences are:
+
+<UL>
+<LI>Newlines can be included for formatting but they are just treated as whitespace and do not imply AND.  Hyphens are therefore *not* required to continue the query if it contains line breaks.
+<LI>Operators must all be explicitly given, that is they can not be implied as in e.g. <TT>SURNAME = SMITH OR JONES</TT>.  You have to say <TT>SURNAME = SMITH OR SURNAME = JONES</TT>. 
+<LI>"IS" is just syntactic sugar - it does not imply a forced numerical find like in User Language.
+</UL>
+
+<P>The rules are summarised formally here, including a couple of non-User Language extensions to accommodate common language conventions like "!=" for "NOT EQ", and & for AND, and | for OR.  Quotes (either type so long as they match) must also be used to enclose spaces in operands.  Hex format can be used with quotes to express operands like e.g. <TT>x'0d0a'</TT>.  Query keywords can be in mixed case but operands are case sensitive.
+<UL>
+<LI><TT>operand ..... :  [[x|X]'|"]string['|"]</TT>
+<LI><TT>fieldname ... :  operand</TT>
+<LI><TT>type ........ :  ALPHA[BETICALLY] | NUM[ERICALLY]</TT>
+<LI><TT>operator .... :  [IS] [NOT] [type] [NOT] {EQ|=|NE|!=|¬=|^=|LT|<|LE|>=|GT|>|GE|>=|[IN] RANGE|BETWEEN|LIKE|UNLIKE|PRESENT|POINT$|REC$}</TT>
+<LI><TT>condition ... :  [fieldname] operator [[FROM] operand [{TO|AND} operand]]</TT>
+<LI><TT>expression .. :  [NOT] [(] condition [{AND|OR|'|'|'&'} expression] [)]</TT>
+</UL>
+
+<P>In addition you can optionally include comment lines in a find specification.  Any lines beginning with an asterisk are ignored. Queries can be in mixed case or automatically uppercased according to <A HREF = #TextCase>an option</A>.
+
+<P><U>Working with multiple find specifications, saving/reusing etc.</U>
+<BR>The find dialog has a little menu of its own, including File/Open and File/Save, so find specifications can be accessed as text files.  The dialog also has several predefined "work area" tabs which you can use to keep more than one query on the go during any wizard session, and avoid having to keep loading and saving queries unless you want to.  You can switch between these work areas with Ctrl+tab.  F5 runs whichever one is visible. 
+
+<P><U>Other find options</U>
+<BR>The Find Records dialog has an area at the bottom with some optional controls (accessible via Ctrl+M), with the following functions:
+
+<UL>
+<LI>A dropdown list to change the target of the find from its default.  So you can either choose a different file or do a referback ("drill-down") find, choosing one of the existing sets.
+<LI>The second dropdown and its associated "insert" button shows the fields which are defined in the target file, and can save you typing long field names.
+<LI>There is a radio button group for choosing the desired record lock on the result set.
+<LI>Any detailed run-time diagnostics chosen will go to the session's output tab.
+<LI>The final check box lets you say if you just want a syntax check on the query entered ("no run" mode).
+</UL> 
+<!**************************************>
+<A NAME = SetOperations> </A> 
+<H3>3.3. Sets</H3>
+
+<P>This means the range of things you can do with record or value sets once they're created.
+
+
+<A NAME = SetNames> </A> 
+<P><U>Set names</U>
+<BR>Sets created by hand can be given a meaningful name in the find dialog, or just take a simple default name.  You can rename them later if things become confusing.
+
+<A NAME = UsingSets> </A> 
+<P><U>Using sets</U>
+<BR>The following operations are conditionally available based on the type of the target set.  For example sorts and referback finds can not be performed on sorted record sets, and "list" modifying functions can only be performed when sets have previously been "listified".
+
+<P>
+<UL>
+<LI><B>Sort</B>
+<BR>This issues a DBMS call to create a sorted copy of the entire underlying set, and creates a new visible set showing the sorted records.  Note therefore that the sort is not just a GUI reordering of the visible records, and if the underlying set is large it might take a long time (unless you say to sort just a sample of the records).
+
+<LI><B>Referback find</B>
+<BR>Brings up the Find Specification dialog as normal, but the resulting find operation will be restricted to the records in the selected set, rather than the whole file.  This function works the same as the User Language "FD IN <I>label</I>" statement - in other words it does not re-check the file's existence bitmap.
+
+<LI><B>Dirty delete</B>
+<BR>Another User Language classic, where it takes the form of "DELETE RECORDS IN <I>label</I>".
+
+<LI><B>File Records</B>
+<BR>Store a new invisible field attribute in the index.  Yet more UL functionality.
+
+<LI><B>Refresh</B>
+<BR>Re-creates the set based on the original criteria.  For a found set the query is re-executed, thus incorporating any record changes or deletions which were made on other views.  For a sorted set the original set is re-sorted with the same sort keys, so long as the original source (unsorted) set still exists.
+
+<LI><B>List operations</B>
+<BR>A record set in "list" form is almost the same as an unlocked found set, but also supports the addition and removal of records and sets of records later, effectively setwise OR and setwise AND-NOT operations.  User Language programmers will be familiar with list usage and the associated PLACE and REMOVE statements.
+</UL>
+
+<!**************************************>
+<A NAME = RecordOperations> </A> 
+<H3>3.4. Records</H3>
+
+There are a few things that can be done at record level, and these are available via the "Data/Record" menu or by right clicking on the record number at the start of a row in the data table.  Some can be performed without selecting a whole row, but with others the row should be selected to distinguish the operation from the corresponding field-level operation, for example Ctrl-C with a record selected copies all fields to the clipboard instead of just one.  To select a record, click or cursor left onto the record number column - the whole row will be highlighted.
+
+<P>The main record operations are:
+
+<UL>
+<LI>Store a new record
+<LI>Delete a record
+<LI><A HREF = #Clipboard>Cut, copy and paste</A> entire records, with various formatting options
+<LI>Display entire record to the session output pane, with various formatting options
+<LI>Place and remove single records to/from lists
+</UL>
+
+<P><U>Notes</U>
+
+<BR>Record-based clipboard operations work as follows. Copy when a record is selected generates the same output as a User Language <TT>PRINT ALL INFORMATION</TT> statement to the clipboard. Cut performs a copy followed by deleting the selected database record. Paste stores a new record if the clipboard contains PAI-style data (at least an attempt is made to store a record - it will fail if fields don't exist etc.)  See also more <A HREF = #Clipboard>clipboard general notes</A> later</A>, e.g. special considerations for BLOBs.
+
+<P>If a record is deleted, the record number actually remains in the current record set, as in User Language.  Subsequent attempts to do anything with that record are disallowed (it is grayed out), until the set is refreshed (F5).  Indirect set operations like referback finds, lists, and sorts will either come back with a gray row in the same place, or give a "nonexistent record referenced" error message until the set is refreshed.
+
+<!**************************************>
+<A NAME = DataOperations> </A> 
+<H3>3.5. Field Data (Editing etc.)</H3>
+
+<P>Most often this will mean hitting Enter/F2 or double clicking on a field value to change that value.  The rest of the field modification functions are available via the "Data/Field" menu or by right clicking on cells and column headers in the data table in the obvious way.
+
+<P>The main field operations are:
+
+<UL>
+<LI>Add, insert, change or delete single fields
+<LI>Delete each occurrence of selected field
+<LI><A HREF = #Clipboard>Cut, copy and paste</A> selected value to the clipboard, with various formatting options
+<LI>Display selected value to the session output pane, with various formatting options
+<LI>Perform a drill-down find for the selected field=value.
+</UL>
+
+<P><U>Notes</U>
+
+<BR>Values entered can be treated in various ways vis-a-vis <A HREF = #Unicode>Unicode/ASCII conversion</A> and <A HREF = #TextCase>text case</A>.
+
+<P>Insertion by default assumes a new occurrence 1 will be inserted, but you can easily change this either on the value-entry dialog, or by positioning the cell selection at an appropriate existing occurrence of the desired field to insert a new value at that occurrence.
+
+<P>Single field value deletion when a cell is selected (using "cut" or the delete key) does not ask for confirmation.  You can also invoke an interactive dialog via the menu - this is necessary if invisible field values are to be deleted, since the existing value must be supplied then.
+
+<P>The same field visibility requirements are applied to these operations as in User Language.  So for invisible fields addition is always valid, insertion never is, and change and individual delete operations require an existing value to be given (which you might copy from a value set view).
+
+<P>Field based clipboard operations work as follows.  Copy takes the value alone as text, the same as would be generated by a User Language <TT>PRINT</TT> statement.  Cut performs a copy followed by deleting the selected field occurrence from the record.  Paste onto a selected cell does the same as a User Language <TT>CHANGE</TT> statement, so long as the clipboard contains a single item which does not look like a record PAI (see record operations above for what happens then).  See also more <A HREF = #Clipboard>clipboard general notes</A> later</A>, e.g. special considerations for BLOBs.
+
+<P>Field value changes are displayed in the foremost data view when they are made, but any other views in existence retain their old view of the data.  Other sets can easily be <A HREF = #SetOperations>refreshed (F5)</A> to pick up changes.
+
+<P>When adding lots of fields to the same record, tick the "more" box to make the value-entry dialog stay visible continuously.
+
+</UL>
+
+<HR WIDTH = 50%>
+<!**************************************>
+<A NAME = GeneralOperations> </A> 
+<H3>3.6. General Notes On Working With Data in the Wizard</H3>
+
+<UL>
+<LI> <A HREF = #Clipboard>Using the clipboard with file data</A>
+<LI> <A HREF = #Unicode>Unicode and binary data issues</A>
+<LI> <A HREF = #TextCase>Text case</A>
+<LI> <A HREF = #Transactions>DBMS transactions (save/undo changes)</A>
+</UL>
+
+
+<A NAME = Clipboard> </A>
+<P><U>Using the clipboard with file data</U>
+<BR>Cut/Copy: When cutting/copying a field value, the value of the field is taken alone.  When cutting/copying a whole record, field=value pairs are placed on the clipboard with line breaks between them - the same format as a User Language PAI statement.  When copying a column the clipboard gets the values in the column with line breaks between them.  When copying an entire table the values are arranged in a suitable format for paste into a spreadsheet, that is, separated with tabs between fields and line breaks between records.
+
+<P>Cut requires there to be a selected field value or record, and includes a DBMS delete operation.  Copy is allowed in various other situations too, such as when there is a selected column.
+
+<P>Paste: The operation of "paste" depends on the current contents of the clipboard.  Single items of text are taken to be attempts to overwrite the selected field value, and trigger a database change operation.  Information in "PAI" format is taken to be an attempt to store a new record with those fields and values.  So for example selecting a record and using Ctrl+C, Ctrl+V, makes a copy of the selected record.
+
+<P>BLOBs: Cut and copy always generate full BLOB values.  The operation of the default cut and copy (<A HREF = #Shortcuts>Ctrl+C and X</A>) is to generate BLOB field values as hex strings (X'414243') and all other fields as plain strings (ABC).  Special "Edit" menu commands are available to do variations when STRING or BLOB field contents might contain unusual values.
+
+<P>Data format: All clipboard data is read and written as text, as used by most applications, so information can be transferred in and out of things like notepad.  No fancy formats are currently supported.
+
+<A NAME = Unicode> </A>
+<P><U>Unicode and binary data issues</U>
+<BR>Since the File Wizard is written in Java, using the DPT Java dabatase API, it has to take into account the multi-byte view of strings, rather than assuming that each character shown on the screen necessarily represents one byte.  The implications of this issue for the DPT Java API are covered in more detail in the DPT API programming guide, Java chapter.
+
+<P>The default approach taken here in the File Wizard GUI when presenting values and taking user input is that STRING fields probably contain simple textual data, and BLOB fields probably have some binary meaning.  What this means is firstly that STRINGs display as simple string literals (as converted by the basic Java Unicode-to-byte routines), and BLOBs display in a hex format (X'...') generated directly from the DPT database values, bypassing Unicode.  Secondly what it means is that when updating fields, the initially-requested style for plain STRINGs is plain text, and for BLOBs is X'...', with the latter being transferred into the database without passing through Unicode form, using the API's <TT>byte[]</TT> interfaces.
+
+<P>It is acceptable to use either style in any situation, regardless of field attributes.  When entering field values, just use X'...' format to bypass Unicode (holding down the Alt key when initiating a field edit goes direct to hex mode).  When using the various display functions (including cut and copy) the menus contain a variety of options to change the data format, with hex values coming directly out of the database and bypassing Unicode.
+
+<A NAME = TextCase></A>
+<P><U>Text case</U>
+<BR>By default the wizard accepts mixed case in query text and edited field values.  However there is an option to make it uppercase everything much like the operation of the default CASE parameter at the Model 204 command line.  Turning this on and off in the "Tools/Options" menu is analogous to issuing the <TT>*UPPER</TT> and <TT>*LOWER</TT> commands on M204, except that here the option is a persistent user preference and you don't have to do it every time you use the wizard.  Query text keywords are valid either way (i.e. mixed case), so using the default option really just saves SHIFT key work if most of your data is in uppercase.
+
+<A NAME = Transactions> </A>
+<P><U>DBMS transactions (save/undo changes)</U>
+<BR>Changes to data are not by default saved at the time you make them - it requires a DBMS "commit" operation.  Some commands, like initializing a file or defining a field, contain an implied commit but you can also trigger one with <A HREF = #Shortcuts>Ctrl+S</A> - "save" is the approximate equivalent operation in a PC-style application.  Commits also occur when exiting the Wizard application and optionally every 5 minutes (Tools/options/autosave).
+
+<P>The Wizard application title line shows an asterisk when the current user has any pending updates.  
+
+<P>Changes can be abandoned with Ctrl+Shift+S ("un-save") which issues a DBMS backout call.  Most changes will also be put back how they were in the displayed data view but there may be times when the display gets out of step with the database, in which case just use refresh (F5), or as a last resort discard sets and re-find them.
+
+<P>Note that there is no Ctrl+Z function to undo a single update like you get in some applications - the DBMS does not support partial backouts in the current release.  Commits and backouts rely on the internal DBMS running with its TBO (transaction backout) facility turned on, which it will be unless you go to the trouble of manually reconfiguring it (see configuration comments below).
+
+<P>
+<HR>
+<!****************************************************************************>
+<A NAME = Options > </A> 
+<H2>Appendix A. Options and User Preferences </H2>
+
+All options settable in the "Tools/options" menu are persistent, so you only need to set them up how you like them once.  In addition, certain GUI settings like which panes are visible/invisible are saved too.
+
+
+<P><U>A.1. Text case options</U>
+
+<BR>There are two separate options, one just controlling the preferred display format for hex literals (x'a1b1' vs X'A1B1') and the other operating more like the Model 204 command line parameter CASE, which auto-uppercases all input (queries, field changes etc.).  See <A HREF = #TextCase>above</A> for more on that.
+
+<P><U>A.2. Create working subdirectory</U>
+<BR>Enabled by default - allows many wizard instances from the same executable (see <A HREF = #Invoke>invocation notes</A>).  As implemented this option means you can *not* configure the internal DBMS host via parms.ini, since files like that are deleted each time.  Disable the "recreate" option and permanent parms.ini etc. will get created, allowing more detailed configurations, but only one instance of the wizard can then run per copy of the executable/working directory.  In turn this will mean the Wizard will not be so useful for accessing files in Windows Explorer since only one executable can be associated with a file extension.
+
+<P>Also note that tinkering with data integrity settings like RCVOPT may potentially cause problems.  The Wizard is designed to run with TBO=on and checkpointing=off.  The default parms.ini file contains the following.  Other resettable parameters can be changed with Ctrl+R.
+
+
+<PRE class=code>
+RCVOPT=2               * TBO only
+MAXBUF=1024            * Small buffer pool - it's not a high-throughput application
+ENQRETRY=0             * Record locking conflicts are reported immediately
+</PRE>
+
+
+<P><U>A.3. Delete working subdirectory</U>
+
+<BR>Related to the above.  Enabled by default, so fresh temp subdirectories do not build up over time.  If "create" is off, this option has no effect.  Sometimes it may be useful to examine the audit trail after a Wizard session, in which case turn this option off for a while.
+
+<P>The default directory for fast unload extracts from the Wizard if you do them will be within this temporary directory, so it may be best to choose something more permanent there.
+
+
+<P>
+<HR>
+<!****************************************************************************>
+<A NAME = Misc> </A>
+<H2>Appendix B. Miscellaneous Usage and Configuration Notes </H2>
+
+<UL>
+<LI> <A HREF = #Invoke> B.1. Invocation and installation</A>
+<LI> <A HREF = #Directories> B.2. Sample directories </A>
+<LI> <A HREF = #Printing> B.3. Printing </A>
+</UL>
+
+
+<A NAME = Invoke> </A>
+<P><U>B.1. Invocation and installation </U>
+<BR>File Wizard needs access to the two API DLLs (<TT>dptcapi.dll</TT> and <TT>dptjapi.dll</TT>).  In the default install directory they will be in a known place and things will work, but running the wizard in another directory will not unless the dlls are put in the same directory or somewhere more globally-accessible like C:\Windows.
+
+<P>Like any DPT DBMS server application, the wizard must run in a working directory it has write access to, so that it can create the audit trail and other auxiliary files.  Unlike dpthost.exe however, many instances of the wizard can be run from the same copy of the executable, because the auxiliary files are all created in a dynamically-created temporary subdirectory (<A HREF = #Options>by default</A>), and there is therefore no contention for the same audit trail etc. This feature allows the single copy of dptwizard.exe to be associated with ".DPT" files, and for many instances of the application to be running at the same time on different files if desired.
+
+<LI><B>Java classpath issues:</B> With some JRE versions, and/or on some platforms, the wizard needs to be invoked in the precise directory where the executable is located.  At the time of writing it is not known whether this is a DPT bug or something about the incremental evolution of Java runtimes.  It has been reported that older JREs work more cleanly on Linux/Wine, and newer ones on Windows.
+
+<LI><B>64-bit:</B> DPT is built as 32-bit binaries, and its API DLLs are 32-bit DLLs. However, the File Wizard will still run on 64-bit machines so long as they also have a 32-bit JVM present (should do). The File Wizard will select the 32-bit JVM when it starts.
+
+<A NAME = Directories> </A>
+<P><U>B.2. Sample directories</U>
+
+<BR>Everything is relative to the <TT>dptwizard.exe</TT> program, wherever you put that.  By default the installer 
+puts it in C:\DPT\wizard, alongside the DPT client and host application directories.
+
+<P>Notes about some of the subdirectories of that:
+
+<P><TT><B>\DPT\wizard</B></TT>
+<UL>
+	<LI><TT><B>\#DPTTEMP\nnnnnnn</B></TT>
+	<BR>Contains the audit trail, checkpoint file, etc., plus a parms.ini file which is by default built on the fly.  The subdirectory name is dynamically generated.  By default after the wizard shuts down <TT>#DPTTEMP</TT> is deleted, unless other wizard instances are still running, in which case the last one deletes it.
+	<LI><TT><B>\FindSpecs</B></TT>
+	<BR>The default place find specifications are saved to.  The installer will put a couple of examples in here.
+	<LI><TT><B>\Layouts</B></TT>
+	<BR>The default place custom column layouts are saved to.  Also contains an example or two.
+</UL>
+
+<A NAME = Printing> </A>
+<P><U>B.3. Printing</U>
+<BR>There is currently no direct hardcopy feature in this program.  Various operations print output to the session output tabs at the bottom, including the <A HREF = #Shortcuts>Ctrl+D</A> variations which do a "print all information" for one or more records.  If you want a hardcopy, use those commands, then copy/paste from the output area into notepad or a word processor.  
+<P>
+<HR>
+
+<!****************************************************************************>
+<A NAME = Shortcuts> </A>
+<H2>Appendix C. List of Shortcut Keys and Meanings</H2>
+
+<P>Ctrl is the main shortcut key.  Where a wizard function corresponds to a single-letter command on Model 204, the same letter is usually used (V=View, R=Reset, O=Open etc.)  Ctrl+Alt usually means a similar but alternative action (e.g. find values instead of find records).  Ctrl+Shift usually means a kind of reversal of the main action (e.g. logoff instead of logon, backout instead of commit).  The other combos are used as required but sticking to that general scheme.
+
+<P>Alt+... obviously invokes menu operations, and those aren't all listed here. Also there are some Ctrl+.... shortcuts (the ones usually found on application "Edit" and "Window" menus) which have standard Windows meanings.  Ctrl+V and Ctrl+Tab for example.  These are only listed below if there is any ambiguity about when the standard meaning applies.
+
+<P>All the following can be found in the application menus, but some are buried in non-obvious places, so here's a list with some extra notes thrown in.
+
+<P>
+<TABLE BORDER = 1>
+
+<TR> <TH>Key</TH> <TH WIDTH = 30 >Ctrl</TH>   <TH WIDTH = 30 >Alt</TH>    <TH WIDTH = 30 >Shift</TH> 
+                  <TH>Function</TH> </TR>
+
+<TR> <TD>C</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When editing a GUI item)</I>  Edit/Copy text</TD> </TR>
+<TR> <TD>C</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record is selected)</I>  Performs a record "PAI" <A HREF = #Clipboard>to the clipboard</A></TD> </TR>
+<TR> <TD>C</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a data cell is selected)</I>  Copies the selected value <A HREF = #Clipboard>to the clipboard</A> </TD> </TR>
+<TR> <TD>D</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record is selected)</I>  Displays the record in "PAI" form to the output pane (<A HREF = #DataFormat>abbreviated BLOBs</A>)</TD> </TR>
+<TR> <TD>D</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a field is selected)</I>  Displays the field value to the output pane (<A HREF = #DataFormat>abbreviated BLOB</A>)</TD> </TR>
+<TR> <TD>D</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record is selected)</I>  As above, including full BLOBs, with strings and BLOBs in both readable and <A HREF = #Unicode>hex format</A></TD> </TR>
+<TR> <TD>D</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a field is selected)</I>  As above, including full BLOB, with strings or BLOB in both string and <A HREF = #Unicode>hex format</A></TD> </TR>
+
+
+<TR> <TD>F</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Find records (open find spec editor)</TD> </TR>
+<TR> <TD>F</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Find values</TD> </TR>
+<TR> <TD>F</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Release lock and discard the selected record set (= "un-find" the set)</TD> </TR>
+<TR> <TD>F</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Find "into" the currently-displayed record set (just opens the find spec editor with referback already filled in)</TD> </TR>
+
+<TR> <TD>I</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Insert a field into the current record at the selected position</TD> </TR>
+<TR> <TD>I</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Append a field to the end of the current record</TD> </TR>
+
+
+<TR> <TD>L</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Logon - start another DBMS session thread</TD> </TR>
+<TR> <TD>L</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Log off - terminate the current foreground session.  If it's the last one, the the application closes</TD> </TR>
+
+<TR> <TD>N</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Store a new empty record in the current file, and re-find it</I></TD> </TR>
+
+<TR> <TD>O</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Allocate and open an existing file. See <A HREF = #FileContexts>comments about allocate/open</A></I></TD> </TR>
+<TR> <TD>O</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Open an already-allocated file</TD> </TR>
+<TR> <TD>O</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Close an open file and free if possible</I></TD> </TR>
+<TR> <TD>O</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Close an open file, don't try to free it</I></TD> </TR>
+
+<TR> <TD>R</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Reset parameter for the current target session and/or file</I></TD> </TR>
+
+<TR> <TD>S</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(During find spec edit</I>) Saves the find spec</TD> </TR>
+<TR> <TD>S</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(Otherwise</I>) Save database changes - i.e. COMMIT transaction (see <A HREF=#Transactions>TBO notes</A>)</I></TD> </TR>
+<TR> <TD>S</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>Database transaction backout (= the reverse of save)</TD> </TR>
+
+<TR> <TD>V</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When editing a GUI item)</I>  Edit/Paste text as usual</TD> </TR>
+<TR> <TD>V</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record or field is selected)</I>  Changes field or stores a new record - see <A HREF = #Clipboard>clipboard operation notes</A></TD> </TR>
+<TR> <TD>V</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>View all parameters for the current target session, printing to the output pane</TD> </TR>
+<TR> <TD>V</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD> 
+                  <TD>View all non-zero statistics at all collection levels, printing to the output pane</TD></TR>
+
+<TR> <TD>X</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When editing a GUI item)</I>  Edit/Cut text</TD> </TR>
+<TR> <TD>X</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record is selected)</I>  Deletes the record (after <A HREF = #Clipboard>clip</A> copy, effectively Ctrl+C, Del)</TD> </TR>
+<TR> <TD>X</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a field is selected)</I>  Deletes the field occurrence (after <A HREF = #Clipboard>clip</A> copy, effectively Ctrl+C, Del)</TD> </TR>
+
+<TR> <TD>Y</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Column layout: fit all columns to data, ignoring column headers</TD> </TR>
+<TR> <TD>Y</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Column layout: fit all columns to data or header (whichever is widest)</TD> </TR>
+
+<TR> <TD>1</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Toggle the session output area visible/invisible</TD> </TR>
+<TR> <TD>1</TD>   <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Tab to the session output area, making visible if required</TD> </TR>
+<TR> <TD>2</TD>   <TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Toggle the file info area visible/invisible</TD> </TR>
+<TR> <TD>2</TD>   <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Tab to the file info area, making visible if required</TD> </TR>
+<TR> <TD>3</TD>   <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Tab to the data grid area (can't be made invisible - best you can do is make it tiny)</TD> </TR>
+
+<TR> <TD>Delete</TD>   <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When editing a GUI item)</I>  Delete character</TD> </TR>
+<TR> <TD>Delete</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a record is selected)</I> Delete the record from the database (like in User Language it remains in the set)</TD> </TR>
+<TR> <TD>Delete</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD><I>(When a field is selected)</I> Delete the field occurrence from the record</TD> </TR>
+<TR> <TD>Delete</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Initiate dialog to allow deletion of an invisible field from the current record.</TD> </TR>
+
+<TR> <TD>F2</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Standard Windows "edit" key, initiates e.g. rename, redefine attributes, change value.</TD> </TR>
+<TR> <TD>F2</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #44ff44 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Initiate change field value in direct <A HREF = #Unicode>hex mode</A>.</TD> </TR>
+
+<TR> <TD>F5</TD> <TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD><TD BGCOLOR = #ff8888 ></TD> 
+                  <TD>Refresh currently-displayed set if the set type supports it.</TD> </TR>
+
+</TABLE>
+
+<P>
+<HR>
+</HTML>

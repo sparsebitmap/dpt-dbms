@@ -1,0 +1,136 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V1R0</TITLE>
+
+<H1>Release Notes for DPT Version 1.0</H1>
+
+<H3>Released: 1st June 2006</H3>
+
+<UL>
+	<LI><A HREF = #Summary>Summary of the state of play</A></LI>
+	<LI><A HREF = #NewFeatures>New features</A></LI>
+	<LI><A HREF = #ChangedFeatures>Changes to the last version</A></LI>
+	<LI><A HREF = #DroppedFeatures>Previously-advertised features still not present </A></LI>
+	<LI><A HREF = #Documentation>Documentation  </A></LI>
+	<LI><A HREF = #Demo>Demo code and utilities </A></LI>
+</UL>
+
+<HR>
+<!***************************************************>
+<A NAME = Summary></A><H2>Summary of the State of Play</H2>
+
+As of this version DPT emulates the great majority of Model 204 commands and statements, importantly now including most of those to do with database management and use, since the system comes with its own built-in DBMS.  There is also good support for screen and image I/O from User Language. This version is therefore the first one you might realistically run existing applications on.
+
+<P>In practice, real-world applications are likely to use
+<UL>
+<LI>Less common, and therefore currently-unsupported, M204 features
+<LI>Custom features such as Sirius $functions
+</UL>
+
+<P>These will be added in future versions according to demand.
+
+<P><HR>
+<!***************************************************>
+<A NAME = NewFeatures></A><H2>New Features</H2>
+
+For those who never tried out Version 0.1, the <A HREF = "relnotes_V0R1.html">V0.1 release notes</A> summarise what was in it.  The main additions in the 2 years since then are as follows.  
+
+<P><B>DBMS</B>
+<BR>The brand-new DPT DBMS is a simplified lookalike of Model 204.  Despite boasting somewhat less functionality it still implements most of the important database-related behaviour, such as:
+
+<UL>
+<LI>Storage formats: string, float (8), invisible
+<LI>Data organization: UP/UE, RRN, extension records
+<LI>Indexes: Ordered character and numeric
+<LI>File integrity: Checkpointing, roll back recovery, TBO, record and resource locking
+<LI>DBA: deferred index updates
+</UL>
+
+The <A HREF = "dbaguide.html">DBA Guide</A> contains a more detailed discussion of the file system, and the <A HREF = "sysconfig.html">System Config Guide</A> has information about topics like recovery and disk buffers.
+
+<P><B>Sequential file handling</B>
+<BR>DPT can now handle sequential files in a similar way to M204.  This was mainly put in place to support the User Language IMAGE statement family, allowing files to be loaded from raw data with User Language, but also includes such things as USE DD processing.  
+
+<P><B>Commands and User Language</B>
+<BR>A large number of commands and statements have been added, importantly including those for handling database files, screens and images.  In addition the level of completeness has been increased across the board, for example nearly all the standard $functions now have at least some kind of support.  The full situation can be seen in the <A HREF = "M204xref.html">Model 204 features cross-reference</A>.
+
+<P><B>Statistics</B>
+<BR>The collection of statistics has been significantly enhanced in this version, notably also including DBMS-related stats such as DKPR, DKWR, FBWT etc.
+
+<P><B>DPT custom processing</B>
+<BR>Most custom options <A HREF = "m204xref.html#CSTFLAGS">can now be disabled</A> if you want to reduce the chances of writing non-M204-compatible code on DPT. 
+
+<P><B>Multithreading</B>
+<BR>A daemon facility has been added to the system, mainly for the purpose of running the checkpointing and other "pseudo subtasks".  The facility is generally available, and users can spawn their own daemon threads (IODev 99) if required to perform general background processing.  This is a non-standard extension to M204 but in practice may sometimes allow DPT to be operated with less system admin where IODev3 set-up would otherwise be required.  It it also analogous to a commonly-used Sirius mod.
+
+<P><B>"Console"</B>
+<BR>The host console window now has some more saveable config options, for example to run it minimized etc.
+
+<P><B>User front end</B>
+<BR>The debugger allows you to watch and change field values and image and screen items.  Also that little "PAI" check box from V0.1 now actually does something.  The navigator has some file and field related shortcuts.  The other major new feature on the client is that it will handle User Language full-screen I/O.
+
+
+<P><HR>
+<!***************************************************>
+<A NAME = ChangedFeatures></A><H2>Changes to the last version</H2>
+
+That is, changes to features that were already present in V0.1.
+
+<P><B>Subsystems</B>
+<BR>The auto-commit option is now provided in subsystem processing, and is specified when creating a subsystem with e.g. PARAMETER AUTOCOMMIT = N.  The <A HREF = "sysconfig.html#System_Integrity">System Config Guide</A> has more details on transaction boundaries.
+
+<P><B>Parameters</B>
+<BR>Assorted parameter defaults and maximums/minimums have been changed.  See the <A HREF = "m204xref.html#Parameters">Features cross-reference</A> for full details.  PGSEP and ERMX have reverted back to their normal selves after spending a short experimental period as PAGESEP and ERRORMAX.
+
+<P><B>User front end</B>
+<BR>A few things have been made more user-friendly:
+
+<UL>
+	<LI>The editor autotab feature now makes a more intelligent job of left-tabbing END xxx statements.
+	<LI>It is now possible to view and change array items in many cases.
+	<LI>The debugger watch pane is a little more interactive. 				<LI>Procedures may now contain the X'00' character without things misbehaving.  It shows in the editor just the same as <A HREF = "ideuser.html#Special_Characters">other ASCII X'20' and below</A>.
+	<LI>The debugger can handle breakpoints in procedures which contain more than one request.
+	<LI>Autoconnect has more options, making it realistic to use the client in a <A HREF = "ideuser.html#BATCH2">BATCH2-style configuration</A>.</UL>
+
+ 
+<P><HR>
+<!***************************************************>
+<A NAME = DroppedFeatures></A><H2>Previously-advertised features not present in this version</H2>
+
+This little section is mainly for those who somehow managed to get their hands on the early documentation.  Those specs described several fantasy features that ended up too far over on the "nice-to-have" side of the spectrum to get built.  In other words there was a certain amount of vapourware.  For example:
+
+<UL>
+	<LI> <A HREF = "dbaguide.html#File_Administration">DBA facilities only required on a hardcore production system</A>.
+
+	<LI>The IDE's scripting facility remains undeveloped, so editor and debugger macros are not yet possible.  Despite this, <A HREF = "ideuser.html#BATCH2">BATCH2-like operation</A> can still be achieved using other options.
+
+	<LI>That beautiful interactive progress-reporting dialog is currently never invoked.
+</UL>
+
+<P><HR>
+<!***************************************************>
+<A NAME = Documentation></A><H2>Documentation</H2>
+
+Whilst a good deal more comprehensive than last time, the docco could perhaps still not be called "complete".  The quantity and type of user documentation required is an issue that will be revisited if and when there are any users.
+
+<P>As before, the versions viewable on the website are the same as those in the download. 
+
+<P><HR>
+<!***************************************************>
+<A NAME = Demo></A><H2>Demo Code and Utilities</H2>
+
+The Version 1.0 installation includes a small set of sample files, procedures and subsystems, which are automatically allocated and defined, and can be used straight away. 
+
+<P>For more details see the <A HREF = "demoguide.html">Demo Walkthrough</A> document.
+
+
+<P><HR>
+<P>
+
+</HTML>

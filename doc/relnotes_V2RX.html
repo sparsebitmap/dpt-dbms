@@ -1,0 +1,885 @@
+<HTML>
+
+<STYLE>
+@import url(docstyles.css);
+</STYLE>
+
+<A NAME = "Top"></A>
+
+<TITLE>Release Notes DPT V2RX</TITLE>
+
+<H1>Release Notes for DPT Versions 2.xx</H1>
+
+<HR>
+
+<H2>Contents</H2>
+<A NAME = DATES></A>
+
+<UL>
+<LI><A HREF = #V2R30>2.30</A>: 25th October 2010
+<LI><A HREF = #V2R29>2.29</A>: 10th September 2010
+<LI><A HREF = #V2R28>2.28</A>: 27th August 2010
+<LI><A HREF = #V2R27>2.27</A>: 6th June 2010
+<LI><A HREF = #V2R26>2.26</A>: 15th April 2010
+<LI><A HREF = #V2R25>2.25</A>: 5th March 2010
+<LI><A HREF = #V2R24>2.24</A>: 8th January 2010
+<LI><A HREF = #V2R23>2.23</A>: 16th November 2009
+<LI><A HREF = #V2R22>2.22</A>: 7th October 2009
+<LI><A HREF = #V2R21>2.21</A>: 20th August 2009
+<LI><A HREF = #V2R20>2.20</A>: 11th August 2009
+<LI><A HREF = #V2R19>2.19</A>: 23rd June 2009
+<LI><A HREF = #V2R18>2.18</A>: 31st May 2009
+<LI><A HREF = #V2R171>2.17.1</A>: 19th May 2009
+<LI><A HREF = #V2R17>2.17</A>: 11th May 2009
+<LI><A HREF = #V2R16>2.16</A>: 25th April 2009
+<LI><A HREF = #V2R15>2.15</A>: 3rd April 2009
+<LI><A HREF = #V2R14>2.14</A>: 23rd March 2009
+<LI><A HREF = #V2R13>2.13</A>: 9th Dec 2008
+<LI><A HREF = #V2R12>2.12</A>: 31st July 2008
+<LI><A HREF = #V2R11>2.11</A>: 14th Feb 2008
+<LI><A HREF = #V2R10>2.10</A>: 10th Dec 2007
+<LI><A HREF = #V2R09>2.09</A>: 13th Nov 2007
+<LI><A HREF = #V2R08>2.08</A>: 28th Oct 2007
+<LI><A HREF = #V2R07>2.07</A>: 17th Sept 2007
+<LI><A HREF = #V2R06>2.06</A>: 19th July 2007
+<LI><A HREF = #V2R05>2.05</A>: 23rd April 2007
+<LI><A HREF = #V2R04>2.04</A>: 12th April 2007
+<LI><A HREF = #V2R03>2.03</A>: 22nd Feb 2007
+<LI><A HREF = #V2R02>2.02</A>: 12th Feb 2007
+<LI><A HREF = #V2R01>2.01</A>: 8th Feb 2007
+</UL>
+
+Further details (appendixes):
+<UL>
+<LI><A HREF = #V203LOADS>V2.03 benchmarks</A>
+<LI><A HREF = #V214LOADS>V2.14 benchmarks</A>
+</UL>
+</UL>
+
+
+<HR>
+<A NAME = ENHANCEMENTS></A>
+<A NAME = FIXES></A>
+<A NAME = SUMMARY></A>
+<H2>Summary of changes per release</H2>
+
+<P>In addition to the following, most releases contain assorted minor internal tidy-ups.  It's possible that if you had a problem that you never reported, it is now fixed anyway.
+
+
+
+<A NAME = V2R01></A>
+<H3>2.01</H3>
+<P><U>Enhancements/changes:</U>
+<LI>Better call conventions on <A HREF = "language.html#BBSHELL">=SHELL</A>, specifically for when issuing DOS commands.
+<P><U>Fixes:</U>
+<LI>Numeric $EDIT now drops input DP if the mask has no DP.
+
+
+
+<A NAME = V2R02></A>
+<H3>2.02</H3>
+<P><U>Enhancements/changes:</U>
+<LI><A HREF = "language.html#COMP_VARIABLES">INITIAL values for %variables</A> can be arbitrary expressions (i.e. the Model 204 <A HREF = "m204xref.html#V5">Version 5</A> feature).  There is also a new <A HREF = "ideuser.html#DB_SPYOPTIONS">debugger option (SPYFLAGS X'0200')</A> related to this.
+<LI>SYSPORT can be given as -1 meaning terminal users will not be able to connect.  (E.g. for a web server only run). 
+
+
+
+<A NAME = V2R03></A>
+<H3>2.03</H3>
+<P><U>Enhancements/changes:</U>
+<LI>Full screen IO processing tailored for slow connections.  Response is better, and diagnostics are more informative.
+<LI>You can <A HREF = "ideuser.html#Editor_Functions">customize the $function information</A> used by the editor.
+<LI>The MSGCTL parameter has <A HREF = "m204xref.html#MSGCTL">a new switch</A> enabling more error diagnostics to the audit trail.
+<LI>You can edit the ini files and browse the host's current working directory direct from the DPT host console.
+<LI>Improvements to deferred-update file loads - <A HREF = #V203LOADS>see notes and benchmarks below</A>.  <B>NB. Backward incompatibility issue for existing deferred-update jobs</B>.
+
+<P><U>Fixes:</U>
+<LI>Editor $function assistance accidental deactivation loophole removed.
+<LI>$DAYI no longer requires CUSTOM = 1 to make it accept input dates with no "C" component.  The YY component is also optional.
+<LI>Very long PRINT lines (e.g. infinite ellipsis) can no longer cause buffer overflow on IODev7 devices.
+<LI>MSGCTL = 4 setting no longer causes an error message on host shutdown.
+
+
+
+<A NAME = V2R04></A>
+<H3>2.04</H3>
+<P><U>Enhancements/changes:</U>
+<LI>NOFLD option on <A HREF = "language.html#INITIALIZE">INITIALIZE</A> can be invoked with "KEEPDEFS" for more M204 compatibility.
+<LI>This release is also the first one where the DBMS can be used in an <A HREF = "DBAPI.html">API configuration</A>.
+<LI>DPT is also <A HREF = "..\downloads.html">open source</A> software as of this release.  The downloads all come with a <A HREF = "http://www.gnu.org/licenses/info/BSD_3Clause.html">more standard  licence</A> now.
+
+
+
+<A NAME = V2R05></A>
+<H3>2.05</H3>
+<P><U>API/Source code:</U>
+<LI>Assorted source code changes for ISO C++ compliance and wider compiler compatibility (specifically gcc).
+
+
+<A NAME = V2R06></A>
+<H3>2.06</H3>
+<P><U>Enhancements/changes:</U>
+<LI>The FMODLDPT parameter <A HREF = "dbaguide.html#NUMERICVAL">has a new X'02' bit</A> to allow nonstandard numerics for STRING ORD NUM fields.
+<LI>The installed application name and the default installation directory name have changed, to be shorter and no longer contain an apostrophe (now DPT instead of Database Programmer's Toolkit).  Note that this means the installer will not recognize any older version you have and will not prompt to uninstall it.  You can use Control Panel "Remove Programs" to invoke the uninstall for "Database Programmer's Toolkit" by hand.
+<LI>The host starts up with a new proc file allocated "USERPROC" containing user code samples, utilities and other good stuff.
+
+<P><U>Fixes:</U>
+<LI>Editor prompt texts for $ONEOF corrected.
+<LI>D GROUP command no longer crashes if issued on a non-terminal thread. 
+<LI>One or two math $function parameter validations altered in boundary cases to match the <A HREF = "..\m204answers.rtf">latest reports</A> about M204 behaviour. 
+<LI>Some $function handling of very high input parameters like 15 digit integers changed to be more reasonable (e.g. $IXPI, $MOD). 
+
+<P><U>API/Source code:</U>
+<LI>Explicit DatabaseServices closedown function provided.
+<LI>The wrapped FindRecords() now correctly uses a wrapped FieldValue parameter.
+<LI>More descriptive field attribute specifications, e.g. for use in DefineField().
+<LI>Some new Record:: methods provided to avoid output parameters in garbage-collected languages.
+<LI>DirectValueCursor: API wrapper class - missing functions added.
+<LI>New repositioning and bookmarking methods on DirectValueCursor.
+<LI>Cursors in general can be optionally told to not "run off the end" of their set.
+<LI>SequentialFileServices::Allocate() parameter order changed.
+
+
+
+<A NAME = V2R07></A>
+<H3>2.07</H3>
+<P><U>Enhancements/changes:</U>
+<LI>Info message is now issued whenever the PRIORTY command is used.
+<LI>Improved handling of very large web pages when testing at the "chevron".
+
+<P><U>Fixes:</U>
+<LI>A fix for the long-standing (and very annoying) intermittent hang and/or user restart problem which occurred under certain multi-user conditions.
+<LI>Bump now works correctly for a user who is already in the subsystem error proc.
+<LI>MONITOR FILE<U>S</U> is now OK for MONITOR FILE.  Also the display now includes the "group" asterisk like on LOGWHO.
+<LI>OUTLPP/UDDLPP now correctly observed in the situation where a subsystem generates a report over the course of several included procs.
+
+
+
+<A NAME = V2R08></A>
+<H3>2.08</H3>
+<P><U>Enhancements/changes:</U>
+<LI>New messages clarifying what's going on during the deferred update process, and preventing some common errors.
+
+<P><U>Fixes:</U>
+<LI>Corrected error introduced in the last version where file close stats would always show as zero.
+<LI>OPEN command parsing is less strict about the placement of commas vs. spaces in the "deffered update" flavour of the command.
+
+
+
+<A NAME = V2R09></A>
+<H3>2.09</H3>
+<P><U>Enhancements/changes:</U>
+<LI><A HREF = "language.html#FUNC_WEB_GET_POST_PARM">$WEB_GET_POST_PARM</A> has a new parameter keyword to obtain the file size when using INPUT TYPE=FILE on an HTML form.
+
+<P><U>Fixes:</U>
+<LI>The browser-local file name returned by the above function can contain spaces.
+<LI>Right click (floating popup menu) in the editor no longer moves the cursor if some text is selected.  So now "cut" and "copy" are not always greyed out on the popup menu.
+
+
+
+<A NAME = V2R10></A>
+<H3>2.10</H3>
+<P><U>Enhancements/changes:</U>
+<LI>Some new deferred update intermediate file formats.
+<LI>The FREE command now waits instead of fails if another user (typically the checkpoint daemon) is taking a checkpoint.
+<LI>API: Several Python-targeted additions.
+
+<P><U>Fixes:</U>
+<LI>Corrected a bug which could cause file corruption in large uncommitted update units involving more than one file.
+
+
+
+<A NAME = V2R11></A>
+<H3>2.11</H3>
+
+<P><U>Fixes:</U>
+<LI>A handful of minor User Language compatibility fixes as per <A HREF = "../m204answers.rtf">the latest information</A> from users, as follows.
+
+<LI>Support for archaic syntax when implicitly declaring a variable in User Language.  For example if %V has not yet been encountered in a request, the statement 
+<BR><TT class=code2>%V(5) = 'ABCDE'</TT> declares a string len 5 rather than giving an error message saying arrays can not be implicitly declared.
+
+<LI>In an expression, the keyword operators GT, LT, WITH, AND etc. can be delimited  with a plus or minus sign or bracket, as well as a space.  For example the statement 
+<BR><TT class=code2>IF %X LT-1 OR+%X EQ(%Y+%Z) THEN</TT> is OK.  Likewise in a FIND expression like:
+<BR><TT class=code2>FD PRODUCT_CODE IS LE-1</TT>
+
+
+<LI>String conversion to number in expressions: trailing spaces are now allowed.  For example 
+<BR><TT class=code2>%AREA = 2 * '3.1415 ' * %R</TT> would previously always equal zero.
+
+<LI>The PRESENT operator in math expressions has been tightened up to require the IS keyword prefix.  For example 
+<BR><TT class=code2>IF %%FID PRESENT</TT> now fails to compile.  Note that this is now in line with the use of PRESENT in FIND statements, which has always required IS.  Note also however that the LIKE operator in both situations can be used *without* "IS"!
+
+<P><U>API:</U>
+<LI>Assigning floating point zero to an APIRoundedDouble object is no longer broken when SetNumRangeThrowOption() is turned on.
+<LI>A new copy of Roger Marsh's notes and sample code is included in the download.
+
+<A NAME = V2R12></A>
+<H3>2.12</H3>
+
+<P><U>Enhancements/changes:</U>
+<LI>The Sirius way of supporting mixedcase User Language code is now emulated in most respects - see <A HREF = "language.html#SIRIUS_MIXCASE">notes in the Language Guide</A>.  This new facility consists of a handful of small changes, as follows.
+<LI>Mixedcase "BEGIN" is now always allowed.
+<LI>New parameter "COMPOPT" as per the Sirius M204 parameter.
+<LI>"Sirius" <A HREF = "language.html#SIRIUS_COMPDIR">compiler directive</A> is now recognized.
+<LI>The editor has a new option to <A HREF = "ideuser.html#Case_Handling">allow mixed-case keywords</A> and $function names.
+ 
+<BR><BR>Other changes:
+<LI>The <A HREF = "language.html#FUNC_CHARSET">$EBCDIC</A> function is now provided for character-set translation, approximately the reverse of $ASCII.
+<LI>$ASCII now works as per the M204 manual.  That is, it converts from EBCDIC to ASCII, rather than "host character set" (here ASCII) to ASCII, which was previously a null operation.
+
+<P><U>Fixes:</U>
+<LI>Complex subroutine parameter INPUT/OUTPUT specifications can now appear anywhere rather than having to be the last word for each parameter.  For example this one has it several ways and no longer gives a compilation error:
+<BR><TT class=code2>SUBROUTINE S (%V1 STRING LEN 3 INOUT, %V2 IS OUTPUT FLOAT, %V3 FIXED INPUT DP 2)</TT>
+<LI>In a find statement on Model 204 the comparison operators (EQ/LE/</> etc.) are only valid if prefixed by (at least) "IS", so as to specify the comparison type (alpha or numeric).  The exceptions are "=" and "EQ" which are allowed without an "IS" part, in which case the comparison type is determined from the field attributes.  Prior to this release of DPT, only the symbol "=" was treated this way, and the keyword equivalent "EQ" required "IS" like the rest.  Now "EQ" is treated exactly the same as "=", including all the various ordering permutations that are allowed with "NOT"/field name/value.
+<LI>Fixed the bug on some machines where after installing a new DPT version, the client would crash straight away the first time it was started.
+
+ 
+<P><U>API:</U>
+<LI>Somewhat rearranged package and one or two new source files added.  <LI>Additional features in Roger's chess application.
+
+
+
+<A NAME = V2R13></A>
+<H3>2.13</H3>
+
+<P><U>API:</U>
+<LI>A wider range of overloads for the FindRecords(...) function.  The <A HREF = "DBAPI.html#Refer_Back">referback examples</A> in the doc all compile now!
+
+
+
+<A NAME = V2R14></A>
+<H3>2.14</H3>
+
+<P><U>DBMS:</U>
+<LI>DPT can now load data much faster than before, using a new "single-step" deferred update process, in many ways similar to Model 204's.  The DBA Guide <A HREF = "dbaguide.html#DEFERSINGLE">describes the process</A>, and the release notes <A HREF = #V214LOADS>appendix (below)</A> gives some performance benchmarks.
+<LI>The old multi-step Z process is no longer recommended, but since it shares some of the tuned code, existing multi-step load jobs will show some improvement just by installing the new version.
+<LI>The DPT download contains a sample single-step load job.
+<LI>Fixed bug affecting the ANALYZE command where incorrect record counts might be shown.
+ 
+<P><U>User Language:</U>
+<LI>The $SUBREP function now correctly handles non-default parameter 3 (start position).  Previously it would use a position one to the right of the position given.
+<LI>The <A HREF = "language.html#FUNC_WEB_GET_HEADER">$WEB_GET_HEADER</A> function now provides "pseudo" headers named METHOD, URL and VERSION.  In other words the three items from the HTTP request message title line.  This is for some measure of compatibility with the Sirius equivalent function $WEB_HDR_PARM.
+
+<P><U>Other:</U>
+<LI>The host console now has an option to change the font of the displayed audit trail and user 0 output. 
+
+<P><U>API:</U>
+<LI>The OpenContext() calls for deferred update runs now use <A HREF = "DBAPI.html#Loading">explicit function names</A>.  The overloaded version was acquiring a ridiculous number of optional parameters.
+
+
+<A NAME = V2R15></A>
+<H3>2.15</H3>
+
+<P><U>Assorted:</U>
+<LI>Record loop skip processing now works correctly.  For example if set S consists of records A,B,C,D,E,F, the loop <TT class=code2>FOR EACH RECORD IN S BY 2</TT> now processes B,D,F and not A,C,E.
+<LI>An error message is now issued if deferred update mode is activated for a non-initialized file.  It's not really an error, but is a meaningless thing to do and it's confusing if the DBMS allows it.
+<LI>The error introduced in V2.14 where multiply-occurring fields might be loaded in the wrong order has been fixed.
+<LI>The single-step deferred update process is better at preventing heap fragmentation, and is therefore less likely to give up due to apparent memory shortage.
+<LI>API: RoundedDouble objects can no longer be assigned an unrounded value.
+<LI>API: The #SEQTEMP directory is now cached at startup time, so API programs can change the OS current directory at will during a run without causing misdirected DISP=TEMP allocations.
+
+
+<A NAME = V2R16></A>
+<H3>2.16</H3>
+
+<P><U>Fixes:</U>
+<LI>User Language FRN bug fixed.
+<LI>Load: Includes workaround for the missing information on [Linux + the current version of Wine], namely the available-memory figure.
+<LI>Load: Fixed intermittent bug with scratch files that ended in X'14' (EOF) character.
+
+<P><U>New:</U>
+<LI>There is now a <A HREF = "sysconfig.html#ACCESSCONTROL">limited selection</A> of M204-style security support, allowing for user ID/password maintenance and lookup with the LOGCTL command etc., plus $function equivalents ($LOGCTL etc).
+<LI><A HREF = "language.html#FUNC_ENCRYPT">$ENCRYPT</A> is now supported.
+<LI>Support for <A HREF = "m204xref.html#Functions_Sirius">Sirius functions</A>: $A2E, $E2A (synonyms for $EBCDIC and $ASCII), $X2D, $D2X, $HEXA, $IHEXA (last two synonyms for $X2C and $C2X).
+<LI>A new hashing $function <A HREF = "language.html#FUNC_SHA1">$SHA1</A>.
+
+<P><U>Other:</U>
+<LI>New <A HREF = "language.html#OPEN">'QUIET' parameter</A> for reducing the audit trail output on big one-step data loads.
+<LI>Correct handling now for API programs that shut down DPT (call Destroy()) and then restart without starting a new OS process.
+
+
+
+<A NAME = V2R17></A>
+<H3>2.17</H3>
+
+<P><U>Fixes:</U>
+<LI>Fixed file handle leak during index build merge.
+<LI>The use of OS file handles is now <A HREF = "m204xref.html#LOADXXXX">parameterized</A> to allow the index build merge phase to work if their supply is limited (e.g. smaller machines or OS configurations).
+
+<P><U>API:</U>
+<LI>New wrapper class for password file.
+
+
+
+
+<A NAME = V2R171></A>
+<H3>2.17.1</H3>
+
+<P><U>Source code:</U>
+<LI>The 2.17 changes should now compile with mingw/gcc.
+<LI>Warning messages on 279 source files (missing final EOL) should no longer occur.
+<LI>Updated bundle of implementation notes, scripts etc. from Roger.
+
+
+
+<A NAME = V2R18></A>
+<H3>2.18</H3>
+Record store overheads have been reduced somewhat in the common case where the same fields are used repeatedly.
+
+<P><U>User Language:</U>
+<LI>STORE RECORDS statements now execute a tad faster, but only when all field names are known at compile time (i.e. there are no %% field name variables).
+
+<P><U>API:</U>
+<LI>API programs now have the option to skip the preparation of the field names when they're the same each time.
+<LI>It is now essential to explicitly use an APIStoreRecordTemplate object (it's no longer just a synonym for RecordCopy).
+
+
+
+<A NAME = V2R19></A>
+<H3>2.19</H3>
+
+<P><U>DBA commands</U>
+<LI>DELETE FIELD is now supported.
+<LI>REDEFINE FIELD support now covers the full range of options.  The Language Guide contains <A HREF = "language.html#REDEFINEFIELD">assorted notes</A> about how this command is processed on DPT when the different options are used.
+
+<P><U>Single-step deferred updates</U>
+<BR>Control and diagnostics have been tidied up somewhat.  The main things are: follows.
+<LI>There are two new parameters to control the process - <A HREF = "m204xref.html#LOADXXXX">LOADMEMP and LOADDIAG</A>.  Note that the two optional arguments that were previously supplied on the <A HREF = "language.html#OPEN">OPEN command</A> (or equivalent API call) are no longer valid.
+<LI>Message number DPT.3110 no longer exists, and therefore cannot be MSGCTL'd as previously recommended.
+<LI>Index build stats are now more accurate in one or two cases where estimates are given.
+<LI>Diagnostics and message texts in general may differ slightly compared to the last version.  For example "single-step deferred update mode" is now sometimes referred to as "fast index build mode" reflecting its multi-purpose usage.
+<LI>Since-last stat groups (diagnostics level 4 only) are back to the M204-like "BLDX" rather than than "1SLX".
+
+<P><U>API</U>
+<LI>A small extension to V2.18 aimed at handling multiply-occurring field groups.
+<LI>Non-standard "const const" declaration from V2.18 removed.
+
+
+<A NAME = V2R20></A>
+<H3>2.20</H3>
+
+<P><U>Server daemons</U>
+<LI>Fixed bug where there was a small window of opportunity for a daemon with a particular ID to be restarted before it had completely logged off.  Taken together with the next point this exposure caused intermittent corruption of daemon-related control blocks, and sometimes could have led to the entire web server crashing.
+
+<LI>There is now better control of server daemon auto-respawning. On systems with a heavy turnover of these daemons the auto-respawn mechanism would prior to this version occasionally get stuck for a while repeatedly starting and stopping daemons but unhappy with the exact number it had.  This would cause a flurry of unnecessary daemon user logon/logoff activity.  (NB. Under ideal conditions you would hope the same set of daemons would run all day without auto-respawn coming into play at all, but realistically there will always be the occasional restart/logoff for one reason or another, triggering the process).
+<LI>Daemon control codes (as issued to e.g $SPAWN) are now always uppercase.  This is hopefully of minor user impact, but ensures the windows file system, which is case-insensitive, will not have problems identifying auto-generated output files.
+
+<P><U>API</U>
+<LI>The DeleteField() function from 2.19 now has an API hook.
+
+<P><U>Cosmetics</U>
+<LI>Windows Vista for some reason did not show the DPT host console "operator" menu in the same colour as the other items at startup time.  Now it does.
+
+
+<A NAME = V2R21></A>
+<H3>2.21</H3>
+
+<P><U>Fixes</U>
+<LI>Fixed bug in V2.18 where null %variable in User Language STORE RECORD would crash the request. 
+<LI>The web server now is *even less* likely to crash than it was made in V2.20 last week. (A benign daemon-spawning error was incorrectly being treated as serious enough to terminate the server).
+
+
+<A NAME = V2R22></A>
+<H3>2.22</H3>
+
+
+<P><U>Email</U>
+<LI><A HREF = "language.html#FUNC_EMAIL">$EMAIL</A> function for sending email directly from User Language.
+<LI>Two new commands, <A HREF = "language.html#USECMD">USE $EMAIL</A> and <A HREF = "language.html#BBEMAIL">=EMAIL</A>, which hook into the same underlying code as the UL $function.  The USE method provides similar functionality to "USE PRINTER ... WRITER=SMTP" on Model 204.
+<LI>All the above features rely on the freeware <A HREF = "http://www.blat.net">"Blat"</A> mailer utility being present on the DPT host machine, and that it has been given the location of a mail server.  The <A HREF = "language.html#FUNC_EMAIL">$function notes</A> describe the simple process of doing that.
+
+<P><U>Other enhancements</U>
+<LI>The <A HREF = "language.html#FUNC_FILE_OPEN">$FILE_OPEN</A> function now supports 'TEMP' disposition. 
+<LI>There is a new flavour of the <A HREF = "ideuser.html#KM_Lat">"command line history"</A> feature on the client.  Previously ALT+uparrow invoked something similar to RETRVKEY on Model 204.  That facility remains but now you can add SHIFT into the mix (ALT+SHIFT+uparrow) to select quickly from all previously-issued commands.
+
+<P><U>Misc</U>
+<LI>Client-host connection is now faster if a fresh $function catalog is downloaded at each connection time (the default).  The ~0.5 second delay appeared to be exclusive to systems running on Windows Vista, but in any case it's gone now.  The transfer is done in a more efficient way.
+
+
+
+
+<A NAME = V2R23></A>
+<H3>2.23</H3>
+
+<P><U>Fixes</U>
+<LI>When using REDEFINE FIELD to convert from ORD CHAR to ORD NUM, the dbms now correctly merges index entries for string values which convert to the same numeric value, such as "100" and "+100".  
+<LI>It is also now a valid option in the same situation to <A HREF = "dbaguide.html#NUMERICVAL">allow invalid numeric values</A> through as zeros.  In other words the same as during a fresh data load.
+<LI>Fixed the bug where the system would crash at file-close time if multiple files had been open in single-step deferred update mode.
+<LI>Resetting FISTAT to clear the deferred update bit is not recommended, but it does work now.
+<LI>Fixed the incorrect reporting of a file as physically inconsistent which occurred on small-buffer-pool onlines when opening a file in the middle of another user's transaction.
+<LI>Parameter 2 of the $COMMBG function now sets the default file.  In other words it does an automatic OPEN rather than OPENC.
+
+
+<P><U>Other</U>
+<LI>The API OpenContext...() function for multi-step deferred-update mode has its format option back again (e.g. NOCRLF).  This parameter was accidentally removed in V2.14.
+<LI>Clarified the informational message <TT>"Too many users of the same buffer page?!"</TT> which occured in certain API runs in garbage-collected languages such as Python, or more improbably in contrived User Language situations such as record loops nested over a hundred deep.
+
+<LI>New load-related parameter <A HREF = "m204xref.html#LOADXXXX">LOADCTL</A>.  DPT no longer tries to auto-detect whether it is running on Linux/Wine.
+
+
+<A NAME = V2R24></A>
+<H3>2.24</H3>
+
+<P><U>Source code</U>
+<BR>A range of source code rejigs to allow clean compilation with current gcc and its default warning settings (very fussy!)  Not all are listed here but these are the main ones.  Thanks to Roger M for assistance with this. <I>{Note - actually the next version below is the one that finally compiles cleanly.}</I>
+
+<P>
+<LI>Assorted minor changes to cater for features deprecated in recent gcc versions, such as assigning string literals to char* (i.e. not const char*) and "friend injection".
+<LI>Explicit casts from double to int inserted rather than having it done automatically.  This is fairly common as all the numeric work in the DBMS and the UL compiler is floating point, even when only integer is required.
+<LI>Numerous constructor initializer lists reordered to match the member order within objects (i.e. actual initialization order).
+<LI>Several casts inserted to quieten gcc's worries about printf() "%d" format items not matching supplied arguments. 
+<LI>bbfloat.cpp now #includes &ltmath.h&gt to cater for the bunch of functions that were moved there from &ltfloat.h&gt in recent gcc.  The relevant function here is _nextafter(). 
+<LI>All source code files now have lowercase names, and all corresponding #include statements that were previously uppercase or mixedcase are now lowercase.  This allows a wider range of utility tools to be used on the source code as some tools are case-sensitive.  The affected modules with this are: <TT>CFR, Cmds_OS, FLGS, ulstmt_IO, randomMT</TT> and 14 separate <TT>page_* (page_A, page_F</TT> etc).
+
+
+<A NAME = V2R25></A>
+<H3>2.25</H3>
+
+<P><U>Database C API and DLL</U>
+<LI>A new usage option is to call the DBMS from C or one of the many languages that can do C-style function linkage, linking dynamically to a pre-prepared DLL (no DPT source compiliation required!)
+<LI>The tidied up and expanded <A HREF = "DBAPI.html#Compilation">API programming guide</A> has full details.
+<LI>The <A HREF = "../downloads.html">downloads page</A> has a package containing the DLL, C headers and a load of sample C code.
+
+<P><U>User Language Fixes</U>
+<LI>FIND WITHOUT LOCKS previously sometimes placed an exclusive lock on the found set (better than the other way round!) Now FDWOL always works correctly.
+<LI>$LOWCASE and $UPCASE correctly process complete strings containing X'00' characters, rather than only going as far as at the first X'00'.
+<LI>FIXED DP 0 variables no longer overflow/wrap when assigned a value requiring more than 31 bits.
+
+<P><U>DBMS Fixes</U>
+<LI>The DIRRCD stat now updates correctly after table B searches. 
+
+<P><U>Source code</U>
+<BR>Well it seems there actually were a few more things to do after the last version to get a complete clean compile with default gcc.  The download contains a brief walkthrough of how to get it to compile and run in the free Eclipse IDE.
+
+<P>
+<LI>Specifically a huge number of <I>int</I> variables (i.e. signed) replaced with C++ STL <I>size_t</I>, (i.e.  unsigned) when indexing into STL strings, vectors, etc., to stop complaints about unsafe comparison between signed and unsigned.  Where usage is not trivial, the existing <I>ints</I> are left in place and cast to <I>size_t</I> (i.e. the standard ANSI behaviour), which is wordier but prevents obscure bugs 
+creeping in from this exercise.
+
+<P><U>Miscellaneous extra functionality</U>
+<LI>UL $LOWCASE has an <A HREF = "language.html#LOWCASE">extra parameter</A> to optionally lowercase the first character too.
+<LI>UL $ALPHA and $ALPHANUM each have an <A HREF = "language.html#FUNC_ALPHA">extra parameter</A> to optionally allow lowercase characters through.
+<LI>The help buttons, menus etc. throughout the apps should now route to the correct documentation chapters on a wider range of browsers, rather than just opening at the top of the relevant documents.  The change takes account of more recent browser-control-mechanism conventions for targeting HTML anchors.  DPT allows it to be done <A HREF = "ideuser.html#Options_Installation">two different ways</A> now.
+
+
+
+
+<A NAME = V2R26></A>
+<H3>2.26</H3>
+This version contains a small but significant change to the build settings for the downloadable .exe and .dll files.  The change addresses a variety of intermittent crashes some users were seeing, especially on high-throughput systems on multi-core hardware.  There are no other major changes in this version.
+
+
+<P><U>Details</U>
+<BR>The change is necessary because of the Microsoft C++ standard library problem described here: <A HREF = "http://support.microsoft.com/kb/813810">KB 813810</A>.  In summary, the old standard library <TT>&ltstring&gt</TT> class had an implementation peculiarity which meant that such objects did not behave "reasonably".  More specifically, when variables are declared as constants to the C++ compiler and are only ever read from, it's reasonable to assume that more than one thread can read them safely without risk of corruption.  With this library however, hidden performance-related code inside the <TT>&ltstring&gt</TT> class made modifications to the underlying data even when just reading a variable's value, resulting in possible corruption if two threads did so at the same time.  
+
+<P><U>Effects of the change on existing installations</U>
+<BR>Of the various Microsoft recommended solutions, the one used is the only one which can be applied in a realistic time frame, namely to remain using the same compiler but disable this performance-related feature of C++ standard library <TT>&ltstring&gt</TT> variables.  Or at least partly so: To counteract the detrimental effect it had on the performance of User Language programs doing a lot of string work, most (the single-threaded parts) of the UL compiler and evaluator remain using the old C++ <TT>&ltstring&gt</TT>.  
+
+<P>DPT as a whole is therefore not too badly affected performance-wise by this change, although it's still possible users may find specific operations which are unusually slow.  Such cases can easily be addressed later if required so please report any you find, or indeed any other strange behaviour of the system in this version.
+
+
+
+
+
+<A NAME = V2R27></A>
+<H3>2.27</H3>
+
+
+<P><U>Installer</U>
+<BR>The downloadable ".exe" file which unzips and installs the DPT demo system is now prepared using a different scripter tool, addressing some problems with the old installer.  At the same time the <A HREF = "sysconfig.html#Install_Config">installation reference section</A> in the system config guide has been clarified and expanded with more information and more discussion of the subject.
+
+<P>The main changes in the install procedure from V2.26 can be summarised as follows.
+
+<UL>
+<LI>The installer wizard offers more helpful and relevant comments/suggestions at each stage.
+<LI>The default install location is now "C:\DPT" rather than a subdirectory of "C\Program Files".  This is to make it so both the installer and DPT itself can be run without administrator privileges on Windows Vista (if you are to avoid the confusing and non-intuitive UAC/folder virtualization behaviour).
+<LI>You are now offered the option to install various subsets of the download package, for example during a version upgrade choosing just the .exe files.
+
+<LI>The wizard no longer always creates a new directory for "DPT Version XX", which often resulted in an untidy build-up of old version directories.  Instead, the same directory is always used by default, with an optional backup being taken of any existing files that get overwritten.
+<LI>Uninstall can now more completely remove DPT, in simple cases leaving no trace at all, rather than an assortment of old audit trails and ini files.
+<LI>An uninstall.exe file is now created as part of the install.  This just offers another quicker way of removing DPT, in addition to the usual method of going via Control Panel.
+<LI>As a bonus, the DPT content is all zipped much more effectively (LZMA algorithm) inside the install package, which is now a lot smaller.
+</UL>
+
+<P>Note however that because it's a brand new install script, it will not uninstall any DPT versions 2.26 or before.  You should do this separately via Control Panel before installing V2.27, unless you want to keep the old version hanging around to confuse you.  Then in V2.28.... etc. things should work more smoothly.
+
+<P>For interest, the old scripter tool was called "GKSetup", and the new one used for this version is "Inno Setup".  Unless anybody has any problems with it, Inno Setup will be used for the foreseeable future because it offers much better functionality.
+
+
+<P><U>Other miscellaneous changes in this version</U>
+<LI>The ERMX parameter can now be reset using a value of -1, disabling its effect.  Previously -1 was taken to mean zero (i.e. super-harsh effect).
+<LI>Clearer messages are issued when attempting to open non-DPT files.
+
+<P><U>Client</U>
+<LI>The editor "Find and Replace" dialog is now mapped more conventionally to Alt+E+E instead of Alt+E+R.
+<LI>The fullscreen view now supports simulated PF key presses in response to mouse clicks.  <A HREF = "ideuser.html#FS_PseudoPFKeys">More details...</A>
+<LI>".js" is now one of the default "non-UL" file extensions for files opened in the editor. 
+
+
+<P><U>Database C API DLL</U>
+<LI>Null string parameters can now be supplied to obtain the default action in a handful of places where "" was previously required.
+
+
+
+
+
+<A NAME = V2R28></A>
+<H3>2.28</H3>
+
+<P><U>Commands and User Language</U>
+
+<LI>Parsing of a stand-alone DECLARE IMAGE statement no longer "eats" a following label if there is one on the very next line.  E.g. this now works instead of the compiler complaining that there is no label:
+
+<PRE CLASS=code>
+DECLARE IMAGE SOMEIMAGE COMMON
+L: 
+NOTE 'SOMETHING'
+</PRE>
+
+<LI>Fixed bug which caused a crash in the pattern matcher.  For example patterns with leading wildcards, tested against strings >128 characters long.  This will not crash now:
+
+<PRE CLASS=code>
+IF $PAD('','A', 129) IS LIKE '*A*' THEN PRINT 'LIKE'
+</PRE>
+
+<LI>Messages are now more logical when a USE command is issued while another USE destination is already open.  For example the familiar "output set to normal" message was misleading if the previous USE destination remained open.  This is what it says now:
+
+<PRE CLASS=code>
+USE PROC -6
+USE OUTJUNK
+*** 1 DPT.1504 Sequential file is not allocated: OUTJUNK - previous USE destination remains active
+</PRE>
+
+<P><U>DBMS</U>
+<LI>Multi-step deferred updates with NOCRLF + NOPAD options.  Zero length field values no longer crash the Z step.
+
+<P><U>Client</U>
+<LI>The find and replace dialogs remember the last string searched for if there is no text selected in the editor.
+<LI>The debugger command <TT>WATCH F.xxxx</TT> to manually add a watch on the value of field "xxxx" now works again.  Generally the PAI check box is much more useful anyway.
+<LI>Better handling of middle mouse click in fullscreen view.
+  
+<P><U>Documentation</U>
+<LI>The CSS definitions have been tidied up, so certain parts of the docs (e.g. code samples scattered throughout) display more clearly on more browsers.
+<LI>Further tweaks to F1/help handling within apps (see also <A HREF = #V2R25>V2.25</A>) to support more browsers, and more potential help doc directory name unusual variations.
+
+
+
+
+<A NAME = V2R29></A>
+<H3>2.29</H3>
+
+
+<P><U>System Management</U>
+<LI>DPT host can now be run without its GUI if the appropriate command line parameter is given when starting it up.
+<LI>It also now has all the necessary internal hooks to be invoked as a Windows Service, so long as the aforementioned NOGUI mode is used.  The subject of running DPT host as a service is covered <A HREF = "sysconfig.html#Config_Service">in more detail</A> in the system config guide.
+<LI>The DPT host console has a new tools dialog for conveniently installing DPT services.
+
+<P><U>Commands</U>
+<LI>A new DPT custom command <A HREF = "language.html#DISPLAYAUDIT">DISPLAY AUDIT</A> for accessing the audit trail.  This is obviously useful in the new NOGUI mode, but also offers simple "SirScan" like functionality for general use.
+
+
+
+
+<A NAME = V2R30></A>
+<H3>2.30</H3>
+
+<P><U>Client</U>
+<LI>Large procedures edited remotely (not on the same machine) now open and save in the editor in a fraction of the time.  (It no longer bothers to ACK every single line back and forth over the socket.)
+<LI>Procedure directories containing a large number of procs, and field listings with a large number of fields, now open much quicker in the navigator view.  Same reason.
+<LI>Further usability tweaks to the editor find/replace dialog.
+<LI>Similarly to the host (see below) there is <A HREF = "ideuser.html#Options_AutoConnect">a new option</A> to make it so the client can be closed without a prompt, even in the middle of a debug session or fullscreen application.  Previously the user would be prompted to terminate the debug/fullscreen session, which is still the default behaviour.
+
+<P><U>Host console</U>
+<LI>When run in GUI mode (the usual) DPT host by default now interrupts Windows closedown, as if the user had hit Alt-F4.  The prompt in both cases can be disabled with <A HREF = "sysconfig.html#ClosedownPrompt">a new option</A>.  This is irrelevant in service mode, where closedown is initiated via the windows service manager, and would never prompt.
+ 
+
+<P><U>User Language</U>
+<BR>Some fixes for obscure situations:
+<P>
+
+<LI>The IS PRESENT and IS LIKE operators can now be terminated in expressions by right bracket or +/-, (these two slipped through the net when the fix for the other "keyword" operators in <A HREF = #V2R11>V 2.11</A> was done). Example: <TT>%HASCLAIMS = CLAIMS06 IS PRESENT+(CLAIMS07 IS PRESENT)</TT>.
+<LI>In fullscreen processing, very rapid multiple PF key presses (or any presses during $FAKEENT) no longer trigger "attention", unless the key actually was "attention".  In the case of $FAKEENT in particular this may cause subtly different behaviour for auto-refresh programs, since a preemptive PF key press by the user now returns normally (with %SCR:PFKEY set) rather than driving the ON ATTENTION unit. 
+<LI>In certain cases ELSEIF statements which failed to compile because of invalid conditional expressions would cause user restart.  This is now fixed.  e.g. <TT>ELSEIF %X EQ GARBAGE</TT> where there is no such field as GARBAGE.
+<LI>It was previously possible to contrive a case where a complex subroutine would be called recursively, recycling its input parameters but with the order mixed round, where one or more incorrect values would be passed into the inner call frame.
+
+<P><U>Miscellaneous new functionality</U>
+<LI>New <A HREF = "language.html#FUNC_LZW">$LZW function</A> providing mild but convenient data compression.
+<LI>New <A HREF = "language.html#POSTCMD">=POST command</A>, a wrapper to the Windows PostMessage API.
+
+
+
+
+<P>
+<P><a href="../downloads.html">Download latest version...</A>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<P><HR><HR>
+
+
+<A NAME = DETAILS></A>
+<H2>Further details about specific releases</H2>
+
+<A NAME = V203LOADS></A>
+<H3>V2.03:  Improvements to multi-step deferred-update loads</H3>
+
+One ongoing plan for versions 2.xx is the improvement of DPTs support for DBA activities such as loading, reorganizing and field maintenance.  The change in V2.03 is in one sense a piece of preparatory work for a specialized fast-load facility coming in the near future, but it also significantly speeds up existing "simple" User Language loads (provided that the deferred update feature is enabled).  See benchmarks below.
+
+<P>The changes can be summarised as:
+<UL>
+	<LI>Reduction in <A HREF = "dbaguide.html#DEFERRED">size of the deferred update records</A> significantly speeds up the sort, regardless (in theory) of the sort utility used.  It also reduces I/O during all phases.
+	<LI>The <A HREF = "language.html#Z">Z command</A> now loads indexes much faster in typical cases, by building inverted lists in memory.
+</UL>
+
+
+<P>Note that any existing deferred-update load decks you have will need changes to the sort parameters to handle the new shorter records.  The sample load job distributed with the DPT download shows the new parameters with the old commented out.
+
+<P><U>Benchmarks</U>
+<BR>The following loads were run on a 1Ghz Celeron laptop, W2K SP2, CMSort with its default settings, and with DPT MAXBUF set to 100.  The job was to load 1 million records as per the sample deferred-update code distributed with the download.  All times are min:sec.
+
+<P><B>A:</B> 
+<BR>5 indexed fields on every record, with a variety of typical value distribution characteristics.
+
+<P><TABLE BORDER>
+
+<TR><TH WIDTH=100>Version</TH> <TH WIDTH=100>Data     </TH> <TH WIDTH=100>Sort     </TH> <TH WIDTH=100>Indexes  </TH> </TR>
+<TR>
+<TD>2.02   </TD>
+ 	<TD ALIGN=RIGHT>5:32</TD> 
+	<TD ALIGN=RIGHT>20:54</TD> 
+	<TD ALIGN=RIGHT>11:35</TD> </TR>
+<TR>
+<TD>2.03   </TD> 
+	<TD ALIGN=RIGHT>4:39</TD> 
+	<TD ALIGN=RIGHT>17:23</TD> 
+	<TD ALIGN=RIGHT>7:38</TD></TR>
+</TABLE>
+
+
+<P><B>B:</B> 
+<BR>Just load one specific field on each record.  The few-valued fields give large improvements as we would expect from the new Z processing.  The many-valued fields smaller improvements just from the reduced sort record size.
+
+<P><TABLE BORDER>
+
+<TR><TH WIDTH=100>Field/Version</TH> <TH WIDTH=100>Data     </TH> <TH WIDTH=100>Sort     </TH> <TH WIDTH=100>Indexes  </TH> </TR>
+<TR><TD>Few valued alpha (STADIUM_NAME)</TD></TR>
+<TR>
+<TD>2.02</TD>
+ 	<TD ALIGN=RIGHT>1:44</TD> 
+	<TD ALIGN=RIGHT>2:07</TD> 
+	<TD ALIGN=RIGHT>1:50</TD> </TR>
+<TR>
+<TD>2.03</TD> 
+	<TD ALIGN=RIGHT>1:31</TD> 
+	<TD ALIGN=RIGHT>1:34</TD> 
+	<TD ALIGN=RIGHT>0:25</TD></TR>
+<TR><TD>Few valued numeric (FOUNDED_YEAR)</TD></TR>
+<TR>
+<TD>2.02</TD>
+ 	<TD ALIGN=RIGHT>2:01</TD> 
+	<TD ALIGN=RIGHT>4:10</TD> 
+	<TD ALIGN=RIGHT>1:01</TD> </TR>
+<TR>
+<TD>2.03</TD> 
+	<TD ALIGN=RIGHT>1:43</TD> 
+	<TD ALIGN=RIGHT>3:32</TD> 
+	<TD ALIGN=RIGHT>0:31</TD></TR>
+
+<TR><TD>Many valued alpha (NAME)</TD></TR>
+<TR>
+<TD>2.02</TD>
+ 	<TD ALIGN=RIGHT>1:55</TD> 
+	<TD ALIGN=RIGHT>2:59</TD> 
+	<TD ALIGN=RIGHT>3:32</TD> </TR>
+<TR>
+<TD>2.03</TD> 
+	<TD ALIGN=RIGHT>1:50</TD> 
+	<TD ALIGN=RIGHT>2:39</TD> 
+	<TD ALIGN=RIGHT>3:33</TD></TR>
+<TR><TD>Many valued numeric (TID)</TD></TR>
+<TR>
+<TD>2.02</TD>
+ 	<TD ALIGN=RIGHT>1:58</TD> 
+	<TD ALIGN=RIGHT>3:42</TD> 
+	<TD ALIGN=RIGHT>2:01</TD> </TR>
+<TR>
+<TD>2.03</TD> 
+	<TD ALIGN=RIGHT>1:45</TD> 
+	<TD ALIGN=RIGHT>3:06</TD> 
+	<TD ALIGN=RIGHT>1:55</TD></TR>
+</TABLE>
+
+
+<P><HR>
+
+<A NAME = V214LOADS></A>
+<H3>V2.14:  One-step loads (etc.)</H3>
+
+Continuing the ongoing V2.x exercise of improving the speed of data loads, DPT now provides similar functionality to M204's one-step ("FILELOAD") process.  In addition, the internal index-build routines have received some significant performance tuning which is beneficial in various situations, including the old multi-step load process.
+
+<P>The following tests tests were run on the same 1Ghz Celeron laptop used above, which has 250Mb of memory.  The single-step loads used the default of 75% of the available memory, and to make for a more reasonable comparison CMSORT in the multi-step runs was configured to use 75% as well (hence the sort is somewhat quicker than it was in the V2.04 benchmarks above).
+
+<P><B><U>A:</B></U> 
+<BR>5 indexed fields on every record, with a variety of typical value distribution characteristics.  (Data generated by the LOAD.RANDOM.DATA program supplied in DEMOPROC).
+
+<P>Remarks:
+<UL>
+<LI>The single-step process is clearly the fastest by a long way.
+<LI>It becomes even better with larger data volumes, as sort-related overheads  start to dominate the multi-step runs.
+<LI>Even discounting the cost of the sort, both the data load component and the index load component are faster using single-step.
+<LI>Comparing just the multi-step index load figures between this version and the last highlights the tuned index-load code which is part of this release.
+<LI>The bottleneck in these figures overall is actually now the User Language runtime during the data load phase.  This will be addressed with a special fast load utility in a future release.  API users (i.e. bypassing UL) should see even better results with the current release though.
+</UL>
+
+
+<P><TABLE BORDER>
+
+<TR><TH WIDTH=120>Run type</TH> <TH WIDTH=100>Data     </TH> <TH WIDTH=100>Sort     </TH> <TH WIDTH=100>Indexes  </TH> <TH WIDTH=100>Total  </TH> 
+</TR>
+
+<TR>
+<TD><U>1 million records</U></TD> 
+</TR>
+<TR>
+<TD>Multi-step V2.12</TD> 
+	<TD ALIGN=RIGHT>4:25</TD> 
+	<TD ALIGN=RIGHT>11:32</TD> 
+	<TD ALIGN=RIGHT>8:34</TD>
+	<TD ALIGN=RIGHT>24:31</TD>
+</TR>
+<TR>
+<TD>Multi-step V2.14</TD> 
+	<TD ALIGN=RIGHT>4:44</TD> 
+	<TD ALIGN=RIGHT>11:22</TD> 
+	<TD ALIGN=RIGHT>3:28</TD>
+	<TD ALIGN=RIGHT>19:34</TD>
+</TR>
+<TR>
+<TD>Single-step</TD> 
+	<TD ALIGN=RIGHT>3:04</TD> 
+	<TD ALIGN=RIGHT>-</TD> 
+	<TD ALIGN=RIGHT>1:08</TD>
+	<TD ALIGN=RIGHT>4:12</TD>
+</TR>
+<TR>
+<TR>
+<TD><U>5 million records</U></TD> 
+</TR>
+<TR>
+<TD>Multi-step V2.12</TD> 
+	<TD ALIGN=RIGHT>  22:16</TD> 
+	<TD ALIGN=RIGHT>1:32:07</TD> 
+	<TD ALIGN=RIGHT>  46.52</TD>
+	<TD ALIGN=RIGHT>2.41.13</TD>
+</TR>
+<TR>
+<TD>Multi-step  V2.14</TD> 
+	<TD ALIGN=RIGHT>  21.55</TD> 
+	<TD ALIGN=RIGHT>1.32.44</TD> 
+	<TD ALIGN=RIGHT>  31.17</TD>
+	<TD ALIGN=RIGHT>2.25.56</TD>
+</TR>
+<TR>
+<TD>Single-step </TD>
+ 	<TD ALIGN=RIGHT>16:45</TD> 
+	<TD ALIGN=RIGHT>-</TD> 
+	<TD ALIGN=RIGHT>4:37</TD>
+	<TD ALIGN=RIGHT>21:12</TD>
+</TR>
+</TABLE>
+
+
+
+
+<P><B><U>B:</B></U> 
+<BR>5 million records containing a single field, FOUNDED_YEAR (few-valued).
+
+<P>Remarks:
+
+<UL>
+<LI>Few-valued fields like this (just 50 values) gain most from the use of inverted lists and show the greatest improvement from using the single-step process.
+</UL>
+
+<P><TABLE BORDER>
+<TR><TH WIDTH=120>Run type</TH> <TH WIDTH=100>Data     </TH> <TH WIDTH=100>Sort     </TH> <TH WIDTH=100>Indexes  </TH> <TH WIDTH=100>Total  </TH> 
+</TR>
+
+<TR>
+<TD>Multi-step V2.12</TD> 
+	<TD ALIGN=RIGHT>8:35</TD> 
+	<TD ALIGN=RIGHT>13:53</TD> 
+	<TD ALIGN=RIGHT>2:30</TD>
+	<TD ALIGN=RIGHT>24:58</TD>
+</TR>
+<TR>
+<TD>Multi-step V2.14</TD> 
+	<TD ALIGN=RIGHT>8:24</TD> 
+	<TD ALIGN=RIGHT>13:51</TD> 
+	<TD ALIGN=RIGHT>2:31</TD> 
+	<TD ALIGN=RIGHT>24:55</TD>
+</TR>
+<TR>
+<TD>Single-step </TD>
+	<TD ALIGN=RIGHT>5:46</TD> 
+	<TD ALIGN=RIGHT>-</TD> 
+	<TD ALIGN=RIGHT>0:03</TD>
+	<TD ALIGN=RIGHT>5:49</TD>
+</TR>
+</TABLE>
+
+<P><B><U>C:</B></U> 
+<BR>5 million records containing a single field, TID (many-valued).
+
+<P>Remarks:
+
+<UL>
+<LI>The single-step run is much faster, although not to quite such a great extent as with the few-valued field.  The benefit here is not from using inverted lists (there are none) but from sequential I/O savings.
+<LI>With a large b-tree to build (5 million entries), the tuning in this area of the code shows up in the multi-step index component timings.
+</UL>
+
+<P><TABLE BORDER>
+<TR><TH WIDTH=120>Run type</TH> <TH WIDTH=100>Data     </TH> <TH WIDTH=100>Sort     </TH> <TH WIDTH=100>Indexes  </TH> <TH WIDTH=100>Total  </TH> 
+</TR>
+
+<TR>
+<TD>Multi-step V2.12</TD> 
+	<TD ALIGN=RIGHT>8:29</TD> 
+	<TD ALIGN=RIGHT>12:51</TD> 
+	<TD ALIGN=RIGHT>12:41</TD>
+	<TD ALIGN=RIGHT>34:01</TD>
+</TR>
+<TR>
+<TD>Multi-step V2.14</TD> 
+	<TD ALIGN=RIGHT>8:17</TD> 
+	<TD ALIGN=RIGHT>12:44</TD> 
+	<TD ALIGN=RIGHT>5:52</TD> 
+	<TD ALIGN=RIGHT>26:53</TD>
+</TR>
+<TR>
+<TD>Single-step </TD>
+	<TD ALIGN=RIGHT>6:03</TD> 
+	<TD ALIGN=RIGHT>-</TD> 
+	<TD ALIGN=RIGHT>0:58</TD>
+	<TD ALIGN=RIGHT>7:01</TD>
+</TR>
+</TABLE>
+
+
+
+<P><HR>
+</HTML>
