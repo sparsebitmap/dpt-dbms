@@ -1,0 +1,380 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.0  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Roger Marsh">
+	<META NAME="CREATED" CONTENT="20071003;9272903">
+	<META NAME="CHANGED" CONTENT="20100107;20054683">
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<P ALIGN=CENTER><FONT SIZE=4 STYLE="font-size: 16pt"><B>Getting
+started using DPT with Python</B></FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Introduction</B></FONT></P>
+<P ALIGN=LEFT>This document describes how to create a Python wrapper
+for the DPT API using SWIG.</P>
+<P ALIGN=LEFT>This document assumes that you do not have a Visual C++
+compiler fit to build the Python wrapper. The free download versions
+are not fit. If you do have a fit Visual C++ version then you may be
+happy with 'here are instructions for installing SWIG; some SWIG
+interface files; and a Makefile that could be converted to use Visual
+C++ to create a Python wrapper for the DPT API'.</P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>History</B></FONT></P>
+<P ALIGN=LEFT>At about the time DPT version 1.0 was released I was
+working on a chess database program and wishing for the ability to
+manipulate indexes in the style of Model 204 User Language. This work
+was being done on a FreeBSD installation with regular but not
+frequent ports to Microsoft Windows. The DPT website
+(<A HREF="http://www.dptoolkit.com/">www.dptoolkit.com</A>) said the
+DPT API could be made available if anyone wanted it. The DPT Host and
+Client run under Wine (<A HREF="http://www.winehq.com/">www.winehq.com</A>)
+on FreeBSD so the same would be true for the DPT API. When the time
+came to tackle the task the decision was to build a Python wrapper
+for the DPT API with SWIG.</P>
+<P ALIGN=LEFT>So one might end up running versions of Python for
+Microsoft Windows under Wine on FreeBSD or Linux or OS X, where
+native versions of Python are available, just to use DPT API in these
+environments.</P>
+<P ALIGN=LEFT>Compiling the DPT API was the major problem because
+some of the runtime libraries used are not supplied with the versions
+of Visual C++ available for free download. My diversion into Visual
+C++ version 8 took up more time than it deserved. The dptdb.lib build
+(see projects\dptdb.mak in the DPT API sources) was first done
+successfully with Visual C++ version 6, using the Winelib runtime
+libraries on a Microsoft Windows installation, but Wine documentation
+(<A HREF="http://www.winehq.com/">www.winehq.com</A>) advice is that
+this be for development only. The solution was to use the MinGW /
+MSYS combination described in the SWIG documentation as an
+alternative to building SWIG from source using Visual C++.</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>MinGW uses the
+gcc compiler and it turned out that a fairly small number of changes
+to the DPT API source were needed to modify statements unique to the
+Visual C++ dialect before a successful build of the Python wrapper
+using gcc occurred. These are in DPT API version 2.06.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Building the
+Python wrapper was easy, allowing for this being my first use of
+SWIG, except for having to add a few small C++ classes to the SWIG
+interface file as C or C++ programming is new for me as well.</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Prerequisites</B></FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>The version
+numbers quoted are those I used. Check the package documentation for
+compatibility if you have a later version. Earlier versions may or
+may not work.</FONT></P>
+<P ALIGN=LEFT>DPT_V2R06_SOURCE_DBMS (<A HREF="http://www.dptoolkit.com/">www.dptoolkit.com</A>)</P>
+<P ALIGN=LEFT>MinGW (<A HREF="http://www.mingw.org/">www.mingw.org</A>)</P>
+<P ALIGN=LEFT>MSYS 1.0.10 (<A HREF="http://www.mingw.org/">www.mingw.org</A>)</P>
+<P ALIGN=LEFT>Python 2.4.4 (<A HREF="http://www.python.org/">www.python.org</A>)</P>
+<P ALIGN=LEFT>SWIG 1.3.39 (<A HREF="http://www.swig.org/">www.swig.org</A>)</P>
+<P ALIGN=LEFT>See the list of files in <B>Instructions</B> when
+choosing the files to download from <A HREF="http://www.mingw.org/">www.mingw.org</A>.</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>SWIG 1.3.39 or
+later is required for compatibility with Python 3.</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Instructions</B></FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>The C drive is
+used throughout these instructions. Although I have done an
+installation using these instructions exactly, except for the version
+of SWIG, I use an installation with most of the stuff on the D drive.
+ These instructions have been updated to refer to SWIG 1.3.39 (from
+SWIG 1.3.31).  The default build uses SWIG 1.3.39.</FONT></P>
+<P ALIGN=LEFT>Make folder c:\mingw</P>
+<P ALIGN=LEFT>Copy these files to c:\mingw</P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>binutils-2.15.91-20040904-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>gcc-core-3.4.2-20040916-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>gcc-g++-3.4.2-20040916-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>mingw-runtime-3.11.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>mingw-utils-0.3.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>w32api-3.8.tar.gz</FONT></P>
+<P ALIGN=LEFT>Run MSYS-1.0.10.exe to install Minimal SYStem in
+c:\msys</P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Answer
+'y' to the 'Do you wish to continue with the post install?' question</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Answer
+'y' to the 'Do you have MinGW installed?' question</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in">Type 'c:/mingw' in answer
+to the 'Where is your MinGW installation?' question. The response is
+that the installation cannot be found and that installation will
+continue as if the answer to the 'Do you have MinGW installed?'
+question were 'n'. However it does say what to do later once the
+MinGW installation has been completed.</P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Press
+ENTER to continue.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>You
+are warned to rename the version of make in the MinGW-1.1
+installation to 'mingw32-make.exe'.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Press
+ENTER to continue.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Press
+ENTER to continue when the pause command is echoed to the terminal.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>The
+installation completes.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Start an MSYS
+session by clicking the msys entry in the MinGW group on the Start
+menu.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in">Type the command 'less
+/etc/fstab.sample'. The windows path to the /etc folder is
+c:\msys\1.0\etc if you prefer to use your favourite text editor to
+view the fstab.sample file. A sample fstab file is displayed (quit
+from the display by typing 'q'). What is needed right now is an fstab
+file containing just the 'c:/mingw /mingw' line. Create it or copy
+and edit fstab.sample. Check the result with the command 'less
+/etc/fstab'.</P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>Type
+the command 'cd /mingw'.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in">Type the command 'ls'. The
+six files copied earlier to c:\mingw should be listed. If the list
+contains no files it is likely that the c:\msys\1.0\mingw folder is
+being listed which means the fstab file is wrong somehow.</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Complete the
+installation of MinGW by typing the following commands in the MSYS
+session. A list of the files extracted is generated.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf binutils-2.15.91-20040904-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf gcc-core-3.4.2-20040916-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf gcc-g++-3.4.2-20040916-1.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf mingw-runtime-3.11.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf mingw-utils-0.3.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>tar
+-xvzf w32api-3.8.tar.gz</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Logout of the
+MSYS session by typing 'logout' or 'CTRL + d'.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>You will now
+find that the warning to rename make.exe does not apply for this
+version of MinGW because the file does not exist.</FONT></P>
+<P ALIGN=LEFT>Extract files from swigwin-1.3.39.zip to
+c:\swigwin-1.3.39.</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Run
+python-2.4.4.msi to install Python 2.4 (many of you will have done
+this as you wish already).</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>I
+chose the 'just for me' option; install everything; and the 'compile
+.py' files option on the Advanced button while doing the steps in
+these instructions.</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Building the SWIG wrapper for Python</B></FONT></P>
+<P ALIGN=LEFT>Extract files from DPT_VnRnn_SOURCE_DBMS.ZIP (VnRnn &gt;
+V2R12).</P>
+<P ALIGN=LEFT>These instructions assume the build is done in the
+extracted directory DPT_VnRnn_SOURCE_DBMS.</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Start an MSYS
+session by clicking the msys entry in the MinGW group on the Start
+menu.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Change the
+current working directory with</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'cd
+DPT_VnRnn_SOURCE_DBMS/&rdquo;sample projects&rdquo;/&rdquo;DPT with
+Python&rdquo;/mingw_port'</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>or similar
+depending on location of DPT_VnRnn_SOURCE_DBMS or build environment.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Type the
+command</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'dptsetup.py'</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>to build the
+Python wrapper. After a successful build the folder python (in
+mingw_port) will exist containing the following files:</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>_dptapi.pyd
+(about 5.2Mb with compilation option -O0)</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>dptapi.py
+(about 77kb)</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 1.58in; font-weight: medium"><FONT SIZE=3>dptapi.py
+and _dptapi.pyd form the Python wrapper for the DPT API described in
+the DPT documentation.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Type the
+command</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'dptsetup.py
+install'</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>to install the
+Python wrappers in site-packages/dptdb. After a successful install
+two additional files are created in folder python and all are copied
+to site-packages/dptdb:</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>__init__.py</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>version.py</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Alternatively
+type the command</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'dptsetup.py
+install'</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>to do it all
+in one go.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Logout of the
+MSYS session by typing</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'logout'
+or 'CTRL + d'.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>You are now
+finished with MSYS MinGW and SWIG until you want to install a new
+release of DPT API.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Then you may
+wish to use the command</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>'dptsetup.py
+uninstall'</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>to remove this
+release of DPT API from site-packages before installing the next.</FONT></P>
+<P>The Makefile in mingw_port assumes the folder structure introduced
+at V2R12 and the use of Python 2.5 but some flexibility is provided.
+Thus the command</P>
+<P STYLE="margin-left: 0.79in">'c:python24/pythonw dptsetup.py
+install'</P>
+<P>installs the wrappers if just Python 2.4 is installed.</P>
+<P>The command</P>
+<P STYLE="margin-left: 0.79in">'dptsetup.py clean'</P>
+<P>removes all files and folders created in mingw_port by the build
+process.</P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Using the Python wrappers for DPT</B></FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Refer to the
+DPT API documentation for details of how to use the API. You will
+have to translate the C++ to Python.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>The dptapi
+module wraps the API classes (APIDatabaseServices for example). The
+underlying classes (DatabaseServices for example) are not available
+in the Python interface provided by dptapi.</FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Note that none
+of MSYS, MinGW, SWIG, or even DPT Host and DPT Client need be
+installed to use the Python wrappers.</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>dptapi module</B></FONT></P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>The Python
+SWIG interface file dptapi_python.i deals with the following
+problems.</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Four constants
+have been renamed because the DPT names, with their similarity to the
+User Language names, are not acceptable Python names.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>FD_POINT$
+becomes FD_POINT</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>FD_SET$
+becomes FD_SET</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>FD_FILE$
+becomes FD_FILE</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>FD_NOT_POINT$
+becomes FD_NOT_POINT</FONT></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>One class
+method has been renamed to prevent it being ignored and thus not
+available.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>The
+operator! method in the APIFindSpecification class becomes the
+__invert__ method of the wrapper class</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in"><BR><BR>
+</P>
+<P ALIGN=LEFT STYLE="font-weight: medium"><FONT SIZE=3>Three
+additional classes are defined to solve specific problems in calling
+particular DPT API methods. They are BoolPtr; IntPtr; and
+StdStringPtr. These were defined as the need for them arose and it is
+reasonable to suppose that other cases await discovery.</FONT></P>
+<P ALIGN=LEFT STYLE="margin-left: 0.79in; font-weight: medium"><FONT SIZE=3>BoolPtr
+- the known use for this is when opening a file in deferred update
+mode.</FONT></P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">bptr =
+dptapi.BoolPtr()</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">dbserv =
+dptapi.APIDatabaseServices(...)</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">cs =
+dptapi.APIContextSpecification(...)</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">...</P>
+<P STYLE="margin-left: 1.58in">oc = dbserv.OpenContext(cs, False,
+bptr, ..., ...)</P>
+<P STYLE="margin-left: 0.79in">IntPtr and StdStringPtr - the known
+use for these is in a APIReadableRecord.GetNextFVPair(...) call.</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">fieldname =
+dptapi.StdStringPtr()</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">count =
+dptapi.IntPtr()</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">fv =
+dptapi.APIFieldValue()</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">v = []</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">while
+record.GetNextFVPair(fieldname, fv, count):</P>
+<P STYLE="margin-left: 2.36in; margin-bottom: 0in">v.append((fieldname.value(),
+fv.ExtractString()))</P>
+<P STYLE="margin-left: 2.36in; margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in">The methods
+AdvanceToNextFVPair(...) LastAdvancedFieldName(...) and
+LastAdvancedFieldValue(...) added at version 2 release 6 between them
+allow GetNextFVPair(...), and thus IntPtr and StdStringPtr, to be
+avoided.</P>
+<P STYLE="margin-left: 1.58in; margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">The APIRoundedDouble class has been
+extended with methods to convert float values for read and write
+operations on the sequential files. These methods are more
+conveniently located than the DPT originals. Their names are
+pyCastToRoundedDouble and pyCastToString.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">When dptapi is first imported
+APIRoundedDouble_SetNumRangeThrowOption(True) is called so that
+attempts to assign a value that is out of range to a float raise an
+exception rather than silently set the value to 0.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=3><B>Sample Code</B></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Much unnecessary stuff has been removed
+at V2R14 following the 1 step load changes (indeed most of it does
+build any more). This section will be changed when sample use of 1
+step load have been prepared.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Folder dptdbsamples contains module
+rmstorerecordapi, demonstrating the use of the dptapi module to do
+deferred updates and rmstorerecordssapi to demonstrate single step
+deferred updates. Folder dptdbtests contains Python scripts that use
+rmstorerecordapi and rmstorerecordssapi to do deferred updates and a
+UL script to view the results in a DPT Client session. Run
+dptdbtests/pydpt.py to see the effect.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">The DU_FORMAT_NOPAD || DU_FORMAT_NOCRLF
+and DU_FORMAT_DEFAULT options are demonstrated along with
+non-deferred updates and single step deferred updates.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">If
+RoundedDouble_SetNumRangeThrowOption(False) is called any attempt to
+assign an illegal value to a float results in the assignment of 0 (to
+emulate UL behaviour as stated in DPT documentation). The sample code
+does, but need not, detect EOF on numeric deferred update sequential
+files by catching the exception generated trying to convert a zero
+length string to a float.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">The sample code takes about 40 seconds
+to do the updates non-deferred; about 20 seconds using
+DU_FORMAT_DEFAULT and the dptapi module; and about 14 seconds in all
+cases using the dpt module. The chess database (see History) run used
+to test deferred updates without intermediate sequential files takes
+8.5 minutes compared with 15 minutes taken by the dptapi module in
+DU_FORMAT_DEFAULT mode; so perhaps the sample runs are not big enough
+to show up any differences.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P ALIGN=LEFT><FONT SIZE=3><B>Contact</B></FONT></P>
+<P ALIGN=LEFT>The author of this guide to getting started using DPT
+with Python can be contacted at <A HREF="mailto:roger.marsh@btinternet.com">roger.marsh@btinternet.com</A></P>
+<P ALIGN=LEFT><BR><BR>
+</P>
+</BODY>
+</HTML>
