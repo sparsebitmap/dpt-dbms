@@ -150,7 +150,7 @@ class DU1SegInvList {
 			unsigned short rn1;
 			unsigned short rn2;
 		} recnums;
-		_int32 allbits;              //generic
+		intptr_t allbits;            //used to clear or copy the whole block regardless of type
 	} data;
 	short segnum;
 	mutable short rectype;
@@ -187,7 +187,7 @@ class DU1InvList {
 	//per object, and enable special packing for unique values.
 	union {
 		DU1SegInvList* seginfos;
-		int unique_recnum;
+		intptr_t unique_recnum;  //the same size as the pointer, whether 32 or 64 bits
 	} info;
 	unsigned short allocsegs;
 	unsigned short numsegs;
