@@ -80,6 +80,14 @@ void DeferredUpdate1StepInfo::CreateLocalHeaps()
 	h_bitmapheap = HeapCreate(HEAP_GENERATE_EXCEPTIONS, initsz, 0);
 }
 
+//Implementation moved from du1step.h to avoid
+//'error: arithmetic on a pointer to an incomplete type ...'
+//first seen in 64-bit clang c++20 compilation.
+bool DeferredUpdate1StepInfo::IsInitialized()
+{
+	return info.size() != 0;
+}
+
 void DeferredUpdate1StepInfo::DestroyLocalHeaps(HANDLE* aheap, HANDLE* bheap)
 {
 	if (*aheap != NULL) {
@@ -531,7 +539,7 @@ DU1InvList* DU1FieldIndex::FindOrInsertInvList(const FieldValue& val)
 
 		//Assuming random value order coming in, so no find cache here.  Leave it to <map>.
 		std::pair<std::map<RoundedDouble, DU1InvList*>::iterator, bool> ins;
-		ins = numinfo->insert(std::make_pair<RoundedDouble, DU1InvList*>(rd, NULL));
+		ins = numinfo->insert(std::pair<RoundedDouble, DU1InvList*>(rd, NULL));
 
 		//Trial pair was inserted - make a new inverted list
 		if (ins.second)

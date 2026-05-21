@@ -1,0 +1,317 @@
+# dpt-dbms_vs_python.Nmakefile
+# Run in a VS x64 Native Tools Command Prompt on Microsoft Windows.
+
+# nmake -f dpt-dbms_vs_python.Nmakefile
+# builds the default Python interface to DPT.
+
+TOOL_CHAIN = vs
+TOOL_CHAIN_VERSION = 
+CPPSTANDARD = 
+COMPILER = clang-cl
+PYTHON_MAJOR = 3
+PYTHON_MINOR = 14
+PYTHON_32_OR_64 = 
+
+# Value of the --platform-tag argument for 'wheel tags ...' command.
+# distutils.util.get_platform() and sysconfig.get_platform() report
+# "win-amd64" but the tag has to be "win_amd64" because "-" is a
+# delimiter here.
+
+PLATFORM_TAG = win_amd64
+
+# Set value of VERSION_DPT_DBMS_DPTDB.
+!INCLUDE version_dpt_dbms_dptdb
+
+# Assume distributions for all Python versions are built with same SWIG version.
+
+PATH_TO_SWIG_WITHOUT_VERSION = C:\swigwin-
+SWIG_VERSION = 4.4.1
+
+# Build Python distribution with SWIG.
+
+all : distribution
+
+# Compiler settings.
+
+PATH_TO_CXX = 
+
+# V3R0 extract and build folders.
+
+DPT_DBMS = ..\..
+DPT_PYTHON = .
+DPT_DBMS_SRC = $(DPT_DBMS)\source
+DPT_DBMS_INC = $(DPT_DBMS)\include
+DPT_LICENCE = licence.txt
+DPT_DBMS_API_SRC = $(DPT_DBMS_SRC)\dbapi
+DPT_DBMS_API_INC = $(DPT_DBMS_INC)\dbapi
+DPT_DBMS_STDAFX = $(DPT_PYTHON)\stdafx
+DPT_DBMS_OBJECT = $(DPT_PYTHON)\object\$(TOOL_CHAIN)_$(COMPILER)
+DPT_DBMS_API_OBJECT = $(DPT_DBMS_OBJECT)\dbapi
+DPT_DBMS_STDAFX_OBJECT = $(DPT_DBMS_OBJECT)\stdafx
+
+# Object file names.
+
+OBJS = $(DPT_DBMS_OBJECT)\access.obj \
+        $(DPT_DBMS_OBJECT)\atom.obj \
+        $(DPT_DBMS_OBJECT)\atomback.obj \
+        $(DPT_DBMS_OBJECT)\audit.obj \
+        $(DPT_DBMS_OBJECT)\bbfloat.obj \
+        $(DPT_DBMS_OBJECT)\bbstack.obj \
+        $(DPT_DBMS_OBJECT)\bbstdio.obj \
+        $(DPT_DBMS_OBJECT)\bbthread.obj \
+        $(DPT_DBMS_OBJECT)\bitmap3.obj \
+        $(DPT_DBMS_OBJECT)\bmset.obj \
+        $(DPT_DBMS_OBJECT)\btree.obj \
+        $(DPT_DBMS_OBJECT)\buffer.obj \
+        $(DPT_DBMS_OBJECT)\buffhandle.obj \
+        $(DPT_DBMS_OBJECT)\buffmgmt.obj \
+        $(DPT_DBMS_OBJECT)\cfr.obj \
+        $(DPT_DBMS_OBJECT)\charconv.obj \
+        $(DPT_DBMS_OBJECT)\checkpt.obj \
+        $(DPT_DBMS_OBJECT)\core.obj \
+        $(DPT_DBMS_OBJECT)\ctxtdef.obj \
+        $(DPT_DBMS_OBJECT)\ctxtopen.obj \
+        $(DPT_DBMS_OBJECT)\ctxtspec.obj \
+        $(DPT_DBMS_OBJECT)\custom.obj \
+        $(DPT_DBMS_OBJECT)\dataconv.obj \
+        $(DPT_DBMS_OBJECT)\dbctxt.obj \
+        $(DPT_DBMS_OBJECT)\dbcursor.obj \
+        $(DPT_DBMS_OBJECT)\dbf_data.obj \
+        $(DPT_DBMS_OBJECT)\dbf_ebm.obj \
+        $(DPT_DBMS_OBJECT)\dbf_field.obj \
+        $(DPT_DBMS_OBJECT)\dbf_find.obj \
+        $(DPT_DBMS_OBJECT)\dbf_idiag.obj \
+        $(DPT_DBMS_OBJECT)\dbf_index.obj \
+        $(DPT_DBMS_OBJECT)\dbf_ival.obj \
+        $(DPT_DBMS_OBJECT)\dbf_join.obj \
+        $(DPT_DBMS_OBJECT)\dbf_rlt.obj \
+        $(DPT_DBMS_OBJECT)\dbf_tableb.obj \
+        $(DPT_DBMS_OBJECT)\dbf_tabled.obj \
+        $(DPT_DBMS_OBJECT)\dbfile.obj \
+        $(DPT_DBMS_OBJECT)\dbserv.obj \
+        $(DPT_DBMS_OBJECT)\dbstatus.obj \
+        $(DPT_DBMS_OBJECT)\du1step.obj \
+        $(DPT_DBMS_OBJECT)\except.obj \
+        $(DPT_DBMS_OBJECT)\except_rlc.obj \
+        $(DPT_DBMS_OBJECT)\fastload.obj \
+        $(DPT_DBMS_OBJECT)\fastunload.obj \
+        $(DPT_DBMS_OBJECT)\fieldatts.obj \
+        $(DPT_DBMS_OBJECT)\fieldinfo.obj \
+        $(DPT_DBMS_OBJECT)\fieldname.obj \
+        $(DPT_DBMS_OBJECT)\fieldval.obj \
+        $(DPT_DBMS_OBJECT)\file.obj \
+        $(DPT_DBMS_OBJECT)\filehandle.obj \
+        $(DPT_DBMS_OBJECT)\findspec.obj \
+        $(DPT_DBMS_OBJECT)\findwork.obj \
+        $(DPT_DBMS_OBJECT)\foundset.obj \
+        $(DPT_DBMS_OBJECT)\frecset.obj \
+        $(DPT_DBMS_OBJECT)\garbage.obj \
+        $(DPT_DBMS_OBJECT)\group.obj \
+        $(DPT_DBMS_OBJECT)\grpserv.obj \
+        $(DPT_DBMS_OBJECT)\handles.obj \
+        $(DPT_DBMS_OBJECT)\hash.obj \
+        $(DPT_DBMS_OBJECT)\inverted.obj \
+        $(DPT_DBMS_OBJECT)\iowrappers.obj \
+        $(DPT_DBMS_OBJECT)\lineio.obj \
+        $(DPT_DBMS_OBJECT)\liocons.obj \
+        $(DPT_DBMS_OBJECT)\lioshare.obj \
+        $(DPT_DBMS_OBJECT)\liostdio.obj \
+        $(DPT_DBMS_OBJECT)\loaddiag.obj \
+        $(DPT_DBMS_OBJECT)\lockable.obj \
+        $(DPT_DBMS_OBJECT)\lockspecial.obj \
+        $(DPT_DBMS_OBJECT)\merge.obj \
+        $(DPT_DBMS_OBJECT)\msgini.obj \
+        $(DPT_DBMS_OBJECT)\msgref.obj \
+        $(DPT_DBMS_OBJECT)\msgroute.obj \
+        $(DPT_DBMS_OBJECT)\page_a.obj \
+        $(DPT_DBMS_OBJECT)\page_b.obj \
+        $(DPT_DBMS_OBJECT)\page_e.obj \
+        $(DPT_DBMS_OBJECT)\page_f.obj \
+        $(DPT_DBMS_OBJECT)\page_i.obj \
+        $(DPT_DBMS_OBJECT)\page_l.obj \
+        $(DPT_DBMS_OBJECT)\page_m.obj \
+        $(DPT_DBMS_OBJECT)\page_p.obj \
+        $(DPT_DBMS_OBJECT)\page_t.obj \
+        $(DPT_DBMS_OBJECT)\page_v.obj \
+        $(DPT_DBMS_OBJECT)\page_x.obj \
+        $(DPT_DBMS_OBJECT)\pagebase.obj \
+        $(DPT_DBMS_OBJECT)\pagebitmap.obj \
+        $(DPT_DBMS_OBJECT)\paged_io.obj \
+        $(DPT_DBMS_OBJECT)\pageixval.obj \
+        $(DPT_DBMS_OBJECT)\pageslotrec.obj \
+        $(DPT_DBMS_OBJECT)\parmini.obj \
+        $(DPT_DBMS_OBJECT)\parmized.obj \
+        $(DPT_DBMS_OBJECT)\parmref.obj \
+        $(DPT_DBMS_OBJECT)\parmref1.obj \
+        $(DPT_DBMS_OBJECT)\parmvr.obj \
+        $(DPT_DBMS_OBJECT)\parsing.obj \
+        $(DPT_DBMS_OBJECT)\pattern.obj \
+        $(DPT_DBMS_OBJECT)\progress.obj \
+        $(DPT_DBMS_OBJECT)\rawpage.obj \
+        $(DPT_DBMS_OBJECT)\reccopy.obj \
+        $(DPT_DBMS_OBJECT)\recdata.obj \
+        $(DPT_DBMS_OBJECT)\reclist.obj \
+        $(DPT_DBMS_OBJECT)\record.obj \
+        $(DPT_DBMS_OBJECT)\recovery.obj \
+        $(DPT_DBMS_OBJECT)\recset.obj \
+        $(DPT_DBMS_OBJECT)\resource.obj \
+        $(DPT_DBMS_OBJECT)\rsvwords.obj \
+        $(DPT_DBMS_OBJECT)\scope.obj \
+        $(DPT_DBMS_OBJECT)\seqfile.obj \
+        $(DPT_DBMS_OBJECT)\seqserv.obj \
+        $(DPT_DBMS_OBJECT)\sortrec.obj \
+        $(DPT_DBMS_OBJECT)\sortset.obj \
+        $(DPT_DBMS_OBJECT)\sortspec.obj \
+        $(DPT_DBMS_OBJECT)\statized.obj \
+        $(DPT_DBMS_OBJECT)\statref.obj \
+        $(DPT_DBMS_OBJECT)\statref1.obj \
+        $(DPT_DBMS_OBJECT)\statview.obj \
+        $(DPT_DBMS_OBJECT)\stlextra.obj \
+        $(DPT_DBMS_OBJECT)\sysfile.obj \
+        $(DPT_DBMS_OBJECT)\update.obj \
+        $(DPT_DBMS_OBJECT)\valdirect.obj \
+        $(DPT_DBMS_OBJECT)\valset.obj \
+        $(DPT_DBMS_OBJECT)\winutil.obj
+
+AFX_OBJS = $(DPT_DBMS_STDAFX_OBJECT)\stdafx.obj
+
+API_OBJS = $(DPT_DBMS_API_OBJECT)\access_api.obj \
+        $(DPT_DBMS_API_OBJECT)\bmset_api.obj \
+        $(DPT_DBMS_API_OBJECT)\core_api.obj \
+        $(DPT_DBMS_API_OBJECT)\ctxtspec_api.obj \
+        $(DPT_DBMS_API_OBJECT)\cursor_api.obj \
+        $(DPT_DBMS_API_OBJECT)\dbctxt_api.obj \
+        $(DPT_DBMS_API_OBJECT)\dbserv_api.obj \
+        $(DPT_DBMS_API_OBJECT)\fieldatts_api.obj \
+        $(DPT_DBMS_API_OBJECT)\fieldinfo_api.obj \
+        $(DPT_DBMS_API_OBJECT)\fieldval_api.obj \
+        $(DPT_DBMS_API_OBJECT)\findspec_api.obj \
+        $(DPT_DBMS_API_OBJECT)\floatnum_api.obj \
+        $(DPT_DBMS_API_OBJECT)\foundset_api.obj \
+        $(DPT_DBMS_API_OBJECT)\grpserv_api.obj \
+        $(DPT_DBMS_API_OBJECT)\msgroute_api.obj \
+        $(DPT_DBMS_API_OBJECT)\parmvr_api.obj \
+        $(DPT_DBMS_API_OBJECT)\reccopy_api.obj \
+        $(DPT_DBMS_API_OBJECT)\reclist_api.obj \
+        $(DPT_DBMS_API_OBJECT)\record_api.obj \
+        $(DPT_DBMS_API_OBJECT)\recread_api.obj \
+        $(DPT_DBMS_API_OBJECT)\recset_api.obj \
+        $(DPT_DBMS_API_OBJECT)\seqfile_api.obj \
+        $(DPT_DBMS_API_OBJECT)\seqserv_api.obj \
+        $(DPT_DBMS_API_OBJECT)\sortset_api.obj \
+        $(DPT_DBMS_API_OBJECT)\sortspec_api.obj \
+        $(DPT_DBMS_API_OBJECT)\statview_api.obj \
+        $(DPT_DBMS_API_OBJECT)\valdirect_api.obj \
+        $(DPT_DBMS_API_OBJECT)\valset_api.obj
+
+OBJECT_FILES = $(OBJS) $(AFX_OBJS) $(API_OBJS)
+
+# Source file names.
+
+# Source file names are implied by 'OBJS', 'AFX_OBS' and API_OBJS.
+
+# Compiler settings.
+
+CXX = $(PATH_TO_CXX)$(COMPILER)
+DEFOPTS = $(DEFINES) $(OPTIONS)
+CXXEXTRA = -D_BBDBAPI -EHsc -nologo
+DPT_DBMS_LDFLAGS = -dll
+
+# Build includes (-I) options for compiler.
+
+DPT_DBMS_INCLUDE = -I$(DPT_DBMS_INC) -I$(DPT_DBMS_STDAFX)
+DPT_DBMS_AFX_INCLUDE = -I$(DPT_DBMS_INC) -I$(DPT_DBMS_STDAFX)
+DPT_DBMS_API_INCLUDE = -I$(DPT_DBMS_INC) -I$(DPT_DBMS_API_INC) -I$(DPT_DBMS_STDAFX)
+
+# Pattern rules V3R06 C++.
+
+{$(DPT_DBMS_SRC)}.cpp{$(DPT_DBMS_OBJECT)}.obj:
+	@if not exist $(DPT_DBMS_OBJECT) mkdir $(DPT_DBMS_OBJECT)
+	@$(CXX) -c $(CXXEXTRA) $(CXXFLAGS) $(DPT_DBMS_INCLUDE) $(DEFOPTS) -Fo$(DPT_DBMS_OBJECT)\ $<
+
+{$(DPT_DBMS_STDAFX)}.cpp{$(DPT_DBMS_STDAFX_OBJECT)}.obj:
+	@if not exist $(DPT_DBMS_STDAFX_OBJECT) mkdir $(DPT_DBMS_STDAFX_OBJECT)
+	@$(CXX) -c $(CXXEXTRA) $(CXXFLAGS) $(DPT_DBMS_AFX_INCLUDE) $(DEFOPTS) -Fo$(DPT_DBMS_STDAFX_OBJECT)\ $<
+
+{$(DPT_DBMS_API_SRC)}.cpp{$(DPT_DBMS_API_OBJECT)}.obj:
+	@if not exist $(DPT_DBMS_API_OBJECT) mkdir $(DPT_DBMS_API_OBJECT)
+	@$(CXX) -c $(CXXEXTRA) $(CXXFLAGS) $(DPT_DBMS_API_INCLUDE) $(DEFOPTS) -Fo$(DPT_DBMS_API_OBJECT)\ $<
+
+objects : $(OBJECT_FILES)
+
+# Build dpt-dbms Python interface with c++ in a x64 VS Developer Command Prompt.
+
+# Python distribution settings.
+
+PYTHON_NAME = Python
+SWIG_PYTHON = python
+PYTHON_MAJOR_MINOR = $(PYTHON_MAJOR)$(PYTHON_MINOR)
+PYTHON_VERSION = $(PYTHON_MAJOR_MINOR)$(PYTHON_32_OR_64)
+PY_MINUS_MAJOR_DOT_MINOR_32_OR_64 = -$(PYTHON_MAJOR).$(PYTHON_MINOR)$(PYTHON_32_OR_64)
+PY_MAJOR_MINUS_MINOR_32_OR_64 = $(PYTHON_MAJOR)-$(PYTHON_MINOR)$(PYTHON_32_OR_64)
+PATH_TO_SWIG = $(PATH_TO_SWIG_WITHOUT_VERSION)$(SWIG_VERSION)
+SWIG_DPTAPI = dptapi
+PYTHON_API_DLL = _$(SWIG_DPTAPI).pyd
+DPT_DBMS_OBJECT_SWIG = $(DPT_DBMS_OBJECT)\swig
+DPT_DBMS_OBJECT_SWIG_PYTHON = $(DPT_DBMS_OBJECT_SWIG)\$(TOOL_CHAIN)_$(COMPILER)_$(PY_MAJOR_MINUS_MINOR_32_OR_64)
+SWIG_INTERFACE = dptapi_python.i
+DPT_DBMS_SWIG = $(DPT_PYTHON)\swig
+DPT_DBMS_SWIG_SOURCE = $(DPT_DBMS_SWIG)\$(PY_MAJOR_MINUS_MINOR_32_OR_64)
+DPT_DBMS_SWIG_INTERFACE = $(DPT_PYTHON)\$(SWIG_INTERFACE)
+DPT_DBMS_PACKAGE = $(DPT_PYTHON)\package\$(TOOL_CHAIN)_$(COMPILER)_$(PY_MAJOR_MINUS_MINOR_32_OR_64)
+DPT_DBMS_PACKAGE_DPTDB = $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME)
+PYTHON_TAG = cp$(PYTHON_MAJOR)$(PYTHON_MINOR)
+ABI_TAG = cp$(PYTHON_MAJOR)$(PYTHON_MINOR)
+
+# Library is python310.dll and header is Python.h for version 3.10 of Python.
+# This is different naming than for unix Pythons.
+
+PYTHON_HEADER = $(PYTHON_NAME).h
+PYTHON_VERSION_DIRECTORY = $(LOCALAPPDATA)\Programs\$(PYTHON_NAME)\$(PYTHON_NAME)$(PYTHON_VERSION)
+PYTHON_INCLUDE_DIRECTORY = $(PYTHON_VERSION_DIRECTORY)\include
+PYTHON_INCLUDE = $(PYTHON_INCLUDE_DIRECTORY)\$(PYTHON_HEADER)
+PYTHON_LIBS_DIRECTORY = $(PYTHON_VERSION_DIRECTORY)\libs
+PYTHON_LIBRARY = $(PYTHON_LIBS_DIRECTORY)\$(SWIG_PYTHON)$(PYTHON_MAJOR_MINOR).lib
+
+WRAP_CXX = $(DPT_DBMS_SWIG_SOURCE)\$(SWIG_DPTAPI)_$(SWIG_PYTHON)_wrap.cxx
+WRAP_O = $(DPT_DBMS_OBJECT_SWIG_PYTHON)\$(SWIG_DPTAPI)_$(SWIG_PYTHON)_wrap.obj
+
+# Copy package template directory and build wrapper.
+
+$(WRAP_CXX) : $(DPT_DBMS_SWIG_INTERFACE)
+	@if not exist $(DPT_DBMS_PACKAGE) mkdir $(DPT_DBMS_PACKAGE)
+	@if not exist $(DPT_DBMS_PACKAGE)\src mkdir $(DPT_DBMS_PACKAGE)\src
+	if not exist $(DPT_DBMS_PACKAGE)\LICENCE copy package-template\LICENCE $(DPT_DBMS_PACKAGE)\\
+	if not exist $(DPT_DBMS_PACKAGE)\MANIFEST.in $(PYTHON_VERSION_DIRECTORY)\Scripts\pythonsed -e /Xproject_nameX/s//\\$(PROJECT_NAME)\\/g package-template\MANIFEST.in > $(DPT_DBMS_PACKAGE)\MANIFEST.in
+	if not exist $(DPT_DBMS_PACKAGE)\README.rst copy package-template\README.rst $(DPT_DBMS_PACKAGE)\\
+	if not exist $(DPT_DBMS_PACKAGE)\tests xcopy /s /e package-template\tests $(DPT_DBMS_PACKAGE)\tests\\
+	if not exist $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME) xcopy /s /e package-template\src\$(PROJECT_NAME) $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME)\\
+	$(PYTHON_VERSION_DIRECTORY)\Scripts\pythonsed -e /"invalid"/s/invalid/$(VERSION_DPT_DBMS_DPTDB)/g package-template\pyproject.toml > $(DPT_DBMS_PACKAGE)\pyproject.toml
+	@if not exist $(DPT_DBMS_SWIG_SOURCE) mkdir $(DPT_DBMS_SWIG_SOURCE)
+	$(PATH_TO_SWIG)\swig -c++ -$(SWIG_PYTHON) -o $(WRAP_CXX) -outdir $(DPT_DBMS_PACKAGE_DPTDB) -I$(DPT_DBMS_API_INC) $(DPT_DBMS_SWIG_INTERFACE)
+
+$(WRAP_O) : $(WRAP_CXX)
+	@if not exist $(DPT_DBMS_OBJECT_SWIG_PYTHON) mkdir $(DPT_DBMS_OBJECT_SWIG_PYTHON)
+	$(CXX) -c $(CXXEXTRA) $(CXXFLAGS) $(DPT_DBMS_API_INCLUDE) -I$(PYTHON_INCLUDE_DIRECTORY) -Fo$@ $(WRAP_CXX)
+
+# The .pyd file built from SWIG.
+
+$(DPT_DBMS_PACKAGE_DPTDB)\$(PYTHON_API_DLL) : $(OBJECT_FILES) $(WRAP_O)
+	@if not exist $(DPT_DBMS_PACKAGE_DPTDB) mkdir $(DPT_DBMS_PACKAGE_DPTDB)
+	link $(DPT_DBMS_LDFLAGS) -out:$@ $(WRAP_O) $(API_OBJS) $(OBJS) $(PYTHON_LIBRARY)
+
+distribution : $(DPT_DBMS_PACKAGE_DPTDB)\$(PYTHON_API_DLL)
+	py $(PY_MINUS_MAJOR_DOT_MINOR_32_OR_64) -m build --wheel --no-isolation $(DPT_DBMS_PACKAGE)
+	py $(PY_MINUS_MAJOR_DOT_MINOR_32_OR_64) -m wheel tags --python-tag=$(PYTHON_TAG) --abi-tag=$(ABI_TAG) --platform-tag=$(PLATFORM_TAG) --remove $(DPT_DBMS_PACKAGE)\dist\$(PROJECT_NAME)-$(VERSION_DPT_DBMS_DPTDB)-py3-none-any.whl
+
+local-install : distribution
+	py $(PY_MINUS_MAJOR_DOT_MINOR_32_OR_64) -m pip install --user --no-index --find-links $(DPT_DBMS_PACKAGE)\dist $(PROJECT_NAME)
+
+clean :
+	-del $(DPT_DBMS_OBJECT)\*.obj
+	-del $(DPT_DBMS_STDAFX_OBJECT)\*.obj
+	-del $(DPT_DBMS_API_OBJECT)\*.obj
+	-del /q $(DPT_DBMS_SWIG_SOURCE)\*
+	-del $(DPT_DBMS_OBJECT_SWIG_PYTHON)\*.obj
+	-rmdir /s /q $(DPT_DBMS_PACKAGE)
+

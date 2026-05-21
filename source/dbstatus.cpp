@@ -48,7 +48,7 @@ void FileStatusInfo::Attach(const std::string& dd, DatabaseFile* f)
 
 	//I hate this rignarole but still prefer it to a double search with operator[]
 	std::pair<std::string, FileStatusInfo*> newtableitem;
-	newtableitem = std::make_pair<std::string, FileStatusInfo*>(dd, NULL);
+	newtableitem = std::pair<std::string, FileStatusInfo*>(dd, NULL);
 	
 	std::pair<std::map<std::string, FileStatusInfo*>::iterator, bool> ins;
 	ins = systable.insert(newtableitem);

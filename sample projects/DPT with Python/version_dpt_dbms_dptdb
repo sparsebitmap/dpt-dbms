@@ -1,0 +1,15 @@
+# version_dpt_dbms_dptdb
+
+# Set VERSION_DPT_DBMS_DPTDB to value which replaces the invalid
+# value of version in [project] section of
+# ./package-template/pyproject.toml file.
+
+# The name in [project] section of pyproject.toml is the normalized
+# form, dpt-dbms, according to
+# //packaging.python.org/en/latest/specifications/name-normalization
+# while PROJECT_NAME below is the form acceptable to the Python build
+# and installation tool chains when naming *.whl and *.tar.gz files,
+# and the Python import statement.
+
+PROJECT_NAME = dpt_dbms
+VERSION_DPT_DBMS_DPTDB = 1.0.dev0

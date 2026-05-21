@@ -431,7 +431,7 @@ BufferPage* BufferedFileInterface::FindOrInsertPage
 
 	//Attempt to insert entry straight off to save 2 finds if it's not there
 	std::pair<std::map<int, BufferPage*>::iterator, bool> p;
-	p = pagetable.insert(std::make_pair<int, BufferPage*>(pagenum, NULL));
+	p = pagetable.insert(std::pair<int, BufferPage*>(pagenum, NULL));
 
 	//-----------------------------------------------------------------------
 	//Again two main cases, as per above

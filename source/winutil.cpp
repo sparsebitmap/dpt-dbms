@@ -901,11 +901,11 @@ std::string VirtualMemoryMap()
 	char* addr = 0;
 	while (VirtualQuery(addr, &mbi, sizeof(mbi))) {
 
-		if (addr > 0) 
+		if ((uintptr_t)addr > 0) 
 			s.append("\n");
 
 		s.append("Base: ");
-		s.append(util::UlongToHexString((unsigned long)addr, 8));
+		s.append(util::UlongToHexString((unsigned long long)addr, 8));
 		s.append("    Length:");
 		s.append(util::SpacePad(mbi.RegionSize, 8, true, true, 0));
 		s.append("    State:");

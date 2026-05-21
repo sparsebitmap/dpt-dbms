@@ -631,7 +631,6 @@ void FindWorkInfo::SetLeafFlags(FindOperator bop, bool will_use_index, bool tbs_
 //return different results.  Sort by tree depth and then field name.
 //************************************************************************************
 struct LeafInfoLessThanPredicate
-: public std::binary_function<FindWorkNode_Leaf*, FindWorkNode_Leaf*, bool> 
 {
 	bool operator()(const FindWorkNode_Leaf* lhs, const FindWorkNode_Leaf* rhs) {
 		
@@ -693,7 +692,7 @@ void FindWorkInfo::Dump(std::vector<std::string>& result, bool ebp) const
 //***************************
 std::string FindWorkNode::PtrString() const
 {
-	return util::UlongToHexString( (const unsigned long) this, 8);
+	return util::UlongToHexString( (const uintptr_t) this, 8);
 }
 
 //***************************

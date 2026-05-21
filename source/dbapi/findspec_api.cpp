@@ -46,7 +46,7 @@ APIFindSpecification::APIFindSpecification(const FindOperator& o, const std::str
 {}
 
 APIFindSpecification::APIFindSpecification(APIBitMappedRecordSet& s)
-: target(new FindSpecification(FD_SET$, reinterpret_cast<unsigned _int32>(s.target)))
+: target(new FindSpecification(FD_SET$, reinterpret_cast<unsigned long _int32>(s.target)))
 {}
 
 APIFindSpecification::APIFindSpecification(const std::string& n, const FindOperator& o)

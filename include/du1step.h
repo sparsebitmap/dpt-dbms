@@ -102,7 +102,7 @@ public:
 	const std::string DD() {return ddname;}
 	LoadDiagnostics* Diags() {return diags;}
 
-	bool IsInitialized() {return info.size() != 0;}
+	bool IsInitialized();
 	void Initialize(SingleDatabaseFileContext*);
 	void InitializeForSingleField(PhysicalFieldInfo*);
 

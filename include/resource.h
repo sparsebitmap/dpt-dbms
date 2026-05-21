@@ -46,7 +46,7 @@ class Resource {
 
 		//This is used during list::remove().  A copy is also used, but the default 
 		//member-by-member version is acceptable.
-		bool operator==(const LockInfo& l);
+		bool operator==(const LockInfo& l) const;
 
 		//For diagnostics such as MONITOR RESOURCE
 		std::string AsString() const;

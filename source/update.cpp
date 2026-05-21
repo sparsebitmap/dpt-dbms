@@ -53,7 +53,7 @@ void UpdateUnit::RegisterAtomicUpdateFile(AtomicUpdate* au, DatabaseFile* file)
 	if (i == files.end()) {
 		file->BeginUpdate(dbapi);
 
-		std::pair<DatabaseFile*, _int64> nf = std::make_pair<DatabaseFile*, _int64>(file, 0);
+		std::pair<DatabaseFile*, _int64> nf = std::pair<DatabaseFile*, _int64>(file, 0);
 		std::pair<std::map<DatabaseFile*, _int64>::iterator, bool> ins = files.insert(nf);
 		i = ins.first;
 	}

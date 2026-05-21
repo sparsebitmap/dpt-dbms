@@ -98,7 +98,7 @@ Resource::LockInfo::LockInfo(bool b, bool dummy) : lock_type(b)
 //A thread can only ever wait for the same resource once (since Get does not return until
 //the resource is acquired), so testing thread ID alone here is sufficient.
 //******************************************************************************************
-bool Resource::LockInfo::operator==(const LockInfo& l) {
+bool Resource::LockInfo::operator==(const LockInfo& l) const {
 	if (l.thread_id == thread_id) 
 		return true;
 	else
