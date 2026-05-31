@@ -439,7 +439,6 @@ public:
 //For std::sort on value sets
 //*************************************************************************************
 struct FieldValueLessThanPredicate
-: public std::binary_function<FieldValue, FieldValue, bool> 
 {
 	SortType sorttype;
 	SortDirection sortdir;

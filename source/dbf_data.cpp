@@ -78,7 +78,7 @@ void DatabaseFileDataManager::RegisterRecordMRO(RecordDataAccessor* da)
 		record_mros.resize(newsize, p);
 	}
 
-	record_mros[x] = std::make_pair<int, RecordDataAccessor*>(rn, da);
+	record_mros[x] = std::pair<int, RecordDataAccessor*>(rn, da);
 
 	if ((int)x > record_mros_hwm)
 		record_mros_hwm = x;

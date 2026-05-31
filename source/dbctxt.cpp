@@ -282,7 +282,7 @@ const std::string& du_parm1, const std::string&, int, int)
 				FieldAttributes atts = *fah.Atts();
 
 				std::pair<std::string, FieldAttributes> p;
-				p = std::make_pair<std::string, FieldAttributes>(name, atts);
+				p = std::pair<std::string, FieldAttributes>(name, atts);
 
 				std::pair<std::map<std::string, FieldAttributes>::iterator, bool> chk;
 				chk = group_field_table.insert(p);

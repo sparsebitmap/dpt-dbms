@@ -35,7 +35,7 @@ std::string AccessController::system_account_prefix_string = "++SYSTEMACCOUNTKLU
 static Hash_SHA1 hasher;
 static int digest_length = Hash_SHA1::DIGEST_LENGTH;
 
-static _int64 NO_SPECIFIC_FILE_PRIVS = -1i64;
+static _int64 NO_SPECIFIC_FILE_PRIVS = -1LL;
 
 //*****************************************************************************************
 AccessController::AccessController(CoreServices* caller)
@@ -561,7 +561,6 @@ void AccessController::RefreshAllAccountsCachedFileIDsOnFileAllocate
 void AccessController::CachedAccountInfo::RefreshFidTable
 	(const std::map<std::string, int>& sys_dd_directory, size_t sys_dd_array_size)
 {
-	using AccessController;
 
 	//Initialize the account's fid/privs array to system fid table size.
 	fileprivs_by_fid.clear();

@@ -1,0 +1,14 @@
+# Notes written in August 2023.
+# The development environment has setuptools.
+# The intended consequence of the two 'include' statements is:
+#   _dptapi.pyd gets into sdist and wheel archives produced by build.
+#   pydpt-test.py gets into sdist archives produced by build.
+# 'python -m build ...' is done in two contexts:
+#   Visual Studio Developer Command Prompt <year> where both sdist and
+#   wheel archives are produced and published.
+#   Msys2 mingw32 where just the wheel archive is produced and used
+#   to install on the box which produced the wheel, but not published.
+# The makefile project which produces the Visual Studio and Msys2
+# archives is published.
+
+include srcXproject_nameX_dptapi.pyd

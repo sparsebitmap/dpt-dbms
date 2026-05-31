@@ -1,0 +1,39 @@
+# Development Status is 'inactive' because DPT C++ source code is not
+# changing unless forced by changes in compiler attitudes to code.
+
+# Version is "invalid" so project will not build unless edited to an
+# acceptable value: the makefiles do this.
+
+# 15 years too late for project name to be "dpt3.0_dptdb" to fit the
+# now recommended usage of "_" and "-" in these names.
+
+[build-system]
+requires = [
+    "setuptools>=77.0.3",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpt-dbms"
+version = "invalid"
+authors = [
+  { name="Roger Marsh", email="roger.marsh@solentware.co.uk" },
+]
+description = "DPT database API wrappers built using SWIG"
+classifiers = [
+    "Programming Language :: Python",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Database",
+    "Topic :: Software Development",
+    "Intended Audience :: Developers",
+    "Development Status :: 7 - Inactive",
+]
+license = "LGPL-2.1"
+license-files = ["LICENCE"]
+readme = "README.rst"
+
+[project.urls]
+Homepage = "http://www.solentware.co.uk"
+Repository = "https://github.com/RogerMarsh/dptdb.git"
+"Bug Tracker" = "https://github.com/RogerMarsh/dptdb/issues"

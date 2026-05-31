@@ -835,7 +835,7 @@ void MemDump2(const char* addr, unsigned int len, std::vector<std::string>& resu
 
 	const char* h = hex_dump.data();
 	const char* c = char_dump.data();
-	int base = (show_absolute) ? reinterpret_cast<unsigned int>(addr) : 0;
+	int base = (show_absolute) ? reinterpret_cast<uintptr_t>(addr) : 0;
 
 	for (int x = 0; x < dumplines; x++) {
 		int show_offset = base + x * 16 ;

@@ -548,29 +548,29 @@ FindOperator FindSpecification::ParseBasicOperator
 	//operator string is the same (> and >= for example), so we must check >= first.
 	static std::vector<std::pair<std::string, FindOperator> >mops;
 	if (mops.empty()) {
-		mops.push_back(std::make_pair<std::string, FindOperator>("EQ", FD_EQ));
-		mops.push_back(std::make_pair<std::string, FindOperator>("NE", (FD_EQ | FD_NOT)));
-		mops.push_back(std::make_pair<std::string, FindOperator>("LT", FD_LT));
-		mops.push_back(std::make_pair<std::string, FindOperator>("LE", FD_LE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("GT", FD_GT));
-		mops.push_back(std::make_pair<std::string, FindOperator>("GE", FD_GE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("==", FD_EQ));
-		mops.push_back(std::make_pair<std::string, FindOperator>("=", FD_EQ));
-		mops.push_back(std::make_pair<std::string, FindOperator>("!=", (FD_EQ | FD_NOT)));
-		mops.push_back(std::make_pair<std::string, FindOperator>("¬=", (FD_EQ | FD_NOT)));
-		mops.push_back(std::make_pair<std::string, FindOperator>("^=", (FD_EQ | FD_NOT)));
-		mops.push_back(std::make_pair<std::string, FindOperator>("<=", FD_LE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("<", FD_LT));        
-		mops.push_back(std::make_pair<std::string, FindOperator>(">=", FD_GE));
-		mops.push_back(std::make_pair<std::string, FindOperator>(">", FD_GT));
-		mops.push_back(std::make_pair<std::string, FindOperator>("RANGE", FD_RANGE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("INRANGE", FD_RANGE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("LIKE", FD_LIKE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("UNLIKE", FD_UNLIKE));
-		mops.push_back(std::make_pair<std::string, FindOperator>("PRESENT", FD_PRESENT));
-		mops.push_back(std::make_pair<std::string, FindOperator>("BETWEEN", FD_RANGE_GT_LT));
-		mops.push_back(std::make_pair<std::string, FindOperator>("POINT$", FD_POINT$));
-		mops.push_back(std::make_pair<std::string, FindOperator>("REC$", FD_SINGLEREC));
+		mops.push_back(std::pair<std::string, FindOperator>("EQ", FD_EQ));
+		mops.push_back(std::pair<std::string, FindOperator>("NE", (FD_EQ | FD_NOT)));
+		mops.push_back(std::pair<std::string, FindOperator>("LT", FD_LT));
+		mops.push_back(std::pair<std::string, FindOperator>("LE", FD_LE));
+		mops.push_back(std::pair<std::string, FindOperator>("GT", FD_GT));
+		mops.push_back(std::pair<std::string, FindOperator>("GE", FD_GE));
+		mops.push_back(std::pair<std::string, FindOperator>("==", FD_EQ));
+		mops.push_back(std::pair<std::string, FindOperator>("=", FD_EQ));
+		mops.push_back(std::pair<std::string, FindOperator>("!=", (FD_EQ | FD_NOT)));
+		mops.push_back(std::pair<std::string, FindOperator>("¬=", (FD_EQ | FD_NOT)));
+		mops.push_back(std::pair<std::string, FindOperator>("^=", (FD_EQ | FD_NOT)));
+		mops.push_back(std::pair<std::string, FindOperator>("<=", FD_LE));
+		mops.push_back(std::pair<std::string, FindOperator>("<", FD_LT));        
+		mops.push_back(std::pair<std::string, FindOperator>(">=", FD_GE));
+		mops.push_back(std::pair<std::string, FindOperator>(">", FD_GT));
+		mops.push_back(std::pair<std::string, FindOperator>("RANGE", FD_RANGE));
+		mops.push_back(std::pair<std::string, FindOperator>("INRANGE", FD_RANGE));
+		mops.push_back(std::pair<std::string, FindOperator>("LIKE", FD_LIKE));
+		mops.push_back(std::pair<std::string, FindOperator>("UNLIKE", FD_UNLIKE));
+		mops.push_back(std::pair<std::string, FindOperator>("PRESENT", FD_PRESENT));
+		mops.push_back(std::pair<std::string, FindOperator>("BETWEEN", FD_RANGE_GT_LT));
+		mops.push_back(std::pair<std::string, FindOperator>("POINT$", FD_POINT$));
+		mops.push_back(std::pair<std::string, FindOperator>("REC$", FD_SINGLEREC));
 	}
 
 	for (int i = 0; i < mops.size(); i++) {

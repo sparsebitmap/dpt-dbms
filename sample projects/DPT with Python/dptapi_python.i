@@ -190,6 +190,6 @@ namespace std {
 Raise exceptions for APIRoundedDouble numbers out of range rather than
 just assign 0.0 instead.
 '''
-APIRoundedDouble_SetNumRangeThrowOption(True)
+APIRoundedDouble.SetNumRangeThrowOption(True)
 
 %}

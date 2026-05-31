@@ -16,7 +16,7 @@ namespace dpt {
 void FoundSet::AppendFileSet(int groupix, BitMappedFileRecordSet* set)
 {
 	std::pair<int, BitMappedFileRecordSet*> newfileset;
-	newfileset = std::make_pair<int, BitMappedFileRecordSet*>(groupix, set);
+	newfileset = std::pair<int, BitMappedFileRecordSet*>(groupix, set);
 
 	std::pair<std::map<int, BitMappedFileRecordSet*>::iterator, bool> insflag;
 	insflag = data.insert(newfileset);

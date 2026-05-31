@@ -8,7 +8,7 @@
 namespace dpt {
 
 //NB zeros not handled, but OK for most things like file paths
-struct NoCaseSortPredicate : public std::binary_function<std::string, std::string, bool> 
+struct NoCaseSortPredicate
 {
 	bool operator()(const std::string& lhs, const std::string& rhs) 
 	{

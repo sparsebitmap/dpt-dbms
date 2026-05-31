@@ -41,7 +41,7 @@ void BitMappedFileRecordSet::AppendSegmentSet(SegmentRecordSet* segset)
 {
 	try {
 		std::pair<short, SegmentRecordSet*> newentry;
-		newentry = std::make_pair<short, SegmentRecordSet*>(segset->SegNum(), segset);
+		newentry = std::pair<short, SegmentRecordSet*>(segset->SegNum(), segset);
 
 		std::pair<std::map<short, SegmentRecordSet*>::iterator, bool> insflag;
 		insflag = data.insert(newentry);

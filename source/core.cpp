@@ -752,7 +752,7 @@ std::vector<int> CoreServices::GetUsernos(const std::string& who)
 		CoreServices* c = user_table[x];
 		if (c != NULL) {
 
-			unsigned int ptr = (unsigned int) c;
+			//unsigned int ptr = (unsigned int) c;
 			std::string id = c->GetUserID();
 			std::string acct = c->GetAccount();
 			int no = c->GetUserNo();

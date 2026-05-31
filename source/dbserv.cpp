@@ -16,7 +16,9 @@
 #include "windows.h"	
 #include "direct.h" //V2.27
 //API tiers
-#include "session.h"	
+#ifdef _BBHOST
+#include "session.h"
+#endif
 #include "grpserv.h"	
 #include "ctxtdef.h"	
 #include "dbfile.h"	
