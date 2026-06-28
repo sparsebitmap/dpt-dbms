@@ -71,9 +71,13 @@ class DeferredUpdate1StepInfo {
 	CriticalFileResource* cfr_index;
 
 	int max_memory_pct;
-	int max_memory_size;
-	int memory_hwm;
-	int total_physical_memory;
+	// 12 June 2026 According to
+	// learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-memorystatus
+	// most elements of MEMORYSTATUS structure are type size_t so change these
+	// derived items to fit.
+	size_t max_memory_size;
+	long long memory_hwm;
+	size_t total_physical_memory;
 
 	int partial_flushes;
 	_int64 chunk_fvpairs;
@@ -115,7 +119,8 @@ public:
 	bool AnythingToFlush() {return ( (chunk_fvpairs + callcount) > 0);}
 
 	int MaxMemPct() {return max_memory_pct;}
-	int MaxMemSize() {return max_memory_size;}
+	// 12 June 2026 max_memory_size is now size_t.
+	size_t MaxMemSize() {return max_memory_size;}
 
 	//V2.23.  These now used where the global variables were used before.
 	HANDLE* AHeap() {return &h_arrayheap;}
