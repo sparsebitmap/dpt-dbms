@@ -861,7 +861,9 @@ void VirtualMemoryCalcFree_ForceUseGlobalMemoryStatus(bool flag) {use_GlobalMemo
 
 //**********************
 //V2.23 Nov 09.  Control flag is now a parameter not a global variable.
-unsigned int VirtualMemoryCalcFree(bool use_GlobalMemoryStatus)
+// 12 June 2026  Member dwAvailVirtual of MEMORYSTATUS is size_t according to
+// learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-memorystatus
+size_t VirtualMemoryCalcFree(bool use_GlobalMemoryStatus)
 {
 	//This winAPI function does the job, but (ATOW) is not fully implemented on Wine.
 	if (use_GlobalMemoryStatus) {
@@ -874,7 +876,9 @@ unsigned int VirtualMemoryCalcFree(bool use_GlobalMemoryStatus)
 	//allocated (1 trip into kernel mode and back per VQ call I think).  Use sparingly!
 	//NB: This route always seems to report 8192 bytes less than the above.  I have no 
 	//idea why so For the time being I've kluged it by 8K here :-)
-	unsigned int total_free = 8192;
+	// 19 June 2026  Member RegionSize of MEMORY_BASIC_INFORMATION is size_t according to
+	// learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-memory_basic_information
+	size_t total_free = 8192;
 	MEMORY_BASIC_INFORMATION mbi;
 	
 	char* addr = 0;

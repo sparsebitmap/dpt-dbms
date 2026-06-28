@@ -281,11 +281,11 @@ WRAP_O = $(DPT_DBMS_OBJECT_SWIG_PYTHON)\$(SWIG_DPTAPI)_$(SWIG_PYTHON)_wrap.obj
 $(WRAP_CXX) : $(DPT_DBMS_SWIG_INTERFACE)
 	@if not exist $(DPT_DBMS_PACKAGE) mkdir $(DPT_DBMS_PACKAGE)
 	@if not exist $(DPT_DBMS_PACKAGE)\src mkdir $(DPT_DBMS_PACKAGE)\src
-	if not exist $(DPT_DBMS_PACKAGE)\LICENCE copy package-template\LICENCE $(DPT_DBMS_PACKAGE)\\
-	if not exist $(DPT_DBMS_PACKAGE)\MANIFEST.in $(PYTHON_VERSION_DIRECTORY)\Scripts\pythonsed -e /Xproject_nameX/s//\\$(PROJECT_NAME)\\/g package-template\MANIFEST.in > $(DPT_DBMS_PACKAGE)\MANIFEST.in
-	if not exist $(DPT_DBMS_PACKAGE)\README.rst copy package-template\README.rst $(DPT_DBMS_PACKAGE)\\
-	if not exist $(DPT_DBMS_PACKAGE)\tests xcopy /s /e package-template\tests $(DPT_DBMS_PACKAGE)\tests\\
-	if not exist $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME) xcopy /s /e package-template\src\$(PROJECT_NAME) $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME)\\
+	copy package-template\LICENCE $(DPT_DBMS_PACKAGE)\\
+	$(PYTHON_VERSION_DIRECTORY)\Scripts\pythonsed -e /Xproject_nameX/s//\\$(PROJECT_NAME)\\/g package-template\MANIFEST.in > $(DPT_DBMS_PACKAGE)\MANIFEST.in
+	copy package-template\README.rst $(DPT_DBMS_PACKAGE)\\
+	xcopy /s /e package-template\tests $(DPT_DBMS_PACKAGE)\tests\\
+	xcopy /s /e package-template\src\$(PROJECT_NAME) $(DPT_DBMS_PACKAGE)\src\$(PROJECT_NAME)\\
 	$(PYTHON_VERSION_DIRECTORY)\Scripts\pythonsed -e /"invalid"/s/invalid/$(VERSION_DPT_DBMS_DPTDB)/g package-template\pyproject.toml > $(DPT_DBMS_PACKAGE)\pyproject.toml
 	@if not exist $(DPT_DBMS_SWIG_SOURCE) mkdir $(DPT_DBMS_SWIG_SOURCE)
 	$(PATH_TO_SWIG)\swig -c++ -$(SWIG_PYTHON) -o $(WRAP_CXX) -outdir $(DPT_DBMS_PACKAGE_DPTDB) -I$(DPT_DBMS_API_INC) $(DPT_DBMS_SWIG_INTERFACE)

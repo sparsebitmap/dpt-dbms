@@ -194,11 +194,11 @@ WRAP_O = $(DPT_DBMS_OBJECT_SWIG_PYTHON)/$(SWIG_DPTAPI)_$(SWIG_PYTHON)_wrap.o
 
 $(WRAP_CXX) : $(DPT_DBMS_SWIG_INTERFACE)
 	@mkdir -p $(DPT_DBMS_PACKAGE)/src
-	cp -np package-template/LICENCE $(DPT_DBMS_PACKAGE)/
+	cp -p package-template/LICENCE $(DPT_DBMS_PACKAGE)/
 	sed -e '/Xproject_nameX/s//\\$(PROJECT_NAME)\\/g' package-template/MANIFEST.in > $(DPT_DBMS_PACKAGE)/MANIFEST.in
-	cp -np package-template/README.rst $(DPT_DBMS_PACKAGE)/
-	cp -nRp package-template/tests $(DPT_DBMS_PACKAGE)/
-	cp -nRp package-template/src/$(PROJECT_NAME) $(DPT_DBMS_PACKAGE)/src/
+	cp -p package-template/README.rst $(DPT_DBMS_PACKAGE)/
+	cp -Rp package-template/tests $(DPT_DBMS_PACKAGE)/
+	cp -Rp package-template/src/$(PROJECT_NAME) $(DPT_DBMS_PACKAGE)/src/
 	sed -e '/"invalid"/s/invalid/$(VERSION_DPT_DBMS_DPTDB)/g' package-template/pyproject.toml > $(DPT_DBMS_PACKAGE)/pyproject.toml
 	@mkdir -p $(DPT_DBMS_SWIG)
 	$(WINE) $(PATH_TO_SWIG)/swig.exe -c++ -$(SWIG_PYTHON) -o $@ -outdir $(DPT_DBMS_PACKAGE_DPTDB) -I$(DPT_DBMS_API_INC) $(DPT_DBMS_SWIG_INTERFACE)

@@ -63,7 +63,9 @@ void Cede(bool = false);
 void SetCedeModeRealThreadSwap(bool);
 
 //Memory management
-unsigned int VirtualMemoryCalcFree(bool use_GlobalMemoryStatus_function);
+// 12 June 2026  Return value is size_t according to
+// learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-memorystatus
+size_t VirtualMemoryCalcFree(bool use_GlobalMemoryStatus_function);
 //V2.23 Nov 09.  Wine auto-detect proved unreliable.
 //void VirtualMemoryCalcFree_ForceUseGlobalMemoryStatus(bool);
 std::string VirtualMemoryMap();
